@@ -1,6 +1,4 @@
-import { Tunnel, TunnelChannel } from '@tunnel/core';
-
-export const tunnel = new Tunnel();
+import { Channel } from '@tunnel/core';
 
 export type ChatMessage = {
     user: string;
@@ -8,12 +6,5 @@ export type ChatMessage = {
     timestamp: number;
 };
 
-export const chat = new TunnelChannel<ChatMessage[]>({
-    tunnel,
-    name: 'chat',
-});
-
-export const counter = new TunnelChannel<number>({
-    tunnel,
-    name: 'counter',
-});
+export const chat = new Channel<ChatMessage[]>({ name: 'chat' });
+export const counter = new Channel<number>({ name: 'counter' });

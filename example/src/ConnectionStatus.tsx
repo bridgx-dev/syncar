@@ -1,16 +1,22 @@
 import { useState, useEffect } from 'react';
-import { tunnel } from '../tunnel';
+import { useTunnelContext } from '@tunnel/react';
 
 export const ConnectionStatus = () => {
-    const [status, setStatus] = useState<'connecting' | 'open' | 'closed'>(tunnel.status);
+    const tunnel = useTunnelContext();
+    const [status, setStatus] = useState<'connecting' | 'open' | 'closed'>('connecting');
 
     useEffect(() => {
-        // tunnel.onStatusChange was added to the core in the previous step
+        if (!tunnel) {
+            setStatus('connecting');
+            return;
+        }
+
+        setStatus(tunnel.status);
         const unsubscribe = tunnel.onStatusChange((newStatus) => {
             setStatus(newStatus);
         });
         return () => unsubscribe();
-    }, []);
+    }, [tunnel]);
 
     const statusColors = {
         connecting: '#ffa500',

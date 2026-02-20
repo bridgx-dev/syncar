@@ -1,30 +1,68 @@
-import { useState, useEffect, useCallback } from 'react';
-import type { TunnelChannel } from '@tunnel/core';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Channel } from '@tunnel/core';
+import { useTunnelContext } from './Provider';
 
-type UseTunnelReturn<T = any> = {
+export * from './Provider';
+
+type UseChannelReturn<T = any> = {
     data: T | null;
     send: (data: T) => void;
+    error: Error | null;
+    loading: boolean;
 };
 
-const useTunnel = <T = any>(tunnel: TunnelChannel<T>): UseTunnelReturn<T> => {
+/**
+ * React hook to interact with a specific Tunnel channel.
+ */
+const useChannel = <T = any>(nameOrChannel: string | Channel<T>): UseChannelReturn<T> => {
+    const tunnel = useTunnelContext();
     const [data, setData] = useState<T | null>(null);
+    const [error, setError] = useState<Error | null>(null);
+
+    // Memoize the Channel instance
+    const channel = useMemo(() => {
+        if (!tunnel) return null;
+
+        if (typeof nameOrChannel === 'string') {
+            return new Channel<T>({ tunnel, name: nameOrChannel });
+        } else {
+            // If it's a shared Channel instance, bind the tunnel to it if not already bound
+            nameOrChannel.bind(tunnel);
+            return nameOrChannel;
+        }
+    }, [tunnel, nameOrChannel]);
 
     useEffect(() => {
-        const unsubscribe = tunnel.receive((receivedData) => {
-            setData(receivedData);
-        });
-        return () => unsubscribe();
-    }, [tunnel]);
+        if (!channel) return;
+
+        try {
+            const unsubscribe = channel.receive((receivedData) => {
+                setData(receivedData);
+            });
+            return () => unsubscribe();
+        } catch (err) {
+            setError(err instanceof Error ? err : new Error(String(err)));
+        }
+    }, [channel]);
 
     const send = useCallback(
         (newData: T) => {
-            tunnel.send(newData);
+            if (!channel) {
+                console.warn(`Tunnel: Cannot send data - tunnel not initialized.`);
+                return;
+            }
+            channel.send(newData);
             setData(newData); // Optimistic local update
         },
-        [tunnel],
+        [channel],
     );
 
-    return { data, send };
+    return {
+        data,
+        send,
+        error,
+        loading: !tunnel,
+    };
 };
 
-export { useTunnel };
+export { useChannel };

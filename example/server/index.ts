@@ -1,16 +1,20 @@
 import express from 'express';
-import { tunnel, chat, counter, type ChatMessage } from '../tunnel';
+import { Tunnel } from '@tunnel/core';
+import { chat, counter, type ChatMessage } from '../tunnel';
 
 const app = express();
 app.use(express.json());
 
-// Pass the app to the tunnel if it was already created
-// Or just let it run on port 3000 if that's what we want.
-// In the shared tunnel.ts, it creates its own server by default.
+// Create the backend Tunnel instance
+const tunnel = new Tunnel();
 
 app.get('/', (req, res) => {
-    res.json({ message: 'Hello World!' });
+    res.json({ message: 'Hello Synnel!' });
 });
+
+// Bind shared channels to this tunnel
+chat.bind(tunnel);
+counter.bind(tunnel);
 
 let serverMessages: ChatMessage[] = [];
 chat.receive((data) => {
@@ -40,5 +44,5 @@ const server = app.listen(3000, () => {
     console.log('Server is running on port 3000 (Combined Express + WebSocket)');
 });
 
-// Attach the tunnel to the shared server to use the same port
+// Attach the tunnel to the express server
 tunnel.attachToServer(server);

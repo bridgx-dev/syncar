@@ -2,13 +2,13 @@ import reactLogo from './assets/react.svg';
 import viteLogo from '/vite.svg';
 import './App.css';
 
+import { useChannel } from '@tunnel/react';
 import { counter } from '../tunnel';
-import { useTunnel } from '@tunnel/react';
 import { Chat } from './Chat';
 import { ConnectionStatus } from './ConnectionStatus';
 
 function App() {
-    const { data: syncCount, send: updateRemote } = useTunnel(counter);
+    const { data: syncCount, send: updateRemote } = useChannel(counter);
 
     const increment = () => {
         const next = (syncCount ?? 0) + 1;
