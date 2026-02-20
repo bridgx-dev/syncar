@@ -1,0 +1,16 @@
+{
+    "name": "live-tunnel",
+    "module": "index.ts",
+    "type": "module",
+    "private": true,
+    "workspaces": [
+        "example",
+        "packages/*"
+    ],
+    "devDependencies": {
+        "@types/bun": "latest"
+    },
+    "peerDependencies": {
+        "typescript": "^5"
+    }
+}
