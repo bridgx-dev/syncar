@@ -1,6 +1,7 @@
 import type { WebSocket as WSWebSocket, WebSocketServer } from 'ws';
 import type { TunnelOptions, TunnelStore, TunnelBase } from './types';
 import { MemoryStore, RedisStore } from './Store';
+import { Channel } from './Channel';
 
 /**
  * Server-side Tunnel implementation.
@@ -45,6 +46,14 @@ export class Tunnel implements TunnelBase {
         this.callbacks.add(callback);
     }
 
+    /**
+     * Create a new channel directly from the tunnel.
+     * This automatically binds the channel to this tunnel instance.
+     */
+    createChannel<T>(name: string): Channel<T> {
+        return new Channel<T>({ tunnel: this, name });
+    }
+
     protected async initServer(options: TunnelOptions) {
         try {
             if (this.store) {
@@ -65,7 +74,7 @@ export class Tunnel implements TunnelBase {
                 socket.on('message', async (data) => {
                     try {
                         const message = JSON.parse(data.toString());
-                        
+
                         // Handle Signal Plane (Internal Subscriptions)
                         if (message.type === 'signal' && this.store) {
                             if (message.signal === 'subscribe') {
@@ -84,7 +93,7 @@ export class Tunnel implements TunnelBase {
                             const subscriberIds = await this.store.getSubscribers(message.channel);
                             const allClients = await this.store.getAllClients();
                             const payload = JSON.stringify(message);
-                            
+
                             subscriberIds.forEach((id) => {
                                 const s = allClients.get(id);
                                 if (s && s !== socket && s.readyState === 1) {
@@ -121,7 +130,7 @@ export class Tunnel implements TunnelBase {
         if (this.store) {
             const subscriberIds = await this.store.getSubscribers(message.channel);
             const allClients = await this.store.getAllClients();
-            subscriberIds.forEach(id => {
+            subscriberIds.forEach((id) => {
                 const s = allClients.get(id);
                 if (s && s.readyState === 1) s.send(payload);
             });

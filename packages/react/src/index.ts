@@ -24,7 +24,7 @@ const useChannel = <T = any>(nameOrChannel: string | Channel<T>): UseChannelRetu
         if (!tunnel) return null;
 
         if (typeof nameOrChannel === 'string') {
-            return new Channel<T>({ tunnel, name: nameOrChannel });
+            return tunnel.createChannel<T>(nameOrChannel);
         } else {
             // If it's a shared Channel instance, bind the tunnel to it if not already bound
             nameOrChannel.bind(tunnel);

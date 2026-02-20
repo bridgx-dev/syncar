@@ -3,12 +3,11 @@ import viteLogo from '/vite.svg';
 import './App.css';
 
 import { useChannel } from '@tunnel/react';
-import { counter } from '../tunnel';
 import { Chat } from './Chat';
 import { ConnectionStatus } from './ConnectionStatus';
 
 function App() {
-    const { data: syncCount, send: updateRemote } = useChannel(counter);
+    const { data: syncCount, send: updateRemote } = useChannel<number>('counter');
 
     const increment = () => {
         const next = (syncCount ?? 0) + 1;

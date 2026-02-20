@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { chat, type ChatMessage } from '../tunnel';
+import type { ChatMessage } from '../tunnel';
 import { useChannel } from '@tunnel/react';
 
 export const Chat = () => {
-    const { data: messages, send } = useChannel(chat);
+    const { data: messages, send } = useChannel<ChatMessage[]>('chat');
     const [inputText, setInputText] = useState('');
 
     const sendMessage = (e: React.FormEvent) => {

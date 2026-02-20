@@ -4,9 +4,16 @@ export type TunnelOptions = {
     port?: number;
     host?: string;
     server?: any;
-    url?: string;
     storage?: 'memory' | 'redis' | TunnelStore;
     redisOptions?: any; // node-redis Options
+};
+
+export type ClientOptions = {
+    url?: string;
+    port?: number;
+    reconnect?: boolean;
+    reconnectInterval?: number;
+    maxReconnectAttempts?: number;
 };
 
 export type TunnelChannelOptions = {
@@ -46,5 +53,6 @@ export abstract class TunnelBase {
     abstract status: 'connecting' | 'open' | 'closed';
     abstract onMessage(callback: (message: any, sender?: WSWebSocket) => void): void;
     abstract send(message: any): void;
+    abstract createChannel<T>(name: string): any;
     abstract disconnect(): void;
 }

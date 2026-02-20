@@ -1,20 +1,20 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { TunnelClient, type TunnelOptions } from '@tunnel/core';
+import { Client, type ClientOptions } from '@tunnel/core';
 
 export type TunnelProviderProps = {
     children: React.ReactNode;
-    options?: TunnelOptions;
+    options?: ClientOptions;
     discoveryUrl?: string;
 };
 
-const TunnelContext = createContext<TunnelClient | null>(null);
+const TunnelContext = createContext<Client | null>(null);
 
 export const TunnelProvider = ({ children, options, discoveryUrl }: TunnelProviderProps) => {
-    const [tunnel, setTunnel] = useState<TunnelClient | null>(null);
+    const [tunnel, setTunnel] = useState<Client | null>(null);
 
     useEffect(() => {
         let active = true;
-        let client: TunnelClient | null = null;
+        let client: Client | null = null;
 
         const init = async () => {
             let finalOptions = options || {};
@@ -30,7 +30,7 @@ export const TunnelProvider = ({ children, options, discoveryUrl }: TunnelProvid
             }
 
             if (active) {
-                client = new TunnelClient(finalOptions);
+                client = new Client(finalOptions);
                 setTunnel(client);
             }
         };

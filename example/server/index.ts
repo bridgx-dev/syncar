@@ -1,6 +1,6 @@
 import express from 'express';
 import { Tunnel } from '@tunnel/core';
-import { chat, counter, type ChatMessage } from '../tunnel';
+import type { ChatMessage } from '../tunnel';
 
 const app = express();
 app.use(express.json());
@@ -8,13 +8,13 @@ app.use(express.json());
 // Create the backend Tunnel instance
 const tunnel = new Tunnel();
 
+// Create channels directly (auto-bound)
+const chat = tunnel.createChannel<ChatMessage[]>('chat');
+const counter = tunnel.createChannel<number>('counter');
+
 app.get('/', (req, res) => {
     res.json({ message: 'Hello Synnel!' });
 });
-
-// Bind shared channels to this tunnel
-chat.bind(tunnel);
-counter.bind(tunnel);
 
 let serverMessages: ChatMessage[] = [];
 chat.receive((data) => {

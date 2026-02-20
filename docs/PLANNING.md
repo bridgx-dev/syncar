@@ -9,7 +9,7 @@ Unlike platforms like Convex or Supabase that are tightly coupled to a managed d
 ### Key Pillars:
 
 - **Framework Agnostic:** Works with any backend (Express, Bun, Fastify) and any frontend (React, Vue, Svelte, or Vanilla JS).
-- **Isomorphic Core:** A single package that detects its environment and switches between a WebSocket Server (`ws`) and a Browser WebSocket.
+- **Core Abstractions:** A single package providing `Tunnel` (Server) and `Client` (Browser) optimized for their respective environments.
 - **Shared Interface Pattern:** Define your communication channels once in a shared file, and let TypeScript infer the types on both ends.
 - **Minimal Configuration:** No complex setup. If you have a port, you have a tunnel.
 
@@ -19,20 +19,21 @@ Unlike platforms like Convex or Supabase that are tightly coupled to a managed d
 
 The system is composed of two primary primitives:
 
-### 1. `Tunnel` (Transport Layer)
+### 1. `Tunnel` & `Client` (Transport Layer)
 
-The `Tunnel` is the physical pipe.
+The physical pipe through which data flows.
 
-- **Server Mode:** Spin up a WebSocket server or attach to an existing HTTP server.
-- **Client Mode:** Connect to the server URL.
-- **Auto-Relay:** The server-side tunnel automatically relays messages from one client to all other connected clients (Broadcast), enabling instant peer-to-peer-like sync through a central hub.
+- **`Tunnel` (Server):** Manages connections, subscriptions (Signal Plane), and data relay using a pluggable `Store`.
+- **`Client` (Browser):** Handles the WebSocket connection in the browser with automatic reconnects and status tracking.
+- **Pluggable Storage:** Support for `MemoryStore` (single instance) and `RedisStore` (distributed scaling).
 
-### 2. `TunnelChannel` (Logical Layer)
+### 2. `Channel` (Logical Layer)
 
-Channels allow for multiplexing multiple sync streams over a single WebSocket connection.
+Named multiplexing on top of a single connection.
 
-- You specify a `name` for the channel (e.g., `"chat"`, `"presence"`, `"document-123"`).
-- Only components or services listening to that specific channel receive its updates.
+- **Scoped Sync:** Only subscribers to a specific channel (e.g., `"chat"`) receive updates for it.
+- **Auto-Binding:** Create channels directly via `tunnel.createChannel('name')` to skip manual binding.
+- **Late Binding:** Channels can be defined in shared files and bound later via `channel.bind(tunnel)`.
 
 ---
 
@@ -40,21 +41,19 @@ Channels allow for multiplexing multiple sync streams over a single WebSocket co
 
 The core innovation is how you use Live-Tunnel in a workspace:
 
-### Step 1: Define the Shared Tunnel
+### Step 1: Define Shared Channels
 
 ```typescript
-// tunnel.ts
-import { Tunnel, TunnelChannel } from '@tunnel/core';
-
-export const tunnel = new Tunnel({ port: 3000 });
+// shared/tunnel.ts
+import { Channel } from '@tunnel/core';
 
 export interface AppState {
     count: number;
     lastUpdatedBy: string;
 }
 
-export const syncChannel = new TunnelChannel<AppState>({
-    tunnel,
+// Named channel with a specific type
+export const syncChannel = new Channel<AppState>({
     name: 'app-state',
 });
 ```
@@ -62,22 +61,39 @@ export const syncChannel = new TunnelChannel<AppState>({
 ### Step 2: Consume on Backend
 
 ```typescript
-import { syncChannel } from './tunnel';
+import { Tunnel } from '@tunnel/core';
+import { syncChannel } from './shared/tunnel';
+
+const tunnel = new Tunnel({ port: 3000, storage: 'redis' });
+
+// Option A: Bind a shared channel instance
+syncChannel.bind(tunnel);
+
+// Option B: Create channel directly (auto-bound)
+// const syncChannel = tunnel.createChannel<AppState>('app-state');
 
 syncChannel.receive((data) => {
     console.log('Update received:', data.count);
-    // Persist to your choice of DB here
+    // Persist to DB
 });
 ```
 
 ### Step 3: Consume on Frontend
 
 ```tsx
-import { syncChannel } from './tunnel';
-import { useTunnel } from '@tunnel/react';
+import { syncChannel } from './shared/tunnel';
+import { TunnelProvider, useChannel } from '@tunnel/react';
+
+function App() {
+    return (
+        <TunnelProvider url='ws://localhost:3000'>
+            <Counter />
+        </TunnelProvider>
+    );
+}
 
 function Counter() {
-    const { data, send } = useTunnel(syncChannel);
+    const { data, send } = useChannel(syncChannel);
 
     return (
         <button onClick={() => send({ count: (data?.count || 0) + 1 })}>
@@ -96,16 +112,18 @@ function Counter() {
 3. **Server Relay:**
     - The server receives the message.
     - It triggers any local `receive` listeners (perfect for DB persistence).
-    - It **broadcasts** the message to every other connected client.
-4. **Reactive Update:** All other clients receive the message, updating their React state via the `useTunnel` hook.
+    - It **relays** the message to all clients subscribed to that channel (via the `Store`).
+4. **Reactive Update:** All other clients receive the message, updating their React state via the `useChannel` hook.
 
 ---
 
 ## 📈 Roadmap
 
-- [x] Isomorphic `@tunnel/core` implementation.
-- [x] Basic React Hook integration.
-- [ ] Presence API (who is currently connected to the tunnel).
-- [ ] Persistence Adapters (easy hooks for Redis/Postgres).
-- [ ] Reliable Message Delivery (ack/retry mechanisms).
-- [ ] Binary Protocol support for performance.
+- [x] Server (`Tunnel`) and Client (`Client`) implementations.
+- [x] Scalable `Store` architecture (Memory & Redis).
+- [x] Basic React Hook integration (`useChannel`).
+- [x] Auto-reconnect with Exponential Backoff in `Client`.
+- [ ] Presence API (tracking current active subscribers per channel).
+- [ ] Reliable Message Delivery (ack/retry mechanisms with message IDs).
+- [ ] Binary Protocol (BSON or Protobuf) support for high-throughput sync.
+- [ ] Persistence Adapters (automatic sync to Postgres/Redis JSON).
