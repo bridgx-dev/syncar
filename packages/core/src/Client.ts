@@ -1,17 +1,16 @@
-import type { WebSocket as WSWebSocket } from 'ws';
-import type { ClientOptions, TunnelMessage, TunnelBase } from './types';
 import { Channel } from './Channel';
+import { ConnectionManager } from './ConnectionManager';
+import { Dispatcher } from './Dispatcher';
+import { ClientTransport } from './transport/ClientTransport';
+import type { ClientOptions, TunnelMessage, TunnelBase } from './types';
 
 export class Client implements TunnelBase {
-    wsClient?: WebSocket;
+    protected transport!: ClientTransport;
+    protected connectionManager: ConnectionManager;
+    protected dispatcher: Dispatcher = new Dispatcher();
     status: 'connecting' | 'open' | 'closed' = 'connecting';
     protected statusListeners: Set<(status: Client['status']) => void> = new Set();
-    protected callbacks: Set<(message: any, sender?: WSWebSocket) => void> = new Set();
     protected options: ClientOptions;
-    protected url: string;
-    protected reconnectTimer?: any;
-    protected attemptCount = 0;
-    protected isExplicitlyDisconnected = false;
 
     constructor(options: ClientOptions = {}) {
         this.options = {
@@ -20,71 +19,41 @@ export class Client implements TunnelBase {
             maxReconnectAttempts: Infinity,
             ...options,
         };
-        this.url =
+        const url =
             this.options.url || `ws://${window.location.hostname}:${this.options.port || 3000}`;
-        this.connect();
-    }
 
-    protected connect() {
-        if (this.wsClient) {
-            this.wsClient.onopen = null;
-            this.wsClient.onclose = null;
-            this.wsClient.onerror = null;
-            this.wsClient.onmessage = null;
-            this.wsClient.close();
-        }
-
-        this.updateStatus('connecting');
-        this.wsClient = new WebSocket(this.url);
-
-        this.wsClient.onopen = () => {
-            this.updateStatus('open');
-            this.attemptCount = 0;
-        };
-
-        this.wsClient.onclose = () => {
-            if (this.status !== 'closed') {
-                this.updateStatus('closed');
-            }
-            this.handleReconnect();
-        };
-
-        this.wsClient.onerror = (err) => {
-            console.error('Tunnel WebSocket error:', err);
-            if (this.status !== 'closed') {
-                this.updateStatus('closed');
-            }
-        };
-
-        this.wsClient.onmessage = (event) => {
-            try {
-                const message = JSON.parse(event.data);
-                this.callbacks.forEach((cb) => cb(message));
-            } catch (e) {
-                console.error('Failed to parse message', e);
-            }
-        };
-    }
-
-    protected handleReconnect() {
-        if (this.isExplicitlyDisconnected || !this.options.reconnect) return;
-        if (this.attemptCount >= (this.options.maxReconnectAttempts || Infinity)) {
-            console.warn('Max reconnect attempts reached');
-            return;
-        }
-
-        if (this.reconnectTimer) return;
-
-        const delay = Math.min(
-            (this.options.reconnectInterval || 1000) * Math.pow(1.5, this.attemptCount),
-            30000, // Max 30s delay
+        this.connectionManager = new ConnectionManager(
+            this.options,
+            () => this.connect(url),
+            () => this.transport?.disconnect(),
         );
 
-        this.reconnectTimer = setTimeout(() => {
-            this.reconnectTimer = undefined;
-            this.attemptCount++;
-            this.connect();
-        }, delay);
+        this.connect(url);
+    }
+
+    protected connect(url: string) {
+        if (this.transport) {
+            this.transport.disconnect();
+        }
+
+        this.transport = new ClientTransport(url);
+
+        this.transport.onStatusChange((status) => {
+            this.updateStatus(status);
+            if (status === 'open') {
+                this.connectionManager.reset();
+            } else if (status === 'closed') {
+                this.connectionManager.handleDisconnect();
+            }
+        });
+
+        this.transport.onMessage((data) => {
+            this.dispatcher.processRaw(data);
+        });
+
+        this.transport.onError((err) => {
+            console.error('Tunnel WebSocket error:', err);
+        });
     }
 
     protected updateStatus(newStatus: Client['status']) {
@@ -99,8 +68,8 @@ export class Client implements TunnelBase {
         };
     }
 
-    onMessage(callback: (message: any, sender?: WSWebSocket) => void) {
-        this.callbacks.add(callback);
+    onMessage(callback: (message: any, sender?: any) => void) {
+        this.dispatcher.onMessage(callback);
     }
 
     /**
@@ -113,13 +82,13 @@ export class Client implements TunnelBase {
 
     send(message: TunnelMessage) {
         const payload = JSON.stringify(message);
-        if (this.status === 'open' && this.wsClient?.readyState === 1) {
-            this.wsClient.send(payload);
+        if (this.status === 'open') {
+            this.transport.send(payload);
         } else {
             // Wait for next 'open' status if not currently connected
             const unbind = this.onStatusChange((status) => {
-                if (status === 'open' && this.wsClient?.readyState === 1) {
-                    this.wsClient.send(payload);
+                if (status === 'open') {
+                    this.transport.send(payload);
                     unbind();
                 }
             });
@@ -127,15 +96,7 @@ export class Client implements TunnelBase {
     }
 
     disconnect() {
-        this.isExplicitlyDisconnected = true;
-        if (this.reconnectTimer) {
-            clearTimeout(this.reconnectTimer);
-            this.reconnectTimer = undefined;
-        }
-        if (this.wsClient) {
-            this.wsClient.close();
-            this.wsClient = undefined;
-            this.updateStatus('closed');
-        }
+        this.connectionManager.destroy();
+        this.updateStatus('closed');
     }
 }

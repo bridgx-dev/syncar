@@ -1,21 +1,22 @@
-import type { WebSocket as WSWebSocket, WebSocketServer } from 'ws';
-import type { TunnelOptions, TunnelStore, TunnelBase } from './types';
-import { MemoryStore, RedisStore } from './Store';
 import { Channel } from './Channel';
+import { Dispatcher } from './Dispatcher';
+import { MemoryStore, RedisStore } from './store';
+import { ServerTransport } from './transport/ServerTransport';
+import type { TunnelOptions, TunnelStore, TunnelBase } from './types';
 
 /**
  * Server-side Tunnel implementation.
  */
 export class Tunnel implements TunnelBase {
-    wsServer?: WebSocketServer;
-    wsClient?: any; // Required by interface but null on server
-    status: 'connecting' | 'open' | 'closed' = 'open';
+    protected transport: ServerTransport;
+    protected dispatcher: Dispatcher = new Dispatcher();
     protected options: TunnelOptions;
-    protected callbacks: Set<(message: any, sender?: WSWebSocket) => void> = new Set();
     protected store?: TunnelStore;
+    protected socketToId: Map<any, string> = new Map();
 
     constructor(options: TunnelOptions = {}) {
         this.options = options;
+        this.transport = new ServerTransport();
 
         // Initialize storage
         if (!options.storage || options.storage === 'memory') {
@@ -35,15 +36,11 @@ export class Tunnel implements TunnelBase {
      * Attach the tunnel to an existing HTTP server.
      */
     attachToServer(server: any) {
-        if (this.wsServer) {
-            console.warn('Tunnel already has a server attached.');
-            return;
-        }
         this.initServer({ ...this.options, server });
     }
 
-    onMessage(callback: (message: any, sender?: WSWebSocket) => void) {
-        this.callbacks.add(callback);
+    onMessage(callback: (message: any, sender?: any) => void) {
+        this.dispatcher.onMessage(callback);
     }
 
     /**
@@ -60,67 +57,66 @@ export class Tunnel implements TunnelBase {
                 await this.store.ready;
             }
 
-            const { WebSocketServer } = await import('ws');
-            this.wsServer = new WebSocketServer(
-                options.server ? { server: options.server } : { port: options.port || 3000 },
-            );
-
-            this.wsServer.on('connection', async (socket: WSWebSocket) => {
+            this.transport.onConnection(async (socket) => {
                 const clientId = Math.random().toString(36).substring(2, 11);
+                this.socketToId.set(socket, clientId);
                 if (this.store) {
                     await this.store.registerClient(clientId, socket);
                 }
+            });
 
-                socket.on('message', async (data) => {
-                    try {
-                        const message = JSON.parse(data.toString());
+            this.transport.onMessage(async (socket, data) => {
+                const clientId = this.socketToId.get(socket);
+                if (!clientId) return;
 
-                        // Handle Signal Plane (Internal Subscriptions)
-                        if (message.type === 'signal' && this.store) {
-                            if (message.signal === 'subscribe') {
-                                await this.store.subscribe(clientId, message.channel);
-                            } else if (message.signal === 'unsubscribe') {
-                                await this.store.unsubscribe(clientId, message.channel);
-                            }
-                            return;
-                        }
+                const message = this.dispatcher.processRaw(data, socket);
+                if (!message) return;
 
-                        // Trigger local listeners
-                        this.callbacks.forEach((cb) => cb(message, socket));
-
-                        // Targeted Relay
-                        if (this.store) {
-                            const subscriberIds = await this.store.getSubscribers(message.channel);
-                            const allClients = await this.store.getAllClients();
-                            const payload = JSON.stringify(message);
-
-                            subscriberIds.forEach((id) => {
-                                const s = allClients.get(id);
-                                if (s && s !== socket && s.readyState === 1) {
-                                    s.send(payload);
-                                }
-                            });
-                        } else {
-                            // Fallback broadcast
-                            this.wsServer?.clients.forEach((client) => {
-                                if (client !== socket && client.readyState === 1) {
-                                    client.send(data.toString());
-                                }
-                            });
-                        }
-                    } catch (e) {
-                        console.error('Failed to parse message', e);
+                // Handle Signal Plane (Internal Subscriptions)
+                if (message.type === 'signal' && this.store) {
+                    if (message.signal === 'subscribe') {
+                        await this.store.subscribe(clientId, message.channel);
+                    } else if (message.signal === 'unsubscribe') {
+                        await this.store.unsubscribe(clientId, message.channel);
                     }
-                });
+                    return;
+                }
 
-                socket.on('close', async () => {
+                // Targeted Relay
+                if (this.store) {
+                    const subscriberIds = await this.store.getSubscribers(message.channel);
+                    const allClients = await this.store.getAllClients();
+                    const payload = JSON.stringify(message);
+
+                    subscriberIds.forEach((id) => {
+                        const s = allClients.get(id);
+                        if (s && s !== socket) {
+                            this.transport.send(s, payload);
+                        }
+                    });
+                } else {
+                    // Fallback broadcast
+                    this.transport.clients.forEach((client: any) => {
+                        if (client !== socket) {
+                            this.transport.send(client, data);
+                        }
+                    });
+                }
+            });
+
+            this.transport.onClose(async (socket) => {
+                const clientId = this.socketToId.get(socket);
+                if (clientId) {
                     if (this.store) {
                         await this.store.unregisterClient(clientId);
                     }
-                });
+                    this.socketToId.delete(socket);
+                }
             });
+
+            await this.transport.listen(options);
         } catch (e) {
-            console.error('Failed to initialize WebSocketServer', e);
+            console.error('Failed to initialize Tunnel Server', e);
         }
     }
 
@@ -132,20 +128,16 @@ export class Tunnel implements TunnelBase {
             const allClients = await this.store.getAllClients();
             subscriberIds.forEach((id) => {
                 const s = allClients.get(id);
-                if (s && s.readyState === 1) s.send(payload);
+                if (s) this.transport.send(s, payload);
             });
-        } else if (this.wsServer) {
-            this.wsServer.clients.forEach((client) => {
-                if (client.readyState === 1) {
-                    client.send(payload);
-                }
+        } else {
+            this.transport.clients.forEach((client: any) => {
+                this.transport.send(client, payload);
             });
         }
     }
 
     disconnect() {
-        if (this.wsServer) {
-            this.wsServer.close();
-        }
+        this.transport.close();
     }
 }

@@ -1,5 +1,3 @@
-import type { WebSocket as WSWebSocket } from 'ws';
-
 export type TunnelOptions = {
     port?: number;
     host?: string;
@@ -29,6 +27,24 @@ export interface TunnelMessage {
     signal?: 'subscribe' | 'unsubscribe';
 }
 
+export interface BaseTransport {
+    status: 'connecting' | 'open' | 'closed';
+    send(message: string): void;
+    onMessage(callback: (data: string) => void): void;
+    onStatusChange(callback: (status: 'connecting' | 'open' | 'closed') => void): void;
+    onError(callback: (err: any) => void): void;
+    disconnect(): void;
+}
+
+export interface BaseServerTransport {
+    listen(options: any): Promise<void>;
+    onConnection(callback: (client: any) => void): void;
+    onMessage(callback: (client: any, data: string) => void): void;
+    onClose(callback: (client: any) => void): void;
+    send(client: any, data: string): void;
+    close(): void;
+}
+
 /**
  * Storage Interface for managing both clients and room memberships.
  */
@@ -48,10 +64,7 @@ export interface TunnelStore {
 }
 
 export abstract class TunnelBase {
-    abstract wsServer?: any;
-    abstract wsClient?: any;
-    abstract status: 'connecting' | 'open' | 'closed';
-    abstract onMessage(callback: (message: any, sender?: WSWebSocket) => void): void;
+    abstract onMessage(callback: (message: any, sender?: any) => void): void;
     abstract send(message: any): void;
     abstract createChannel<T>(name: string): any;
     abstract disconnect(): void;
