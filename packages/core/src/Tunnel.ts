@@ -43,6 +43,14 @@ export class Tunnel implements TunnelBase {
         this.dispatcher.onMessage(callback);
     }
 
+    subscribe(channel: string) {
+        // Server-side internal subscription logic for server consumers
+    }
+
+    unsubscribe(channel: string) {
+        // Server-side internal unsubscription logic
+    }
+
     /**
      * Create a new channel directly from the tunnel.
      * This automatically binds the channel to this tunnel instance.

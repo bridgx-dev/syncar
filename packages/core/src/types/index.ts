@@ -8,7 +8,6 @@ export type TunnelOptions = {
 
 export type ClientOptions = {
     url?: string;
-    port?: number;
     reconnect?: boolean;
     reconnectInterval?: number;
     maxReconnectAttempts?: number;
@@ -66,6 +65,8 @@ export interface TunnelStore {
 export abstract class TunnelBase {
     abstract onMessage(callback: (message: any, sender?: any) => void): void;
     abstract send(message: any): void;
+    abstract subscribe(channel: string): void;
+    abstract unsubscribe(channel: string): void;
     abstract createChannel<T>(name: string): any;
     abstract disconnect(): void;
 }

@@ -10,32 +10,32 @@ Currently, **Synnel** uses a broadcast model if no store is present, or a relay 
 
 ---
 
-## Architecture Changes
+## Architecture Changes (Modularity Update)
 
-### 1. `TunnelBase` (Interface)
+### 1. `TunnelBase` & `TunnelMessage` (types/index.ts)
 
-Add `subscribe` and `unsubscribe` methods to the base interface to allow `Channel` to communicate subscription intent regardless of whether it's on a server or client.
+- Add `abstract subscribe(channel: string): void` and `abstract unsubscribe(channel: string): void` to `TunnelBase`.
+- Ensure `TunnelMessage` explicitly supports `type: 'signal'` for the control plane.
 
 ### 2. `Client` (packages/core/src/Client.ts)
 
 - **State**: Maintain a `Set<string>` of `activeSubscriptions`.
 - **Logic**:
-    - `subscribe(channel)`: Send a `signal` message with `type: 'signal', signal: 'subscribe', channel: '...'`.
-    - `unsubscribe(channel)`: Send a `signal` message with `type: 'signal', signal: 'unsubscribe', channel: '...'`.
-    - **Recovery**: On WebSocket `open`, iterate through `activeSubscriptions` and re-send subscribe signals.
+    - `subscribe(channel)`: Adds to `Set` and sends signal via `transport.send`.
+    - `unsubscribe(channel)`: Removes from `Set` and sends signal.
+    - **Recovery**: On `onStatusChange` to `'open'`, iterate through `activeSubscriptions` and re-send signals.
 
 ### 3. `Channel` (packages/core/src/Channel.ts)
 
 - **Reference Counting**:
-    - When `receive(cb)` is called:
-        - If `listeners.size` becomes 1, call `tunnel.subscribe(this.name)`.
-    - When the returned `unsubscribe()` is called:
-        - If `listeners.size` becomes 0, call `tunnel.unsubscribe(this.name)`.
+    - When `listeners.size` goes $0 \to 1$, call `tunnel.subscribe(this.name)`.
+    - When `listeners.size` goes $1 \to 0$, call `tunnel.unsubscribe(this.name)`.
 
 ### 4. `Tunnel` (packages/core/src/Tunnel.ts)
 
-- Ensure that if `this.store` is NOT present, it still respects the "Signal Plane" to manage local subscription state or continues to fallback to broadcast intentionally.
-- Recommendation: Make `MemoryStore` the default even if no options are passed, ensuring targeted relay is ALWAYS enabled.
+- **Signal Handling**: The `Dispatcher` will route messages with `type: 'signal'` to a dedicated handler.
+- **Store Mapping**: Effectively calls `this.store.subscribe(clientId, channel)` using the `clientId` mapped in `socketToId`.
+- **Defaulting**: Ensure `MemoryStore` is initialized if no storage is provided, so that "targeted relay" works out of the box.
 
 ---
 

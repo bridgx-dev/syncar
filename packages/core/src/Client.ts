@@ -11,17 +11,20 @@ export class Client implements TunnelBase {
     status: 'connecting' | 'open' | 'closed' = 'connecting';
     protected statusListeners: Set<(status: Client['status']) => void> = new Set();
     protected options: ClientOptions;
+    protected activeSubscriptions: Set<string> = new Set();
 
-    constructor(options: ClientOptions = {}) {
+    constructor(
+        options: ClientOptions = {
+            url: `ws://${window.location.hostname}:3000`,
+        },
+    ) {
         this.options = {
             reconnect: true,
             reconnectInterval: 1000,
             maxReconnectAttempts: Infinity,
             ...options,
         };
-        const url =
-            this.options.url || `ws://${window.location.hostname}:${this.options.port || 3000}`;
-
+        const url = this.options.url!;
         this.connectionManager = new ConnectionManager(
             this.options,
             () => this.connect(url),
@@ -42,6 +45,10 @@ export class Client implements TunnelBase {
             this.updateStatus(status);
             if (status === 'open') {
                 this.connectionManager.reset();
+                // Re-subscribe to all active channels
+                this.activeSubscriptions.forEach((channel) => {
+                    this.send({ type: 'signal', signal: 'subscribe', channel });
+                });
             } else if (status === 'closed') {
                 this.connectionManager.handleDisconnect();
             }
@@ -70,6 +77,16 @@ export class Client implements TunnelBase {
 
     onMessage(callback: (message: any, sender?: any) => void) {
         this.dispatcher.onMessage(callback);
+    }
+
+    subscribe(channel: string) {
+        this.activeSubscriptions.add(channel);
+        this.send({ type: 'signal', signal: 'subscribe', channel });
+    }
+
+    unsubscribe(channel: string) {
+        this.activeSubscriptions.delete(channel);
+        this.send({ type: 'signal', signal: 'unsubscribe', channel });
     }
 
     /**
