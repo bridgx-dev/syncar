@@ -14,7 +14,7 @@ const server = app.listen(3000, () => {
 })
 
 // Create the backend Synnel instance
-const synnel = new Synnel(server)
+const synnel = new Synnel({ server, path: '/ws' })
 
 // In-memory message store for the chat channel
 const chatHistory: ChatMessage[] = []

@@ -7,6 +7,12 @@ import { Dispatcher } from './Dispatcher'
 import type { IClient } from './models/client'
 import type { IMessage } from './models/message'
 
+// Define options for the constructor
+interface SynnelOptions {
+  server: any // Node http server
+  path?: string // Websocket path (e.g. /ws)
+}
+
 export class Synnel {
   private wsServer: WebsocketServer
   private realm: Realm = new Realm()
@@ -14,24 +20,37 @@ export class Synnel {
   private dispatcher: Dispatcher = new Dispatcher()
   private transport: TransportManager
 
-  constructor(server: any) {
-    this.wsServer = new WebsocketServer({ server, realm: this.realm })
+  constructor({ server, path = '/ws' }: SynnelOptions) {
+    // Pass the path to the internal WS server
+    this.wsServer = new WebsocketServer({ server, realm: this.realm, path })
+
     this.transport = new TransportManager(
       this.realm,
       this.subscriptionManager,
       this.dispatcher,
     )
 
-    this.wsServer.on('connection', (_client: IClient) => {
-      // Logic for new connections
+    this._setupListeners()
+  }
+
+  private _setupListeners() {
+    this.wsServer.on('connection', (client: IClient) => {
+      // Optional: Send a "Welcome" or "Identify" packet here
     })
 
     this.wsServer.on('message', async (client: IClient, msg: IMessage) => {
-      if (!msg || !msg.channel) return
+      if (!msg) return
 
-      // 1. Handle signals (subscriptions/unsubscriptions)
+      // FIX 1: Check for signals FIRST.
+      // Signals might not have a 'channel' property (e.g. "ping", "auth").
       if (msg.type === 'signal') {
-        await this.subscriptionManager.handleSignal(client, msg as any)
+        await this.subscriptionManager.handleSignal(client, msg)
+        return
+      }
+
+      // FIX 2: Now check for channel requirements for standard messages
+      if (!msg.channel) {
+        // Optional: Handle direct messages (Unicast) here if targetId exists
         return
       }
 
@@ -43,6 +62,7 @@ export class Synnel {
     })
 
     this.wsServer.on('close', (client: IClient) => {
+      // Clean up subscriptions when user disconnects
       this.subscriptionManager.removeClient(client.getId())
     })
   }
@@ -64,21 +84,24 @@ export class Synnel {
   /**
    * One-to-All: Target every connected client.
    */
-  public broadcast(name: string = 'global'): ITransport {
-    return this.transport.broadcast(name)
+  public broadcast(): ITransport {
+    return this.transport.broadcast()
   }
 
   private async handleRelay(client: IClient, message: IMessage): Promise<void> {
-    // Targeted Relay (Broadcast to subscribers of the channel)
     if (!message.channel) return
-    const subscribers = this.subscriptionManager.getSubscribers(message.channel)
 
-    const clientId = client.getId()
+    const subscribers = this.subscriptionManager.getSubscribers(message.channel)
+    const senderId = client.getId()
+
+    // Optimization: If you have 10,000 users, don't iterate one by one.
+    // For now (MVP), iteration is fine.
     subscribers.forEach((id: string) => {
-      // Don't send back to the sender
-      if (id === clientId) return
+      if (id === senderId) return // Don't echo back to sender
 
       const targetClient = this.realm.getClientById(id)
+
+      // Ensure the client is still connected before sending
       if (targetClient) {
         targetClient.send(message)
       }

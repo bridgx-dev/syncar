@@ -1,8 +1,9 @@
-import type { IRealm } from './realm'
-import type { ISubscriptionManager } from './subscribe'
 import { MessageType, type IMessage } from './message'
+
+import type { IRealm } from './realm'
 import type { IClient } from './client'
 import type { Dispatcher } from '../Dispatcher'
+import type { ISubscriptionManager } from './subscribe'
 
 export interface ITransport {
   send(data: any): void
@@ -48,23 +49,21 @@ export class TransportManager {
   /**
    * One-to-One: Sends a message directly to a specific client by their ID.
    */
-  public unicast(targetClientId: string): ITransport {
+  public unicast(clientId: string): ITransport {
     return {
       send: (data: any) => {
-        const client = this.realm.getClientById(targetClientId)
+        const client = this.realm.getClientById(clientId)
         if (client) {
-          const message: IMessage = {
-            channel: `unicast:${targetClientId}`,
+          client.send({
+            data: data,
             type: MessageType.DATA,
-            data,
-          }
-          client.send(message)
+          })
         }
       },
       receive: (callback) => {
         return this.dispatcher.onMessage((message, client) => {
           // Listen for messages FROM this specific client
-          if (client && client.getId() === targetClientId) {
+          if (client && client.getId() === clientId) {
             callback(message.data, client)
           }
         })
@@ -75,13 +74,12 @@ export class TransportManager {
   /**
    * One-to-All: Sends a message to every connected client in the realm.
    */
-  public broadcast(name: string = 'global'): ITransport {
-    this.subscriptionManager.getOrCreateChannel(name)
+  public broadcast(): ITransport {
     return {
       send: (data: any) => {
         const allIds = this.realm.getClientsIds()
         const message: IMessage = {
-          channel: name,
+          channel: 'broadcast',
           type: MessageType.DATA,
           data,
         }
