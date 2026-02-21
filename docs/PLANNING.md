@@ -1,15 +1,15 @@
-# Live-Tunnel: The Isomorphic Sync Bridge
+# Synnel: The Isomorphic Sync Bridge
 
-Live-Tunnel is a lightweight, database-agnostic synchronization layer designed to bridge the gap between frontend state and backend logic. It provides a "tunnel" through which data flows bi-directionally with minimal configuration and full type safety.
+Synnel is a lightweight, database-agnostic synchronization layer designed to bridge the gap between frontend state and backend logic. It provides a "tunnel" through which data flows bi-directionally with minimal configuration and full type safety.
 
 ## 🚀 The Vision
 
-Unlike platforms like Convex or Supabase that are tightly coupled to a managed database, **Live-Tunnel** is built on a "Transportation-First" philosophy. It doesn't care where your data lives (Postgres, Redis, In-Memory, or a JSON file); it only cares about making sure the frontend and backend stay in sync in real-time.
+Unlike platforms like Convex or Supabase that are tightly coupled to a managed database, **Synnel** is built on a "Transportation-First" philosophy. It doesn't care where your data lives (Postgres, Redis, In-Memory, or a JSON file); it only cares about making sure the frontend and backend stay in sync in real-time.
 
 ### Key Pillars:
 
 - **Framework Agnostic:** Works with any backend (Express, Bun, Fastify) and any frontend (React, Vue, Svelte, or Vanilla JS).
-- **Core Abstractions:** A single package providing `Tunnel` (Server) and `Client` (Browser) optimized for their respective environments.
+- **Core Abstractions:** A single package providing `SynnelServer` (Server) and `SynnelClient` (Browser) optimized for their respective environments.
 - **Shared Interface Pattern:** Define your communication channels once in a shared file, and let TypeScript infer the types on both ends.
 - **Minimal Configuration:** No complex setup. If you have a port, you have a tunnel.
 
