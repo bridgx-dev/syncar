@@ -8,8 +8,7 @@
     "packages/*"
   ],
   "scripts": {
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format": "prettier --write ."
   },
   "devDependencies": {
     "@types/bun": "latest",

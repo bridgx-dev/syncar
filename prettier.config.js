@@ -1,8 +1,8 @@
 export default {
   semi: false,
   singleQuote: true,
-  trailingComma: "all",
+  trailingComma: 'all',
   printWidth: 80,
   tabWidth: 2,
-  endOfLine: "lf",
-};
+  endOfLine: 'lf',
+}
