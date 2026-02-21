@@ -20,30 +20,30 @@ For detailed architecture and future plans, see [docs/PLANNING.md](docs/PLANNING
 
 1. **Install Dependencies:**
 
-    ```bash
-    bun install
-    ```
+   ```bash
+   bun install
+   ```
 
 2. **Run Example:**
    Open two terminals:
 
-    ```bash
-    # Terminal 1: Backend
-    bun example/server/index.ts
+   ```bash
+   # Terminal 1: Backend
+   bun example/server/index.ts
 
-    # Terminal 2: Frontend
-    cd example && bun run dev
-    ```
+   # Terminal 2: Frontend
+   cd example && bun run dev
+   ```
 
 ## 🛠️ Unified Interface Example
 
 ```typescript
 // Shared tunnel definition
-export const chat = new TunnelChannel({ tunnel, name: 'chat' });
+export const chat = new TunnelChannel({ tunnel, name: 'chat' })
 
 // Backend
-chat.receive((data) => console.log('Syncing to DB:', data));
+chat.receive((data) => console.log('Syncing to DB:', data))
 
 // Frontend
-const { data, send } = useTunnel(chat);
+const { data, send } = useTunnel(chat)
 ```

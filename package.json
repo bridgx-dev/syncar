@@ -1,16 +1,21 @@
 {
-    "name": "live-tunnel",
-    "module": "index.ts",
-    "type": "module",
-    "private": true,
-    "workspaces": [
-        "example",
-        "packages/*"
-    ],
-    "devDependencies": {
-        "@types/bun": "latest"
-    },
-    "peerDependencies": {
-        "typescript": "^5"
-    }
+  "name": "live-tunnel",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "workspaces": [
+    "example",
+    "packages/*"
+  ],
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "prettier": "^3.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
 }

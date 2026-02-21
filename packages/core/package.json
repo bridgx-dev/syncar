@@ -1,17 +1,17 @@
 {
-    "name": "@tunnel/core",
-    "module": "index.ts",
-    "type": "module",
-    "private": true,
-    "devDependencies": {
-        "@types/bun": "latest",
-        "@types/ws": "^8.18.1"
-    },
-    "peerDependencies": {
-        "typescript": "^5"
-    },
-    "dependencies": {
-        "redis": "^5.11.0",
-        "ws": "^8.19.0"
-    }
+  "name": "@tunnel/core",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/ws": "^8.18.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "redis": "^5.11.0",
+    "ws": "^8.19.0"
+  }
 }

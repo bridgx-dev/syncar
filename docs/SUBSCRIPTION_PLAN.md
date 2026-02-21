@@ -21,15 +21,15 @@ Currently, **Synnel** uses a broadcast model if no store is present, or a relay 
 
 - **State**: Maintain a `Set<string>` of `activeSubscriptions`.
 - **Logic**:
-    - `subscribe(channel)`: Adds to `Set` and sends signal via `transport.send`.
-    - `unsubscribe(channel)`: Removes from `Set` and sends signal.
-    - **Recovery**: On `onStatusChange` to `'open'`, iterate through `activeSubscriptions` and re-send signals.
+  - `subscribe(channel)`: Adds to `Set` and sends signal via `transport.send`.
+  - `unsubscribe(channel)`: Removes from `Set` and sends signal.
+  - **Recovery**: On `onStatusChange` to `'open'`, iterate through `activeSubscriptions` and re-send signals.
 
 ### 3. `Channel` (packages/core/src/Channel.ts)
 
 - **Reference Counting**:
-    - When `listeners.size` goes $0 \to 1$, call `tunnel.subscribe(this.name)`.
-    - When `listeners.size` goes $1 \to 0$, call `tunnel.unsubscribe(this.name)`.
+  - When `listeners.size` goes $0 \to 1$, call `tunnel.subscribe(this.name)`.
+  - When `listeners.size` goes $1 \to 0$, call `tunnel.unsubscribe(this.name)`.
 
 ### 4. `Tunnel` (packages/core/src/Tunnel.ts)
 

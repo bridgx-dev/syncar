@@ -45,61 +45,61 @@ The core innovation is how you use Live-Tunnel in a workspace:
 
 ```typescript
 // shared/tunnel.ts
-import { Channel } from '@tunnel/core';
+import { Channel } from '@tunnel/core'
 
 export interface AppState {
-    count: number;
-    lastUpdatedBy: string;
+  count: number
+  lastUpdatedBy: string
 }
 
 // Named channel with a specific type
 export const syncChannel = new Channel<AppState>({
-    name: 'app-state',
-});
+  name: 'app-state',
+})
 ```
 
 ### Step 2: Consume on Backend
 
 ```typescript
-import { Tunnel } from '@tunnel/core';
-import { syncChannel } from './shared/tunnel';
+import { Tunnel } from '@tunnel/core'
+import { syncChannel } from './shared/tunnel'
 
-const tunnel = new Tunnel({ port: 3000, storage: 'redis' });
+const tunnel = new Tunnel({ port: 3000, storage: 'redis' })
 
 // Option A: Bind a shared channel instance
-syncChannel.bind(tunnel);
+syncChannel.bind(tunnel)
 
 // Option B: Create channel directly (auto-bound)
 // const syncChannel = tunnel.createChannel<AppState>('app-state');
 
 syncChannel.receive((data) => {
-    console.log('Update received:', data.count);
-    // Persist to DB
-});
+  console.log('Update received:', data.count)
+  // Persist to DB
+})
 ```
 
 ### Step 3: Consume on Frontend
 
 ```tsx
-import { syncChannel } from './shared/tunnel';
-import { TunnelProvider, useChannel } from '@tunnel/react';
+import { syncChannel } from './shared/tunnel'
+import { TunnelProvider, useChannel } from '@tunnel/react'
 
 function App() {
-    return (
-        <TunnelProvider url='ws://localhost:3000'>
-            <Counter />
-        </TunnelProvider>
-    );
+  return (
+    <TunnelProvider url="ws://localhost:3000">
+      <Counter />
+    </TunnelProvider>
+  )
 }
 
 function Counter() {
-    const { data, send } = useChannel(syncChannel);
+  const { data, send } = useChannel(syncChannel)
 
-    return (
-        <button onClick={() => send({ count: (data?.count || 0) + 1 })}>
-            Count: {data?.count}
-        </button>
-    );
+  return (
+    <button onClick={() => send({ count: (data?.count || 0) + 1 })}>
+      Count: {data?.count}
+    </button>
+  )
 }
 ```
 
@@ -110,9 +110,9 @@ function Counter() {
 1. **Client Action:** A user clicks a button, calling `send()`.
 2. **Tunneling:** The client-side tunnel sends a JSON packet: `{ channel: "app-state", data: { ... } }`.
 3. **Server Relay:**
-    - The server receives the message.
-    - It triggers any local `receive` listeners (perfect for DB persistence).
-    - It **relays** the message to all clients subscribed to that channel (via the `Store`).
+   - The server receives the message.
+   - It triggers any local `receive` listeners (perfect for DB persistence).
+   - It **relays** the message to all clients subscribed to that channel (via the `Store`).
 4. **Reactive Update:** All other clients receive the message, updating their React state via the `useChannel` hook.
 
 ---

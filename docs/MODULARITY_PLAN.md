@@ -44,8 +44,8 @@ Introduce a middleware system for the **Signal Plane** and the **Data Plane**:
 
 ```typescript
 tunnel.use((message, next) => {
-    if (isAuthorized(message)) next();
-});
+  if (isAuthorized(message)) next()
+})
 ```
 
 ---

@@ -1,5 +1,5 @@
 export type ChatMessage = {
-    user: string;
-    text: string;
-    timestamp: number;
-};
+  user: string
+  text: string
+  timestamp: number
+}
