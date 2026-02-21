@@ -5,7 +5,7 @@ import React, {
   useState,
   useMemo,
 } from 'react'
-import { Client, type ClientOptions } from '@synnel/core'
+import { Client, type ClientOptions } from '@synnel/core/client'
 
 export type SynnelProviderProps = {
   children: React.ReactNode

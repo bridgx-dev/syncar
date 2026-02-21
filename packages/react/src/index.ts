@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSynnel } from './Provider'
-import { MessageType } from '@synnel/core'
+import { MessageType } from '@synnel/core/client'
 
 export * from './Provider'
 

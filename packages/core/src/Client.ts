@@ -3,6 +3,9 @@ import { ConnectionManager } from './ConnectionManager'
 import type { ClientOptions, ClientBase, IChannelSubscription } from './types'
 import { MessageType, SignalType, type IMessage } from './models/message'
 
+export * from './types'
+export { MessageType, SignalType, type IMessage } from './models/message'
+
 export class Client implements ClientBase {
   id: string
   status: 'connecting' | 'open' | 'closed' = 'connecting'

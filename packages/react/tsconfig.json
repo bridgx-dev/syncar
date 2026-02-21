@@ -24,7 +24,11 @@
     // Some stricter flags (disabled by default)
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
+    "noPropertyAccessFromIndexSignature": false,
+    "paths": {
+      "@synnel/core/client": ["../core/src/client.ts"],
+      "@synnel/core": ["../core/src/index.ts"]
+    }
   },
   "include": ["index.ts", "src"]
 }
