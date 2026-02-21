@@ -4,6 +4,7 @@ import type { Server as HttpServer, IncomingMessage } from 'node:http'
 
 import { Client } from '../models/client'
 import type { IRealm } from '../models/realm'
+import { MessageType } from '../models/message'
 
 // 1. Declaration Merging to fix 'isAlive' typing
 declare module 'ws' {
@@ -77,14 +78,22 @@ export class WebsocketServer extends EventEmitter {
     const id = searchParams.get('id')
 
     if (!id) {
-      socket.send(JSON.stringify({ type: 'ERROR', message: 'ID is mandatory' }))
+      socket.send(
+        JSON.stringify({
+          type: MessageType.ERROR,
+          data: { message: 'ID is mandatory' },
+        }),
+      )
       socket.close()
       return
     }
 
     if (this.realm.getClientById(id)) {
       socket.send(
-        JSON.stringify({ type: 'ID-TAKEN', message: 'ID is already taken' }),
+        JSON.stringify({
+          type: MessageType.ERROR,
+          data: { message: 'ID is already taken', code: 'ID_TAKEN' },
+        }),
       )
       socket.close()
       return
@@ -113,7 +122,10 @@ export class WebsocketServer extends EventEmitter {
         // 4. Handle invalid JSON gracefully
         console.error('Invalid JSON received')
         socket.send(
-          JSON.stringify({ type: 'ERROR', message: 'Invalid JSON format' }),
+          JSON.stringify({
+            type: MessageType.ERROR,
+            data: { message: 'Invalid JSON format' },
+          }),
         )
       }
     })

@@ -1,6 +1,5 @@
 export interface IChannel {
   name: string
-  type: 'broadcast' | 'multicast' | 'unicast'
   subscribers: Set<string>
   subscribe(clientId: string): void
   unsubscribe(clientId: string): void
@@ -10,15 +9,10 @@ export interface IChannel {
 
 export class Channel implements IChannel {
   public name: string
-  public type: 'broadcast' | 'multicast' | 'unicast'
   public subscribers: Set<string> = new Set()
 
-  constructor(
-    name: string,
-    type: 'broadcast' | 'multicast' | 'unicast' = 'multicast',
-  ) {
+  constructor(name: string) {
     this.name = name
-    this.type = type
   }
 
   public subscribe(clientId: string): void {

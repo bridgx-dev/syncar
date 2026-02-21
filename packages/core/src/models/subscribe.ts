@@ -1,19 +1,19 @@
 import type { IClient } from './client'
-import type { IMessage } from './message'
+import { MessageType, SignalType, type IMessage } from './message'
 import { Channel, type IChannel } from './channel'
 
 export interface ISubscriptionManager {
   handleSignal(client: IClient, message: IMessage): Promise<void>
   getSubscribers(channel: string): Set<string>
   removeClient(clientId: string): void
-  getOrCreateChannel(name: string): IChannel
+  createChannel(name: string): IChannel
 }
 
 export class SubscriptionManager implements ISubscriptionManager {
   private channels = new Map<string, IChannel>()
   private clientChannels = new Map<string, Set<string>>()
 
-  public getOrCreateChannel(name: string): IChannel {
+  public createChannel(name: string): IChannel {
     let channel = this.channels.get(name)
     if (!channel) {
       channel = new Channel(name)
@@ -23,35 +23,84 @@ export class SubscriptionManager implements ISubscriptionManager {
   }
 
   public async handleSignal(client: IClient, message: IMessage): Promise<void> {
-    const clientId = client.getId()
     const channelName = message.channel
 
-    if (message.signal === 'subscribe') {
-      this.subscribe(clientId, channelName)
-    } else if (message.signal === 'unsubscribe') {
-      this.unsubscribe(clientId, channelName)
+    if (!channelName) {
+      client.send({
+        type: MessageType.ERROR,
+        data: {
+          message: 'Channel name is required for signals.',
+          code: 'MISSING_CHANNEL',
+        },
+      })
+      return
+    }
+
+    if (message.signal === SignalType.SUBSCRIBE) {
+      this.subscribe(client, channelName)
+    } else if (message.signal === SignalType.UNSUBSCRIBE) {
+      this.unsubscribe(client, channelName)
+    } else {
+      client.send({
+        type: MessageType.ERROR,
+        data: {
+          message: `Unknown signal type: ${message.signal}`,
+          code: 'INVALID_SIGNAL',
+        },
+      })
     }
   }
 
-  private subscribe(clientId: string, channelName: string): void {
-    const channel = this.getOrCreateChannel(channelName)
+  private subscribe(client: IClient, channelName: string): void {
+    const clientId = client.getId()
+    const channel = this.channels.get(channelName)
+
+    // Prevent dynamic creation: if channel doesn't exist, abort.
+    if (!channel) {
+      console.warn(
+        `Client ${clientId} attempted to subscribe to non-existent channel: ${channelName}`,
+      )
+      client.send({
+        type: MessageType.ERROR,
+        channel: channelName,
+        data: {
+          message: `Channel '${channelName}' not found.`,
+          code: 'CHANNEL_NOT_FOUND',
+        },
+      })
+      return
+    }
+
     channel.subscribe(clientId)
 
     if (!this.clientChannels.has(clientId)) {
       this.clientChannels.set(clientId, new Set())
     }
     this.clientChannels.get(clientId)?.add(channelName)
+
+    client.send({
+      type: MessageType.SIGNAL,
+      signal: SignalType.SUBSCRIBED,
+      channel: channelName,
+      data: { message: `Subscribed to '${channelName}' successfully.` },
+    })
   }
 
-  private unsubscribe(clientId: string, channelName: string): void {
+  private unsubscribe(client: IClient, channelName: string): void {
+    const clientId = client.getId()
     const channel = this.channels.get(channelName)
     if (channel) {
       channel.unsubscribe(clientId)
-      if (channel.isEmpty()) {
-        this.channels.delete(channelName)
-      }
+      // Removed auto-delete to give server full control over channel lifecycle
     }
     this.clientChannels.get(clientId)?.delete(channelName)
+
+    client.send({
+      type: MessageType.SIGNAL,
+      signal: SignalType.UNSUBSCRIBED,
+      channel: channelName,
+      data: { message: `Unsubscribed from '${channelName}' successfully.` },
+    })
   }
 
   public getSubscribers(channelName: string): Set<string> {
@@ -65,9 +114,7 @@ export class SubscriptionManager implements ISubscriptionManager {
         const channel = this.channels.get(name)
         if (channel) {
           channel.unsubscribe(clientId)
-          if (channel.isEmpty()) {
-            this.channels.delete(name)
-          }
+          // Removed auto-delete to give server full control over channel lifecycle
         }
       })
     }

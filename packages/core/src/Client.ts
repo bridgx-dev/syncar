@@ -53,6 +53,15 @@ export class Client implements ClientBase {
           this.callbacks.get(message.channel)?.forEach((cb) => cb(message.data))
         } else if (message.type === MessageType.ERROR) {
           this.errors.get(message.channel)?.forEach((cb) => cb(message.data))
+          // If the server rejects a subscription, remove it from active so we don't retry on reconnect
+          this.activeSubscriptions.delete(message.channel)
+        } else if (message.type === MessageType.SIGNAL) {
+          // Handle server acknowledgments
+          if (message.signal === SignalType.SUBSCRIBED) {
+            this.activeSubscriptions.add(message.channel)
+          } else if (message.signal === SignalType.UNSUBSCRIBED) {
+            this.activeSubscriptions.delete(message.channel)
+          }
         }
       }
     })

@@ -1,11 +1,15 @@
 import { Realm } from './models/realm'
 import { WebsocketServer } from './services/socket'
 import { SubscriptionManager } from './models/subscribe'
-import { TransportManager, type ITransport } from './models/transport-manager'
+import {
+  MulticastTransport,
+  BroadcastTransport,
+  type ITransport,
+} from './models/transports'
 import { Dispatcher } from './Dispatcher'
 
 import type { IClient } from './models/client'
-import type { IMessage } from './models/message'
+import { MessageType, type IMessage } from './models/message'
 
 // Define options for the constructor
 interface SynnelOptions {
@@ -15,21 +19,13 @@ interface SynnelOptions {
 
 export class Synnel {
   private wsServer: WebsocketServer
-  private realm: Realm = new Realm()
+  private realm = new Realm()
   private subscriptionManager = new SubscriptionManager()
-  private dispatcher: Dispatcher = new Dispatcher()
-  private transport: TransportManager
+  private dispatcher = new Dispatcher()
 
   constructor({ server, path = '/ws' }: SynnelOptions) {
     // Pass the path to the internal WS server
     this.wsServer = new WebsocketServer({ server, realm: this.realm, path })
-
-    this.transport = new TransportManager(
-      this.realm,
-      this.subscriptionManager,
-      this.dispatcher,
-    )
-
     this._setupListeners()
   }
 
@@ -41,16 +37,35 @@ export class Synnel {
     this.wsServer.on('message', async (client: IClient, msg: IMessage) => {
       if (!msg) return
 
+      // Protocol check for unknown types
+      const allowedTypes = Object.values(MessageType)
+      if (!allowedTypes.includes(msg.type as MessageType)) {
+        client.send({
+          type: MessageType.ERROR,
+          data: {
+            message: `Unknown message type: ${msg.type}`,
+            code: 'INVALID_TYPE',
+          },
+        })
+        return
+      }
+
       // FIX 1: Check for signals FIRST.
       // Signals might not have a 'channel' property (e.g. "ping", "auth").
-      if (msg.type === 'signal') {
+      if (msg.type === MessageType.SIGNAL) {
         await this.subscriptionManager.handleSignal(client, msg)
         return
       }
 
       // FIX 2: Now check for channel requirements for standard messages
       if (!msg.channel) {
-        // Optional: Handle direct messages (Unicast) here if targetId exists
+        client.send({
+          type: MessageType.ERROR,
+          data: {
+            message: 'Channel is required for data messages',
+            code: 'MISSING_CHANNEL',
+          },
+        })
         return
       }
 
@@ -71,27 +86,27 @@ export class Synnel {
    * One-to-Many: Target a specific group/channel.
    */
   public multicast(name: string): ITransport {
-    return this.transport.multicast(name)
-  }
-
-  /**
-   * One-to-One: Target a specific client by ID.
-   */
-  public unicast(clientId: string): ITransport {
-    return this.transport.unicast(clientId)
+    return new MulticastTransport(
+      name,
+      this.realm,
+      this.subscriptionManager,
+      this.dispatcher,
+    )
   }
 
   /**
    * One-to-All: Target every connected client.
    */
   public broadcast(): ITransport {
-    return this.transport.broadcast()
+    return new BroadcastTransport(this.realm, this.dispatcher)
   }
 
   private async handleRelay(client: IClient, message: IMessage): Promise<void> {
-    if (!message.channel) return
+    const channelName = message.channel
+    if (!channelName) return
 
-    const subscribers = this.subscriptionManager.getSubscribers(message.channel)
+    // Multicast Relay (to subscribers of the channel)
+    const subscribers = this.subscriptionManager.getSubscribers(channelName)
     const senderId = client.getId()
 
     // Optimization: If you have 10,000 users, don't iterate one by one.
