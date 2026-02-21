@@ -1,69 +1,68 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Channel } from '@tunnel/core'
-import { useTunnelContext } from './Provider'
+import { useSynnel } from './Provider'
+import { MessageType } from '@synnel/core'
 
 export * from './Provider'
 
 type UseChannelReturn<T = any> = {
   data: T | null
   send: (data: T) => void
+  status: 'connecting' | 'open' | 'closed'
   error: Error | null
   loading: boolean
 }
 
 /**
- * React hook to interact with a specific Tunnel channel.
+ * React hook to interact with a specific Synnel channel.
  */
-const useChannel = <T = any>(
-  nameOrChannel: string | Channel<T>,
-): UseChannelReturn<T> => {
-  const tunnel = useTunnelContext()
+const useChannel = <T = any>(channelName: string): UseChannelReturn<T> => {
+  const { client: synnel, status } = useSynnel()
   const [data, setData] = useState<T | null>(null)
   const [error, setError] = useState<Error | null>(null)
 
-  // Memoize the Channel instance
-  const channel = useMemo(() => {
-    if (!tunnel) return null
-
-    if (typeof nameOrChannel === 'string') {
-      return tunnel.createChannel<T>(nameOrChannel)
-    } else {
-      // If it's a shared Channel instance, bind the tunnel to it if not already bound
-      nameOrChannel.bind(tunnel)
-      return nameOrChannel
-    }
-  }, [tunnel, nameOrChannel])
-
   useEffect(() => {
-    if (!channel) return
+    if (!synnel) return
 
-    try {
-      const unsubscribe = channel.receive((receivedData) => {
-        setData(receivedData)
+    const unsubscribe = synnel
+      .subscribe(channelName)
+      .onMessage((incomingData: T) => {
+        setData(incomingData)
       })
-      return () => unsubscribe()
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)))
+      .onError((err: any) => {
+        setError(
+          err instanceof Error
+            ? err
+            : new Error(err || 'Unknown channel error'),
+        )
+      })
+
+    return () => {
+      unsubscribe()
     }
-  }, [channel])
+  }, [synnel, channelName])
 
   const send = useCallback(
     (newData: T) => {
-      if (!channel) {
-        console.warn(`Tunnel: Cannot send data - tunnel not initialized.`)
+      if (!synnel) {
+        console.warn(`Synnel: Cannot send data - client not initialized.`)
         return
       }
-      channel.send(newData)
+      synnel.send({
+        type: MessageType.DATA,
+        channel: channelName,
+        data: newData,
+      })
       setData(newData) // Optimistic local update
     },
-    [channel],
+    [synnel, channelName],
   )
 
   return {
     data,
     send,
+    status,
     error,
-    loading: !tunnel,
+    loading: status === 'connecting',
   }
 }
 

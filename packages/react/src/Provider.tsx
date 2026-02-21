@@ -1,63 +1,66 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import { Client, type ClientOptions } from '@tunnel/core'
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useMemo,
+} from 'react'
+import { Client, type ClientOptions } from '@synnel/core'
 
-export type TunnelProviderProps = {
+export type SynnelProviderProps = {
   children: React.ReactNode
-  options?: ClientOptions
-  discoveryUrl?: string
+  options: ClientOptions
 }
 
-const TunnelContext = createContext<Client | null>(null)
+type SynnelContextValue = {
+  client: Client | null
+  status: 'connecting' | 'open' | 'closed'
+}
 
-export const TunnelProvider = ({
-  children,
-  options,
-  discoveryUrl,
-}: TunnelProviderProps) => {
-  const [tunnel, setTunnel] = useState<Client | null>(null)
+const SynnelContext = createContext<SynnelContextValue>({
+  client: null,
+  status: 'connecting',
+})
+
+export const SynnelProvider = ({ children, options }: SynnelProviderProps) => {
+  const [status, setStatus] =
+    useState<SynnelContextValue['status']>('connecting')
+
+  const client = useMemo(() => {
+    const defaultId =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : Math.random().toString(36).substring(2, 11)
+
+    return new Client({
+      ...options,
+      id: options.id || defaultId,
+    })
+  }, [JSON.stringify(options)])
 
   useEffect(() => {
-    let active = true
-    let client: Client | null = null
+    if (!client) return
 
-    const init = async () => {
-      let finalOptions = options || {}
+    setStatus(client.status)
 
-      if (discoveryUrl) {
-        try {
-          const res = await fetch(discoveryUrl)
-          const config = await res.json()
-          finalOptions = { ...finalOptions, ...config }
-        } catch (e) {
-          console.error(
-            'Tunnel: Failed to discover config from',
-            discoveryUrl,
-            e,
-          )
-        }
-      }
-
-      if (active) {
-        client = new Client(finalOptions)
-        setTunnel(client)
-      }
-    }
-
-    init()
+    const unbind = client.onStatusChange((newStatus) => {
+      setStatus(newStatus)
+    })
 
     return () => {
-      active = false
-      if (client) client.disconnect()
+      unbind()
+      client.disconnect()
     }
-  }, [discoveryUrl, JSON.stringify(options)])
+  }, [client])
 
   return (
-    <TunnelContext.Provider value={tunnel}>{children}</TunnelContext.Provider>
+    <SynnelContext.Provider value={{ client, status }}>
+      {children}
+    </SynnelContext.Provider>
   )
 }
 
-export const useTunnelContext = () => {
-  const context = useContext(TunnelContext)
-  // Note: context can be null during initialization or if discovery fails
+export const useSynnel = () => {
+  const context = useContext(SynnelContext)
   return context
 }

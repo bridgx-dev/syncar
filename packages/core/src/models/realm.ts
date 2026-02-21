@@ -1,5 +1,11 @@
-import { randomUUID } from 'node:crypto'
 import type { IClient } from './client.ts'
+
+const defaultGenerateId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID()
+  }
+  return Math.random().toString(36).substring(2, 11)
+}
 
 export interface IRealm {
   getClientsIds(): string[]
@@ -35,7 +41,7 @@ export class Realm implements IRealm {
   }
 
   public generateClientId(generateClientId?: () => string): string {
-    const generateId = generateClientId ? generateClientId : randomUUID
+    const generateId = generateClientId ? generateClientId : defaultGenerateId
 
     let clientId = generateId()
 

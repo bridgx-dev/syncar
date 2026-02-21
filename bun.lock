@@ -6,6 +6,7 @@
       "name": "live-tunnel",
       "devDependencies": {
         "@types/bun": "latest",
+        "prettier": "^3.0.0",
       },
       "peerDependencies": {
         "typescript": "^5",
@@ -15,8 +16,8 @@
       "name": "example",
       "version": "0.0.0",
       "dependencies": {
-        "@tunnel/core": "workspace:*",
-        "@tunnel/react": "workspace:*",
+        "@synnel/core": "workspace:*",
+        "@synnel/react": "workspace:*",
         "express": "^5.2.1",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
@@ -38,7 +39,7 @@
       },
     },
     "packages/core": {
-      "name": "@tunnel/core",
+      "name": "@synnel/core",
       "dependencies": {
         "redis": "^5.11.0",
         "ws": "^8.19.0",
@@ -52,9 +53,9 @@
       },
     },
     "packages/react": {
-      "name": "@tunnel/react",
+      "name": "@synnel/react",
       "dependencies": {
-        "@tunnel/core": "workspace:*",
+        "@synnel/core": "workspace:*",
         "react": "^19.2.4",
       },
       "devDependencies": {
@@ -255,9 +256,9 @@
 
     "@rollup/rollup-win32-x64-msvc": ["@rollup/rollup-win32-x64-msvc@4.57.1", "", { "os": "win32", "cpu": "x64" }, "sha512-mxRFDdHIWRxg3UfIIAwCm6NzvxG0jDX/wBN6KsQFTvKFqqg9vTrWUE68qEjHt19A5wwx5X5aUi2zuZT7YR0jrA=="],
 
-    "@tunnel/core": ["@tunnel/core@workspace:packages/core"],
+    "@synnel/core": ["@synnel/core@workspace:packages/core"],
 
-    "@tunnel/react": ["@tunnel/react@workspace:packages/react"],
+    "@synnel/react": ["@synnel/react@workspace:packages/react"],
 
     "@types/babel__core": ["@types/babel__core@7.20.5", "", { "dependencies": { "@babel/parser": "^7.20.7", "@babel/types": "^7.20.7", "@types/babel__generator": "*", "@types/babel__template": "*", "@types/babel__traverse": "*" } }, "sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA=="],
 
@@ -578,6 +579,8 @@
     "postcss": ["postcss@8.5.6", "", { "dependencies": { "nanoid": "^3.3.11", "picocolors": "^1.1.1", "source-map-js": "^1.2.1" } }, "sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg=="],
 
     "prelude-ls": ["prelude-ls@1.2.1", "", {}, "sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g=="],
+
+    "prettier": ["prettier@3.8.1", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-UOnG6LftzbdaHZcKoPFtOcCKztrQ57WkHDeRD9t/PTQtmT0NHSeWWepj6pS0z/N7+08BHFDQVUrfmfMRcZwbMg=="],
 
     "proxy-addr": ["proxy-addr@2.0.7", "", { "dependencies": { "forwarded": "0.2.0", "ipaddr.js": "1.9.1" } }, "sha512-llQsMLSUDUPT44jdrU/O37qlnifitDP+ZwrmmZcoSKyLKvtZxpyV0n2/bD/N4tBAAZ/gJEdZU7KMraoK1+XYAg=="],
 

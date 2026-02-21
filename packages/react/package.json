@@ -1,5 +1,5 @@
 {
-  "name": "@tunnel/react",
+  "name": "@synnel/react",
   "module": "index.ts",
   "type": "module",
   "private": true,
@@ -11,7 +11,7 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@tunnel/core": "workspace:*",
+    "@synnel/core": "workspace:*",
     "react": "^19.2.4"
   }
 }

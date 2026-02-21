@@ -15,6 +15,7 @@ export type SocketServerOptions = {
 export class WebsocketServer extends EventEmitter {
   private socketServer: Server
   private realm: IRealm
+  private heartbeatInterval: any
 
   constructor({ server, realm }: SocketServerOptions) {
     super()
@@ -26,9 +27,31 @@ export class WebsocketServer extends EventEmitter {
     this.socketServer.on('error', (error) => {
       this._onSocketError(error)
     })
+
+    this._setupHeartbeat()
+  }
+
+  private _setupHeartbeat() {
+    this.heartbeatInterval = setInterval(() => {
+      this.socketServer.clients.forEach((socket: any) => {
+        if (socket.isAlive === false) return socket.terminate()
+
+        socket.isAlive = false
+        socket.ping()
+      })
+    }, 30000)
+
+    this.socketServer.on('close', () => {
+      clearInterval(this.heartbeatInterval)
+    })
   }
 
   private _onConnection(socket: WebSocket, req: IncomingMessage) {
+    ;(socket as any).isAlive = true
+    socket.on('pong', () => {
+      ;(socket as any).isAlive = true
+    })
+
     socket.on('error', (error) => {
       this._onSocketError(error)
     })

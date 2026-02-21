@@ -1,10 +1,23 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { ChatMessage } from '../tunnel'
-import { useChannel } from '@tunnel/react'
+import { useChannel } from '@synnel/react'
 
 export const Chat = () => {
-  const { data: messages, send } = useChannel<ChatMessage[]>('chat')
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const {
+    data: incomingMessage,
+    send,
+    error,
+    status,
+  } = useChannel<ChatMessage>('chat')
   const [inputText, setInputText] = useState('')
+
+  useEffect(() => {
+    if (incomingMessage) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMessages((prev) => [...prev, incomingMessage])
+    }
+  }, [incomingMessage])
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault()
@@ -16,10 +29,8 @@ export const Chat = () => {
       timestamp: Date.now(),
     }
 
-    // If 'data' is null, we start with an empty array
-    const updatedMessages = [...(messages || []), newMessage]
-
-    send(updatedMessages)
+    send(newMessage)
+    setMessages((prev) => [...prev, newMessage])
     setInputText('')
   }
 
@@ -31,9 +42,15 @@ export const Chat = () => {
         padding: '15px',
         border: '1px solid #ccc',
         borderRadius: '8px',
+        opacity: status === 'closed' ? 0.6 : 1,
       }}
     >
       <h3>Real-time Tunnel Chat</h3>
+      {error && (
+        <div style={{ color: 'red', marginBottom: '10px', fontSize: '14px' }}>
+          Error: {error.message}
+        </div>
+      )}
       <div
         className="messages"
         style={{

@@ -1,6 +1,7 @@
 import type { IMessage } from '../models/message'
 
 export type ClientOptions = {
+  id?: string
   url?: string
   reconnect?: boolean
   reconnectInterval?: number
@@ -18,10 +19,18 @@ export interface BaseTransport {
   disconnect(): void
 }
 
+export interface IChannelSubscription {
+  (): void
+  onMessage<T = any>(callback: (data: T) => void): IChannelSubscription
+  onError(callback: (error: any) => void): IChannelSubscription
+}
+
 export abstract class ClientBase {
-  abstract onMessage(callback: (message: IMessage, sender?: any) => void): void
+  abstract onMessage(
+    callback: (message: IMessage, sender?: any) => void,
+  ): () => void
   abstract send(message: IMessage): void
-  abstract subscribe(channel: string): void
+  abstract subscribe(channel: string): IChannelSubscription
   abstract unsubscribe(channel: string): void
   abstract disconnect(): void
 }

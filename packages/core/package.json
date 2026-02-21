@@ -1,7 +1,11 @@
 {
-  "name": "@tunnel/core",
+  "name": "@synnel/core",
   "module": "index.ts",
   "type": "module",
+  "exports": {
+    ".": "./index.ts",
+    "./server": "./server.ts"
+  },
   "private": true,
   "devDependencies": {
     "@types/bun": "latest",
