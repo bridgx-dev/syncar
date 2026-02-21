@@ -9,51 +9,55 @@ export { MessageType, SignalType, type IMessage } from './models/message'
 export class Client implements ClientBase {
   id: string
   status: 'connecting' | 'open' | 'closed' = 'connecting'
+  public options: ClientOptions
+
   protected socket?: WebSocket
   protected connectionManager: ConnectionManager
   protected dispatcher = new Dispatcher()
+
   protected statusListeners: Set<(status: Client['status']) => void> = new Set()
-  protected options: ClientOptions
   protected activeSubscriptions: Set<string> = new Set()
   protected callbacks: Map<string, Set<(data: any) => void>> = new Map()
   protected errors: Map<string, Set<(error: any) => void>> = new Map()
 
-  constructor(
-    options: ClientOptions = {
-      url: `ws://${window.location.hostname}:3000`,
-    },
-  ) {
+  // Minimal state for safety
+  protected messageQueue: string[] = []
+  protected unsubTimers: Map<string, any> = new Map()
+
+  constructor(options?: ClientOptions) {
+    // 1. Safe default URL (SSR safe)
+    const defaultUrl =
+      typeof window !== 'undefined'
+        ? `ws://${window.location.hostname}:3000`
+        : 'ws://localhost:3000'
+
     this.options = {
       reconnect: true,
       reconnectInterval: 1000,
       maxReconnectAttempts: Infinity,
+      url: defaultUrl,
       ...options,
     }
+
     this.id = this.options.id || Math.random().toString(36).substring(2, 11)
-    const url = this.options.url!
+
     this.connectionManager = new ConnectionManager(
       this.options,
-      () => this.connect(url),
+      () => this.connect(this.options.url!),
       () => this.disconnectSocket(),
     )
 
     this.onMessage((message) => {
       if (message.channel) {
         if (message.type === MessageType.DATA) {
-          const callbacks = this.callbacks.get(message.channel)
-          if (callbacks) {
-            callbacks.forEach((cb) => cb(message.data))
-          }
+          this.callbacks.get(message.channel)?.forEach((cb) => cb(message.data))
         } else if (message.type === MessageType.ERROR) {
-          const errorCallbacks = this.errors.get(message.channel)
-          if (errorCallbacks) {
-            errorCallbacks.forEach((cb) => cb(message.data))
-          }
+          this.errors.get(message.channel)?.forEach((cb) => cb(message.data))
         }
       }
     })
 
-    this.connect(url)
+    this.connect(this.options.url!)
   }
 
   protected disconnectSocket() {
@@ -79,13 +83,15 @@ export class Client implements ClientBase {
     this.socket.onopen = () => {
       this.updateStatus('open')
       this.connectionManager.reset()
+
+      // Flush offline messages
+      while (this.messageQueue.length > 0) {
+        this.socket?.send(this.messageQueue.shift()!)
+      }
+
       // Re-subscribe to all active channels
       this.activeSubscriptions.forEach((channel) => {
-        this.send({
-          type: MessageType.SIGNAL,
-          signal: SignalType.SUBSCRIBE,
-          channel,
-        })
+        this.sendSignal(SignalType.SUBSCRIBE, channel)
       })
     }
 
@@ -122,12 +128,8 @@ export class Client implements ClientBase {
   }
 
   protected addChannelCallback(channel: string, callback: (data: any) => void) {
-    if (!this.callbacks.has(channel)) {
-      this.callbacks.set(channel, new Set())
-    }
-    const callbacks = this.callbacks.get(channel)!
-    callbacks.add(callback)
-
+    if (!this.callbacks.has(channel)) this.callbacks.set(channel, new Set())
+    this.callbacks.get(channel)!.add(callback)
     this.syncChannelSubscription(channel)
     return () => this.removeChannelCallback(channel, callback)
   }
@@ -147,12 +149,8 @@ export class Client implements ClientBase {
     channel: string,
     callback: (error: any) => void,
   ) {
-    if (!this.errors.has(channel)) {
-      this.errors.set(channel, new Set())
-    }
-    const callbacks = this.errors.get(channel)!
-    callbacks.add(callback)
-
+    if (!this.errors.has(channel)) this.errors.set(channel, new Set())
+    this.errors.get(channel)!.add(callback)
     this.syncChannelSubscription(channel)
     return () => this.removeChannelErrorCallback(channel, callback)
   }
@@ -173,15 +171,22 @@ export class Client implements ClientBase {
     const errorCount = this.errors.get(channel)?.size || 0
     const hasListeners = dataCount + errorCount > 0
 
+    // 2. Fix Re-rendering: Clear pending unsubscribe if we add a listener back quickly
+    if (this.unsubTimers.has(channel)) {
+      clearTimeout(this.unsubTimers.get(channel))
+      this.unsubTimers.delete(channel)
+    }
+
     if (hasListeners && !this.activeSubscriptions.has(channel)) {
       this.activeSubscriptions.add(channel)
-      this.send({
-        type: MessageType.SIGNAL,
-        signal: SignalType.SUBSCRIBE,
-        channel,
-      })
+      this.sendSignal(SignalType.SUBSCRIBE, channel)
     } else if (!hasListeners && this.activeSubscriptions.has(channel)) {
-      this.unsubscribe(channel)
+      // 2. Fix Re-rendering: Wait 100ms before actually unsubscribing
+      const timer = setTimeout(() => {
+        this.unsubscribe(channel)
+        this.unsubTimers.delete(channel)
+      }, 100)
+      this.unsubTimers.set(channel, timer)
     }
   }
 
@@ -212,11 +217,16 @@ export class Client implements ClientBase {
     this.callbacks.delete(channel)
     this.errors.delete(channel)
     this.activeSubscriptions.delete(channel)
-    this.send({
-      type: MessageType.SIGNAL,
-      signal: SignalType.UNSUBSCRIBE,
-      channel,
-    })
+    this.sendSignal(SignalType.UNSUBSCRIBE, channel)
+  }
+
+  protected sendSignal(signal: SignalType, channel: string) {
+    // Signals are never queued (to avoid stale state)
+    if (this.status === 'open' && this.socket?.readyState === WebSocket.OPEN) {
+      this.socket.send(
+        JSON.stringify({ type: MessageType.SIGNAL, signal, channel }),
+      )
+    }
   }
 
   send(message: IMessage) {
@@ -224,18 +234,15 @@ export class Client implements ClientBase {
     if (this.status === 'open' && this.socket?.readyState === WebSocket.OPEN) {
       this.socket.send(payload)
     } else {
-      // Wait for next 'open' status if not currently connected
-      const unbind = this.onStatusChange((status) => {
-        if (status === 'open' && this.socket?.readyState === WebSocket.OPEN) {
-          this.socket.send(payload)
-          unbind()
-        }
-      })
+      // 3. Fix Memory Leak: Use Array instead of Event Listeners
+      this.messageQueue.push(payload)
     }
   }
 
   disconnect() {
     this.connectionManager.destroy()
+    this.disconnectSocket()
     this.updateStatus('closed')
+    this.messageQueue = []
   }
 }

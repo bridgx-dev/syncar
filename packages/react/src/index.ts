@@ -1,13 +1,18 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSynnel } from './Provider'
 import { MessageType } from '@synnel/core/client'
 
 export * from './Provider'
 
+type UseChannelOptions<T> = {
+  onMessage?: (data: T) => void
+  onError?: (err: any) => void
+}
+
 type UseChannelReturn<T = any> = {
   data: T | null
   send: (data: T) => void
-  status: 'connecting' | 'open' | 'closed'
+  status: 'connecting' | 'open' | 'closed' | 'closing'
   error: Error | null
   loading: boolean
 }
@@ -15,25 +20,45 @@ type UseChannelReturn<T = any> = {
 /**
  * React hook to interact with a specific Synnel channel.
  */
-const useChannel = <T = any>(channelName: string): UseChannelReturn<T> => {
+const useChannel = <T = any>(
+  channelName: string,
+  options: UseChannelOptions<T> = {},
+): UseChannelReturn<T> => {
   const { client: synnel, status } = useSynnel()
   const [data, setData] = useState<T | null>(null)
   const [error, setError] = useState<Error | null>(null)
 
+  // Stable references for callbacks to avoid re-subscription
+  const onMessageRef = useRef(options.onMessage)
+  const onErrorRef = useRef(options.onError)
+
+  useEffect(() => {
+    onMessageRef.current = options.onMessage
+    onErrorRef.current = options.onError
+  }, [options.onMessage, options.onError])
+
   useEffect(() => {
     if (!synnel) return
+
+    // Clear state when switching channels
+    setData(null)
+    setError(null)
 
     const unsubscribe = synnel
       .subscribe(channelName)
       .onMessage((incomingData: T) => {
         setData(incomingData)
+        if (onMessageRef.current) {
+          onMessageRef.current(incomingData)
+        }
       })
       .onError((err: any) => {
-        setError(
-          err instanceof Error
-            ? err
-            : new Error(err || 'Unknown channel error'),
-        )
+        const errorObject =
+          err instanceof Error ? err : new Error(err || 'Unknown channel error')
+        setError(errorObject)
+        if (onErrorRef.current) {
+          onErrorRef.current(errorObject)
+        }
       })
 
     return () => {
