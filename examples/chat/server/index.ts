@@ -180,7 +180,7 @@ async function main() {
 
     console.log('')
     console.log('==================================')
-    console.log(' Synnel v2 Chat Server')
+    console.log(' Synnel Chat Server')
     console.log('==================================')
     console.log(`Server: ws://localhost:3001`)
     console.log(`Client: http://localhost:3000`)

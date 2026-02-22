@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useLayoutEffect } from 'react'
-import { useSynnelClient, useChannel, useBroadcast } from '@synnel/react-v2'
+import { useSynnelClient, useChannel, useBroadcast } from '@synnel/react'
 import type { Notification } from '../App'
 
 interface ChatProps {
@@ -41,7 +41,7 @@ export default function Chat({ username, onNotification }: ChatProps) {
 
   // Handle incoming chat messages
   useEffect(() => {
-    const unsubscribe = chat.onMessage((data, message) => {
+    const unsubscribe = chat.onMessage((data, _message) => {
       setMessages((prev) => [...prev, data])
     })
     return unsubscribe
