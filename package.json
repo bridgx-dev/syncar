@@ -5,13 +5,16 @@
   "private": true,
   "workspaces": [
     "example",
-    "packages/*"
+    "packages/*",
+    "packages_v2/*",
+    "examples/*"
   ],
   "scripts": {
     "format": "prettier --write ."
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/node": "^25.3.0",
     "prettier": "^3.0.0"
   },
   "peerDependencies": {
