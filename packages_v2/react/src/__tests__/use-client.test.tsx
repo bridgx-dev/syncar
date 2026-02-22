@@ -4,10 +4,10 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { renderHook, cleanup } from '@testing-library/react'
-import { StrictMode, useEffect } from 'react'
+import { StrictMode } from 'react'
 import { SynnelProvider, useSynnelClient } from '../index.js'
 import { createSynnelClient } from '@synnel/client-v2'
-import type { Transport, Message } from '@synnel/client-v2'
+import type { Transport } from '@synnel/client-v2'
 
 // Mock transport
 class MockTransport implements Transport {
