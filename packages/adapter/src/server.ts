@@ -242,7 +242,7 @@ export class WebSocketServerTransport
    * Generate a unique client ID
    */
   private generateClientId(): string {
-    return `client_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
+    return Math.random().toString(36).substring(2, 11)
   }
 }
 
