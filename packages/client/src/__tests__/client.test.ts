@@ -10,7 +10,11 @@ import { SignalType } from '@synnel/core'
 
 // Mock transport
 class MockTransport {
-  public _status: 'disconnected' | 'connecting' | 'connected' | 'disconnecting' = 'disconnected'
+  public _status:
+    | 'disconnected'
+    | 'connecting'
+    | 'connected'
+    | 'disconnecting' = 'disconnected'
   public eventHandlers: Map<string, Set<(...args: any[]) => void>> = new Map()
   public sentMessages: Message[] = []
 
@@ -66,7 +70,10 @@ class MockTransport {
   }
 
   getConnectionInfo() {
-    return { connectedAt: this._status === 'connected' ? Date.now() : undefined, url: 'ws://localhost:3000' }
+    return {
+      connectedAt: this._status === 'connected' ? Date.now() : undefined,
+      url: 'ws://localhost:3000',
+    }
   }
 
   // Test helper

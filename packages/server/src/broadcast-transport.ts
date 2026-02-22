@@ -19,9 +19,15 @@ const BROADCAST_CHANNEL = '__broadcast__'
 /**
  * Broadcast Transport Implementation
  */
-export class BroadcastTransportImpl<T = unknown> implements IBroadcastTransport<T> {
+export class BroadcastTransportImpl<
+  T = unknown,
+> implements IBroadcastTransport<T> {
   private messageHandlers: Set<
-    (data: T, client: ServerClient, message: DataMessage<T>) => void | Promise<void>
+    (
+      data: T,
+      client: ServerClient,
+      message: DataMessage<T>,
+    ) => void | Promise<void>
   > = new Set()
 
   constructor(private registry: ClientRegistry) {}
@@ -46,7 +52,11 @@ export class BroadcastTransportImpl<T = unknown> implements IBroadcastTransport<
    * Register a handler for incoming broadcast messages
    */
   onMessage(
-    handler: (data: T, client: ServerClient, message: DataMessage<T>) => void | Promise<void>,
+    handler: (
+      data: T,
+      client: ServerClient,
+      message: DataMessage<T>,
+    ) => void | Promise<void>,
   ): () => void {
     this.messageHandlers.add(handler as any)
     return () => {
@@ -93,7 +103,10 @@ export class BroadcastTransportImpl<T = unknown> implements IBroadcastTransport<
           try {
             await client.send(message)
           } catch (error) {
-            console.error(`Failed to send broadcast to client ${client.id}:`, error)
+            console.error(
+              `Failed to send broadcast to client ${client.id}:`,
+              error,
+            )
           }
         })(),
       )

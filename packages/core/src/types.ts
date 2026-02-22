@@ -50,8 +50,9 @@ export interface TransportEvents {
 /**
  * Transport event listener type
  */
-export type TransportEventListener<K extends keyof TransportEvents> =
-  (event: TransportEvents[K]) => void
+export type TransportEventListener<K extends keyof TransportEvents> = (
+  event: TransportEvents[K],
+) => void
 
 /**
  * Transport configuration options

@@ -142,7 +142,6 @@ class MockWebSocketServer {
 }
 
 describe('WebSocketServerTransport', () => {
-
   describe('constructor', () => {
     it('should initialize with default config', () => {
       const server = new WebSocketServerTransport({
@@ -220,7 +219,7 @@ describe('WebSocketServerTransport', () => {
       clientWs.close(1000, 'Normal close')
 
       // Wait for close to process
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await new Promise((resolve) => setTimeout(resolve, 10))
 
       expect(server.getClients()).toHaveLength(0)
       expect(disconnectionHandler).toHaveBeenCalledWith(clientId, {
@@ -276,7 +275,9 @@ describe('WebSocketServerTransport', () => {
         data: { text: 'hello' },
         timestamp: Date.now(),
       }
-      await expect(server.sendToClient('nonexistent', message)).rejects.toThrow('Client not found')
+      await expect(server.sendToClient('nonexistent', message)).rejects.toThrow(
+        'Client not found',
+      )
     })
   })
 
@@ -307,7 +308,7 @@ describe('WebSocketServerTransport', () => {
 
       await server.disconnectClient(clientId, 1000, 'Server disconnect')
 
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await new Promise((resolve) => setTimeout(resolve, 10))
 
       expect(server.getClients()).toHaveLength(0)
       expect(disconnectionHandler).toHaveBeenCalledWith(clientId, {
@@ -318,7 +319,9 @@ describe('WebSocketServerTransport', () => {
     })
 
     it('should throw if client not found', async () => {
-      await expect(server.disconnectClient('nonexistent')).rejects.toThrow('Client not found')
+      await expect(server.disconnectClient('nonexistent')).rejects.toThrow(
+        'Client not found',
+      )
     })
   })
 

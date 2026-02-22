@@ -61,7 +61,9 @@ class MockWebSocket {
 
   simulateMessage(data: unknown): void {
     if (this.onmessage) {
-      this.onmessage(new MessageEvent('message', { data: JSON.stringify(data) }))
+      this.onmessage(
+        new MessageEvent('message', { data: JSON.stringify(data) }),
+      )
     }
   }
 
@@ -87,7 +89,9 @@ class MockWebSocket {
 }
 
 // Helper to create a connected transport
-async function createConnectedTransport(config?: Partial<TransportConfig>): Promise<WebSocketClientTransport> {
+async function createConnectedTransport(
+  config?: Partial<TransportConfig>,
+): Promise<WebSocketClientTransport> {
   const transport = new WebSocketClientTransport({
     url: 'ws://localhost:3000',
     connectionTimeout: 5000, // Large timeout
@@ -188,7 +192,9 @@ describe('WebSocketClientTransport', () => {
 
       await transport.send(message)
 
-      const sentData = ((transport as any).ws as MockWebSocket).getLastSentMessage()
+      const sentData = (
+        (transport as any).ws as MockWebSocket
+      ).getLastSentMessage()
       expect(sentData).toBeDefined()
 
       const parsed = JSON.parse(sentData!)
@@ -225,7 +231,7 @@ describe('WebSocketClientTransport', () => {
       ws.close()
 
       // Wait for close to process
-      await new Promise(resolve => setTimeout(resolve, 50))
+      await new Promise((resolve) => setTimeout(resolve, 50))
 
       const message: Message = {
         id: 'msg-1',
@@ -242,7 +248,7 @@ describe('WebSocketClientTransport', () => {
       }
 
       // Error handler might be called asynchronously
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await new Promise((resolve) => setTimeout(resolve, 10))
 
       // The error handler may or may not be called depending on implementation
       // The key is that send() throws an error
@@ -420,7 +426,7 @@ describe('WebSocketClientTransport', () => {
       ws.close(1001, 'Going away')
 
       // Wait a bit to ensure no reconnection happens
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 100))
 
       // Should have closed once and not reconnected
       expect(closeHandler).toHaveBeenCalledTimes(1)

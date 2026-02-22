@@ -17,6 +17,7 @@ yarn add @synnel/adapter
 ```
 
 **Peer Dependencies:**
+
 - Browser: No additional dependencies (uses native WebSocket)
 - Node.js: `ws@^8.0.0`
 
@@ -120,16 +121,16 @@ const transport = createWebSocketClientTransport({
 
 **Config Options:**
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `url` | `string` | *required* | WebSocket server URL |
-| `reconnect` | `boolean` | `false` | Enable automatic reconnection |
-| `maxReconnectAttempts` | `number` | `5` | Maximum reconnection attempts |
-| `reconnectDelay` | `number` | `1000` | Initial reconnection delay (ms) |
-| `maxReconnectDelay` | `number` | `30000` | Maximum reconnection delay (ms) |
-| `connectionTimeout` | `number` | `10000` | Connection timeout (ms) |
-| `protocols` | `string \| string[]` | `undefined` | WebSocket protocols |
-| `WebSocketConstructor` | `typeof WebSocket` | `WebSocket` | Custom WebSocket constructor |
+| Option                 | Type                 | Default     | Description                     |
+| ---------------------- | -------------------- | ----------- | ------------------------------- |
+| `url`                  | `string`             | _required_  | WebSocket server URL            |
+| `reconnect`            | `boolean`            | `false`     | Enable automatic reconnection   |
+| `maxReconnectAttempts` | `number`             | `5`         | Maximum reconnection attempts   |
+| `reconnectDelay`       | `number`             | `1000`      | Initial reconnection delay (ms) |
+| `maxReconnectDelay`    | `number`             | `30000`     | Maximum reconnection delay (ms) |
+| `connectionTimeout`    | `number`             | `10000`     | Connection timeout (ms)         |
+| `protocols`            | `string \| string[]` | `undefined` | WebSocket protocols             |
+| `WebSocketConstructor` | `typeof WebSocket`   | `WebSocket` | Custom WebSocket constructor    |
 
 **Methods:**
 
@@ -168,16 +169,16 @@ const server = createWebSocketServerTransport({
 
 **Config Options:**
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `server` | `object` | `undefined` | Existing HTTP server to attach to (Express, Fastify, etc.) |
-| `port` | `number` | `3000` | Server port (only used if `server` is not provided) |
-| `host` | `string` | `'0.0.0.0'` | Server host (only used if `server` is not provided) |
-| `path` | `string` | `'/synnel'` | WebSocket path |
-| `maxPayload` | `number` | `1048576` | Max message size (bytes) |
-| `enablePing` | `boolean` | `true` | Enable ping/pong |
-| `pingInterval` | `number` | `30000` | Ping interval (ms) |
-| `pingTimeout` | `number` | `5000` | Ping timeout (ms) |
+| Option         | Type      | Default     | Description                                                |
+| -------------- | --------- | ----------- | ---------------------------------------------------------- |
+| `server`       | `object`  | `undefined` | Existing HTTP server to attach to (Express, Fastify, etc.) |
+| `port`         | `number`  | `3000`      | Server port (only used if `server` is not provided)        |
+| `host`         | `string`  | `'0.0.0.0'` | Server host (only used if `server` is not provided)        |
+| `path`         | `string`  | `'/synnel'` | WebSocket path                                             |
+| `maxPayload`   | `number`  | `1048576`   | Max message size (bytes)                                   |
+| `enablePing`   | `boolean` | `true`      | Enable ping/pong                                           |
+| `pingInterval` | `number`  | `30000`     | Ping interval (ms)                                         |
+| `pingTimeout`  | `number`  | `5000`      | Ping timeout (ms)                                          |
 
 **Methods:**
 

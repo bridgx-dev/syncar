@@ -105,7 +105,11 @@ describe('ClientRegistry', () => {
       const clients = registry.getAll()
 
       expect(clients).toHaveLength(3)
-      expect(clients.map((c) => c.id)).toEqual(['client-1', 'client-2', 'client-3'])
+      expect(clients.map((c) => c.id)).toEqual([
+        'client-1',
+        'client-2',
+        'client-3',
+      ])
     })
 
     it('should clear all clients', () => {
@@ -168,7 +172,11 @@ describe('ClientRegistry', () => {
       const subscribers = registry.getSubscribers('chat')
 
       expect(subscribers).toHaveLength(3)
-      expect(subscribers.map((s) => s.id)).toEqual(['client-1', 'client-2', 'client-3'])
+      expect(subscribers.map((s) => s.id)).toEqual([
+        'client-1',
+        'client-2',
+        'client-3',
+      ])
     })
 
     it('should get subscriber count for a channel', () => {
@@ -242,7 +250,11 @@ describe('ClientRegistry', () => {
 
       const sendSpy = vi.spyOn(transport, 'sendToClient').mockResolvedValue()
 
-      await client.send({ id: 'test', type: MessageType.DATA, timestamp: Date.now() })
+      await client.send({
+        id: 'test',
+        type: MessageType.DATA,
+        timestamp: Date.now(),
+      })
 
       expect(sendSpy).toHaveBeenCalledWith('client-1', expect.any(Object))
     })

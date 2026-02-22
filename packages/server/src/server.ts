@@ -14,7 +14,12 @@ import type {
   DisconnectionEvent,
   MiddlewareContext,
 } from './types.js'
-import type { Message, DataMessage, ChannelName, SignalType } from '@synnel/core'
+import type {
+  Message,
+  DataMessage,
+  ChannelName,
+  SignalType,
+} from '@synnel/core'
 import { MessageType, SignalType as CoreSignalType } from '@synnel/core'
 import type { ServerTransport } from '@synnel/adapter'
 import { WebSocketServerTransport } from '@synnel/adapter/server'
@@ -29,7 +34,13 @@ import type { ChannelTransportImpl } from './channel-transport.js'
  */
 interface InternalChannel<T = unknown> {
   transport: ChannelTransport<T>
-  messageHandlers: Set<(data: T, client: ServerClient, message: DataMessage<T>) => void | Promise<void>>
+  messageHandlers: Set<
+    (
+      data: T,
+      client: ServerClient,
+      message: DataMessage<T>,
+    ) => void | Promise<void>
+  >
 }
 
 /**
@@ -45,7 +56,11 @@ export class SynnelServer {
   private middleware: MiddlewareManager = new MiddlewareManager()
   private channels: Map<ChannelName, InternalChannel> = new Map()
   private broadcastHandlers: Set<
-    (data: unknown, client: ServerClient, message: DataMessage<unknown>) => void | Promise<void>
+    (
+      data: unknown,
+      client: ServerClient,
+      message: DataMessage<unknown>,
+    ) => void | Promise<void>
   > = new Set()
   private eventHandlers: Map<ServerEventType, Set<any>> = new Map()
   private createdChannels: Set<ChannelName> = new Set()
@@ -141,21 +156,29 @@ export class SynnelServer {
     if (!channel) {
       // Import ChannelTransportImpl dynamically to avoid circular dependency
       const { ChannelTransportImpl } = await import('./channel-transport.js')
-      const impl = new ChannelTransportImpl(name, this.registry) as ChannelTransportImpl<T>
+      const impl = new ChannelTransportImpl(
+        name,
+        this.registry,
+      ) as ChannelTransportImpl<T>
 
       // Set up message handler for this channel
-      impl.onMessage((data: T, client: ServerClient, message: DataMessage<T>) => {
-        const handlers = this.channels.get(name)?.messageHandlers
-        if (handlers) {
-          for (const handler of handlers) {
-            try {
-              handler(data, client, message as any)
-            } catch (error) {
-              console.error(`Error in message handler for channel ${name}:`, error)
+      impl.onMessage(
+        (data: T, client: ServerClient, message: DataMessage<T>) => {
+          const handlers = this.channels.get(name)?.messageHandlers
+          if (handlers) {
+            for (const handler of handlers) {
+              try {
+                handler(data, client, message as any)
+              } catch (error) {
+                console.error(
+                  `Error in message handler for channel ${name}:`,
+                  error,
+                )
+              }
             }
           }
-        }
-      })
+        },
+      )
 
       channel = {
         transport: impl,
@@ -193,7 +216,10 @@ export class SynnelServer {
                 await client.send(message)
                 self.messagesSent++
               } catch (error) {
-                console.error(`Failed to send broadcast to ${client.id}:`, error)
+                console.error(
+                  `Failed to send broadcast to ${client.id}:`,
+                  error,
+                )
               }
             })(),
           )
@@ -223,7 +249,10 @@ export class SynnelServer {
                 await client.send(message)
                 self.messagesSent++
               } catch (error) {
-                console.error(`Failed to send broadcast to ${client.id}:`, error)
+                console.error(
+                  `Failed to send broadcast to ${client.id}:`,
+                  error,
+                )
               }
             })(),
           )
@@ -233,7 +262,11 @@ export class SynnelServer {
       },
 
       onMessage(
-        handler: (data: T, client: ServerClient, message: DataMessage<T>) => void | Promise<void>,
+        handler: (
+          data: T,
+          client: ServerClient,
+          message: DataMessage<T>,
+        ) => void | Promise<void>,
       ): () => void {
         self.broadcastHandlers.add(handler as any)
         return () => {
@@ -310,7 +343,9 @@ export class SynnelServer {
    * @param name - Channel name
    * @returns Channel transport with send/receive methods
    */
-  async multicast<T = unknown>(name: ChannelName): Promise<ChannelTransport<T>> {
+  async multicast<T = unknown>(
+    name: ChannelName,
+  ): Promise<ChannelTransport<T>> {
     // Mark this channel as created/allowed
     this.createdChannels.add(name)
     return await this.channel<T>(name)
@@ -341,9 +376,18 @@ export class SynnelServer {
    * ```
    */
   authorize(
-    handler: (clientId: string, channel: string, action: string) => boolean | Promise<boolean>,
+    handler: (
+      clientId: string,
+      channel: string,
+      action: string,
+    ) => boolean | Promise<boolean>,
   ): () => void {
-    const middleware = async ({ client, channel, action, reject }: MiddlewareContext) => {
+    const middleware = async ({
+      client,
+      channel,
+      action,
+      reject,
+    }: MiddlewareContext) => {
       const clientId = client?.id ?? 'unknown'
       const channelName = channel ?? ''
       const actionName = action
@@ -379,7 +423,9 @@ export class SynnelServer {
    * })
    * ```
    */
-  onMessage(handler: (client: ServerClient, message: Message) => void): () => void {
+  onMessage(
+    handler: (client: ServerClient, message: Message) => void,
+  ): () => void {
     return this.on('message', handler)
   }
 
@@ -393,9 +439,15 @@ export class SynnelServer {
     })
 
     // Handle disconnections
-    this.transport.on('disconnection', async (clientId: string, event: { wasClean: boolean; code: number; reason: string }) => {
-      await this.handleDisconnection(clientId, event)
-    })
+    this.transport.on(
+      'disconnection',
+      async (
+        clientId: string,
+        event: { wasClean: boolean; code: number; reason: string },
+      ) => {
+        await this.handleDisconnection(clientId, event)
+      },
+    )
 
     // Handle incoming messages
     this.transport.on('message', async (clientId: string, message: Message) => {
@@ -418,7 +470,11 @@ export class SynnelServer {
     }
 
     // Register the client
-    const serverClient = this.registry.register(clientId, this.transport, connection)
+    const serverClient = this.registry.register(
+      clientId,
+      this.transport,
+      connection,
+    )
 
     // Execute connection middleware
     try {
@@ -484,7 +540,10 @@ export class SynnelServer {
   /**
    * Handle an incoming message
    */
-  private async handleMessage(clientId: string, message: Message): Promise<void> {
+  private async handleMessage(
+    clientId: string,
+    message: Message,
+  ): Promise<void> {
     this.messagesReceived++
 
     const serverClient = this.registry.get(clientId)
@@ -514,7 +573,11 @@ export class SynnelServer {
 
     // Handle signal messages
     if (message.type === MessageType.SIGNAL) {
-      await this.handleSignal(serverClient, message.signal as SignalType, message.channel)
+      await this.handleSignal(
+        serverClient,
+        message.signal as SignalType,
+        message.channel,
+      )
       return
     }
 
@@ -749,7 +812,7 @@ export class SynnelServer {
     if (handlers) {
       for (const handler of handlers) {
         try {
-          ; (handler as any)(...args)
+          ;(handler as any)(...args)
         } catch (error) {
           console.error(`Error in ${event} handler:`, error)
         }

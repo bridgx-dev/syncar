@@ -13,7 +13,11 @@ import { SignalType } from '@synnel/core'
 
 // Mock transport
 class MockTransport implements Transport {
-  public _status: 'disconnected' | 'connecting' | 'connected' | 'disconnecting' = 'disconnected'
+  public _status:
+    | 'disconnected'
+    | 'connecting'
+    | 'connected'
+    | 'disconnecting' = 'disconnected'
   public eventHandlers: Map<string, Set<(...args: any[]) => void>> = new Map()
   public subscribedChannels: Set<string> = new Set()
 
@@ -76,7 +80,10 @@ class MockTransport implements Transport {
   }
 
   getConnectionInfo() {
-    return { connectedAt: this._status === 'connected' ? Date.now() : undefined, url: 'ws://localhost:3000' }
+    return {
+      connectedAt: this._status === 'connected' ? Date.now() : undefined,
+      url: 'ws://localhost:3000',
+    }
   }
 
   // Test helper to simulate message
@@ -200,7 +207,10 @@ describe('useChannel', () => {
       transport.simulateMessage(message)
 
       await waitFor(() => {
-        expect(onMessage).toHaveBeenCalledWith({ id: '1', text: 'Hello' }, message)
+        expect(onMessage).toHaveBeenCalledWith(
+          { id: '1', text: 'Hello' },
+          message,
+        )
       })
 
       await waitFor(() => {
@@ -279,7 +289,11 @@ describe('useChannel', () => {
           return useChannel<TestMessage>('chat')
         },
         {
-          wrapper: function StrictModeWrapper({ children }: { children: React.ReactNode }) {
+          wrapper: function StrictModeWrapper({
+            children,
+          }: {
+            children: React.ReactNode
+          }) {
             return (
               <StrictMode>
                 <SynnelProvider client={client}>{children}</SynnelProvider>

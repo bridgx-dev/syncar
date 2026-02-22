@@ -79,10 +79,7 @@ export class MiddlewareManager {
   /**
    * Execute middleware for a message action
    */
-  async executeMessage(
-    client: ServerClient,
-    message: Message,
-  ): Promise<void> {
+  async executeMessage(client: ServerClient, message: Message): Promise<void> {
     const context: MiddlewareContext = {
       client,
       action: 'message',
@@ -166,7 +163,12 @@ export class MiddlewareManager {
  * ```
  */
 export function createAuthMiddleware(options: {
-  verify?: (token: string) => Promise<string | Record<string, unknown>> | string | Record<string, unknown>
+  verify?: (
+    token: string,
+  ) =>
+    | Promise<string | Record<string, unknown>>
+    | string
+    | Record<string, unknown>
   getToken?: (client: ServerClient) => string | undefined
 }): ServerMiddleware {
   return async ({ client, reject }) => {
@@ -219,13 +221,19 @@ export function createLoggingMiddleware(options?: {
   const logger = options?.logger ?? console.log
 
   return async ({ client, action, channel, message }) => {
-    if (!options?.logConnections && (action === 'connect' || action === 'disconnect')) {
+    if (
+      !options?.logConnections &&
+      (action === 'connect' || action === 'disconnect')
+    ) {
       return
     }
     if (!options?.logMessages && action === 'message') {
       return
     }
-    if (!options?.logSubscriptions && (action === 'subscribe' || action === 'unsubscribe')) {
+    if (
+      !options?.logSubscriptions &&
+      (action === 'subscribe' || action === 'unsubscribe')
+    ) {
       return
     }
 
@@ -237,7 +245,10 @@ export function createLoggingMiddleware(options?: {
         logger(`[Synnel] Client disconnected: ${client?.id}`)
         break
       case 'message':
-        logger(`[Synnel] Message from ${client?.id} to channel ${channel}:`, message)
+        logger(
+          `[Synnel] Message from ${client?.id} to channel ${channel}:`,
+          message,
+        )
         break
       case 'subscribe':
         logger(`[Synnel] ${client?.id} subscribed to ${channel}`)
@@ -297,7 +308,9 @@ export function createRateLimitMiddleware(options?: {
  * Channel whitelist middleware
  * Enforces that clients can only subscribe to whitelisted channels
  */
-export function createChannelWhitelistMiddleware(allowedChannels: string[]): ServerMiddleware {
+export function createChannelWhitelistMiddleware(
+  allowedChannels: string[],
+): ServerMiddleware {
   const allowed = new Set(allowedChannels)
 
   return async ({ action, channel, reject }) => {

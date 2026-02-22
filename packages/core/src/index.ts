@@ -54,10 +54,7 @@ export {
 } from './protocol.js'
 
 // Channel
-export {
-  Channel,
-  type ChannelOptions,
-} from './channel.js'
+export { Channel, type ChannelOptions } from './channel.js'
 
 // MessageBus
 export {

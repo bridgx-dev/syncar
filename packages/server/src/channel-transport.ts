@@ -54,7 +54,9 @@ export class ChannelTransportImpl<T = unknown> implements IChannelTransport<T> {
   async sendTo(clientId: string, data: T): Promise<void> {
     const client = this.registry.get(clientId)
     if (!client || !this.state.subscribers.has(clientId)) {
-      throw new Error(`Client ${clientId} is not subscribed to channel ${this.name}`)
+      throw new Error(
+        `Client ${clientId} is not subscribed to channel ${this.name}`,
+      )
     }
 
     const message = createDataMessage(this.name, data)
@@ -65,7 +67,11 @@ export class ChannelTransportImpl<T = unknown> implements IChannelTransport<T> {
    * Register a handler for incoming messages
    */
   onMessage(
-    handler: (data: T, client: ServerClient, message: DataMessage<T>) => void | Promise<void>,
+    handler: (
+      data: T,
+      client: ServerClient,
+      message: DataMessage<T>,
+    ) => void | Promise<void>,
   ): () => void {
     this.state.messageHandlers.add(handler as any)
     return () => {
@@ -85,7 +91,11 @@ export class ChannelTransportImpl<T = unknown> implements IChannelTransport<T> {
    * ```
    */
   receive(
-    handler: (data: T, client: ServerClient, message: DataMessage<T>) => void | Promise<void>,
+    handler: (
+      data: T,
+      client: ServerClient,
+      message: DataMessage<T>,
+    ) => void | Promise<void>,
   ): () => void {
     return this.onMessage(handler)
   }
@@ -140,7 +150,10 @@ export class ChannelTransportImpl<T = unknown> implements IChannelTransport<T> {
       try {
         await handler(client)
       } catch (error) {
-        console.error(`Error in subscribe handler for channel ${this.name}:`, error)
+        console.error(
+          `Error in subscribe handler for channel ${this.name}:`,
+          error,
+        )
       }
     }
   }
@@ -157,7 +170,10 @@ export class ChannelTransportImpl<T = unknown> implements IChannelTransport<T> {
       try {
         await handler(client)
       } catch (error) {
-        console.error(`Error in unsubscribe handler for channel ${this.name}:`, error)
+        console.error(
+          `Error in unsubscribe handler for channel ${this.name}:`,
+          error,
+        )
       }
     }
   }
@@ -176,7 +192,10 @@ export class ChannelTransportImpl<T = unknown> implements IChannelTransport<T> {
       try {
         await handler(data, client, message)
       } catch (error) {
-        console.error(`Error in message handler for channel ${this.name}:`, error)
+        console.error(
+          `Error in message handler for channel ${this.name}:`,
+          error,
+        )
       }
     }
   }
@@ -201,7 +220,10 @@ export class ChannelTransportImpl<T = unknown> implements IChannelTransport<T> {
           try {
             await subscriber.send(message)
           } catch (error) {
-            console.error(`Failed to send message to client ${subscriber.id}:`, error)
+            console.error(
+              `Failed to send message to client ${subscriber.id}:`,
+              error,
+            )
           }
         })(),
       )

@@ -18,6 +18,7 @@ A full-stack chat application demonstrating the Synnel real-time messaging frame
 ## Tech Stack
 
 ### Server
+
 - `@synnel/server` - WebSocket server with Express integration
 - `@synnel/adapter` - WebSocket transport
 - `@synnel/core` - Core types and protocols
@@ -25,6 +26,7 @@ A full-stack chat application demonstrating the Synnel real-time messaging frame
 - Node.js + TypeScript
 
 ### Client
+
 - `@synnel/react` - React hooks and provider
 - `@synnel/client` - Core client
 - `@synnel/adapter` - WebSocket transport
@@ -70,6 +72,7 @@ bun run dev
 ```
 
 This will start:
+
 - **Server** on `http://localhost:3001` (HTTP + WebSocket)
 - **Client** on `http://localhost:3000`
 
@@ -184,27 +187,27 @@ chat.send({ text: 'Hello!', user: username, type: 'message' })
 
 ### Server API
 
-| Method | Description |
-|--------|-------------|
-| `new Synnel({ server })` | Attach to existing Express server |
-| `new Synnel({ port })` | Create standalone server on port |
-| `await synnel.multicast(name)` | Create multicast channel (returns Promise) |
-| `synnel.broadcast()` | Create broadcast channel |
-| `channel.receive(handler)` | Handle incoming messages |
-| `channel.send(data, excludeId?)` | Send to all (optionally exclude sender) |
-| `synnel.on('connection', handler)` | Handle new connections |
-| `synnel.on('disconnection', handler)` | Handle disconnections |
-| `synnel.getStats()` | Get server statistics |
+| Method                                | Description                                |
+| ------------------------------------- | ------------------------------------------ |
+| `new Synnel({ server })`              | Attach to existing Express server          |
+| `new Synnel({ port })`                | Create standalone server on port           |
+| `await synnel.multicast(name)`        | Create multicast channel (returns Promise) |
+| `synnel.broadcast()`                  | Create broadcast channel                   |
+| `channel.receive(handler)`            | Handle incoming messages                   |
+| `channel.send(data, excludeId?)`      | Send to all (optionally exclude sender)    |
+| `synnel.on('connection', handler)`    | Handle new connections                     |
+| `synnel.on('disconnection', handler)` | Handle disconnections                      |
+| `synnel.getStats()`                   | Get server statistics                      |
 
 ### Client React API
 
-| Hook/Method | Description |
-|-------------|-------------|
+| Hook/Method                       | Description                                 |
+| --------------------------------- | ------------------------------------------- |
 | `useChannel(name, { onMessage })` | Subscribe with callback (no race condition) |
-| `useBroadcast({ onMessage })` | Subscribe to broadcast channel |
-| `channel.send(data)` | Send data to channel |
-| `client.subscribe(channel)` | Subscribe to channel |
-| `client.publish(channel, data)` | Publish data to channel |
+| `useBroadcast({ onMessage })`     | Subscribe to broadcast channel              |
+| `channel.send(data)`              | Send data to channel                        |
+| `client.subscribe(channel)`       | Subscribe to channel                        |
+| `client.publish(channel, data)`   | Publish data to channel                     |
 
 ## License
 

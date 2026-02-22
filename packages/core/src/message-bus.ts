@@ -12,7 +12,7 @@ import { Channel, type ChannelOptions } from './channel.js'
  */
 export type MessageHandler<T = unknown> = (
   message: Message<T>,
-  sender?: SubscriberId
+  sender?: SubscriberId,
 ) => void
 
 /**
@@ -67,7 +67,10 @@ export class MessageBus {
    * Create a new channel
    * @returns The created channel or undefined if channel already exists
    */
-  createChannel(name: ChannelName, options?: ChannelOptions): Channel | undefined {
+  createChannel(
+    name: ChannelName,
+    options?: ChannelOptions,
+  ): Channel | undefined {
     if (this.channels.has(name)) {
       return undefined
     }
@@ -160,10 +163,7 @@ export class MessageBus {
    * Subscribe a subscriber to a channel
    * @returns true if subscription succeeded
    */
-  subscribe(
-    channelName: ChannelName,
-    subscriber: SubscriberId
-  ): boolean {
+  subscribe(channelName: ChannelName, subscriber: SubscriberId): boolean {
     const channel = this.getOrCreateChannel(channelName)
     return channel.subscribe(subscriber)
   }
@@ -172,20 +172,14 @@ export class MessageBus {
    * Unsubscribe a subscriber from a channel
    * @returns true if unsubscription succeeded
    */
-  unsubscribe(
-    channelName: ChannelName,
-    subscriber: SubscriberId
-  ): boolean {
+  unsubscribe(channelName: ChannelName, subscriber: SubscriberId): boolean {
     const channel = this.getChannel(channelName)
 
     if (channel) {
       const result = channel.unsubscribe(subscriber)
 
       // Auto-delete empty channel if enabled
-      if (
-        this.options.autoDeleteEmptyChannels &&
-        channel.isEmpty()
-      ) {
+      if (this.options.autoDeleteEmptyChannels && channel.isEmpty()) {
         this.scheduleChannelDeletion(channelName)
       }
 
@@ -226,7 +220,7 @@ export class MessageBus {
   publish<T>(
     channelName: ChannelName,
     message: Message<T>,
-    excludeSender?: SubscriberId
+    excludeSender?: SubscriberId,
   ): number {
     const channel = this.getChannel(channelName)
 
@@ -239,7 +233,7 @@ export class MessageBus {
 
     // Get subscribers
     const subscribers = Array.from(channel.getSubscribers()).filter(
-      (id) => id !== excludeSender
+      (id) => id !== excludeSender,
     )
 
     // Notify global handlers

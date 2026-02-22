@@ -48,7 +48,10 @@ export interface Transport {
   /**
    * Register an event handler
    */
-  on(event: 'open' | 'message' | 'error' | 'close', handler: (...args: any[]) => void): () => void
+  on(
+    event: 'open' | 'message' | 'error' | 'close',
+    handler: (...args: any[]) => void,
+  ): () => void
 
   /**
    * Get connection info
@@ -110,7 +113,11 @@ export interface ClientConfig {
   /**
    * Logger function
    */
-  logger?: (level: 'info' | 'warn' | 'error', message: string, ...args: any[]) => void
+  logger?: (
+    level: 'info' | 'warn' | 'error',
+    message: string,
+    ...args: any[]
+  ) => void
 }
 
 /**

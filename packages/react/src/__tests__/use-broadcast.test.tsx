@@ -12,7 +12,11 @@ import type { DataMessage } from '@synnel/core'
 
 // Mock transport
 class MockTransport implements Transport {
-  public _status: 'disconnected' | 'connecting' | 'connected' | 'disconnecting' = 'disconnected'
+  public _status:
+    | 'disconnected'
+    | 'connecting'
+    | 'connected'
+    | 'disconnecting' = 'disconnected'
   public eventHandlers: Map<string, Set<(...args: any[]) => void>> = new Map()
 
   get status() {
@@ -60,7 +64,10 @@ class MockTransport implements Transport {
   }
 
   getConnectionInfo() {
-    return { connectedAt: this._status === 'connected' ? Date.now() : undefined, url: 'ws://localhost:3000' }
+    return {
+      connectedAt: this._status === 'connected' ? Date.now() : undefined,
+      url: 'ws://localhost:3000',
+    }
   }
 
   // Test helper to simulate message
@@ -176,7 +183,10 @@ describe('useBroadcast', () => {
       transport.simulateMessage(message)
 
       await waitFor(() => {
-        expect(onMessage).toHaveBeenCalledWith({ type: 'test', value: 42 }, message)
+        expect(onMessage).toHaveBeenCalledWith(
+          { type: 'test', value: 42 },
+          message,
+        )
       })
 
       await waitFor(() => {
@@ -242,7 +252,11 @@ describe('useBroadcast', () => {
   describe('React Strict Mode', () => {
     it('should handle Strict Mode double-invocation', () => {
       const { result } = renderHook(() => useBroadcast<TestBroadcast>(), {
-        wrapper: function StrictModeWrapper({ children }: { children: React.ReactNode }) {
+        wrapper: function StrictModeWrapper({
+          children,
+        }: {
+          children: React.ReactNode
+        }) {
           return (
             <StrictMode>
               <SynnelProvider client={client}>{children}</SynnelProvider>

@@ -74,7 +74,9 @@ import { createSynnelClient } from '@synnel/client'
 import { WebSocketClientTransport } from '@synnel/adapter'
 
 const client = createSynnelClient({
-  transport: new WebSocketClientTransport({ url: 'ws://localhost:3000/synnel' }),
+  transport: new WebSocketClientTransport({
+    url: 'ws://localhost:3000/synnel',
+  }),
 })
 
 function Root() {
@@ -95,7 +97,7 @@ function ChatRoom() {
   const chat = useChannel<{ text: string }>('chat', {
     onMessage: (data) => {
       console.log('Received:', data.text)
-    }
+    },
   })
 
   return (
@@ -114,19 +116,20 @@ Synnel enforces explicit channel creation. Channels must be created on the serve
 
 ```typescript
 // Server - Create channels explicitly
-const chat = await synnel.multicast('chat')       // ✅ Clients CAN join
-const notifications = synnel.broadcast()            // ✅ Clients CAN join
+const chat = await synnel.multicast('chat') // ✅ Clients CAN join
+const notifications = synnel.broadcast() // ✅ Clients CAN join
 // 'admin' NOT created                                   // ❌ Clients CANNOT join
 ```
 
 ```typescript
 // Client trying to join non-created channel
-await client.subscribe('admin')                     // ❌ ERROR: Channel not allowed
+await client.subscribe('admin') // ❌ ERROR: Channel not allowed
 ```
 
 ## 📡 Channel Types
 
 ### Multicast Channel
+
 Many-to-many messaging. All subscribers can send and receive messages.
 
 ```typescript
@@ -142,6 +145,7 @@ await chat.send(data, excludeClientId)
 ```
 
 ### Broadcast Channel
+
 Server-to-all messaging. Only the server can send; all clients receive.
 
 ```typescript
@@ -150,7 +154,7 @@ const notifications = synnel.broadcast<NotificationType>()
 // Send to all connected clients
 await notifications.send({
   type: 'info',
-  message: 'Server maintenance in 5 minutes'
+  message: 'Server maintenance in 5 minutes',
 })
 ```
 

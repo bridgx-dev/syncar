@@ -60,7 +60,9 @@ describe('Protocol', () => {
     })
 
     it('should include optional data', () => {
-      const message = createSignalMessage('chat', SignalType.SUBSCRIBE, { token: 'abc' })
+      const message = createSignalMessage('chat', SignalType.SUBSCRIBE, {
+        token: 'abc',
+      })
 
       expect(message.data).toEqual({ token: 'abc' })
     })
@@ -68,7 +70,10 @@ describe('Protocol', () => {
 
   describe('createErrorMessage', () => {
     it('should create a valid error message', () => {
-      const message = createErrorMessage('Something went wrong', ErrorCode.CHANNEL_NOT_FOUND)
+      const message = createErrorMessage(
+        'Something went wrong',
+        ErrorCode.CHANNEL_NOT_FOUND,
+      )
 
       expect(message.type).toBe(MessageType.ERROR)
       expect(message.data.message).toBe('Something went wrong')
@@ -76,7 +81,11 @@ describe('Protocol', () => {
     })
 
     it('should include optional channel', () => {
-      const message = createErrorMessage('Error', ErrorCode.INVALID_MESSAGE_TYPE, 'chat')
+      const message = createErrorMessage(
+        'Error',
+        ErrorCode.INVALID_MESSAGE_TYPE,
+        'chat',
+      )
 
       expect(message.channel).toBe('chat')
     })
@@ -85,7 +94,10 @@ describe('Protocol', () => {
   describe('Type Guards', () => {
     it('isDataMessage should correctly identify data messages', () => {
       const dataMessage: Message = createDataMessage('chat', { text: 'hello' })
-      const signalMessage: Message = createSignalMessage('chat', SignalType.PING)
+      const signalMessage: Message = createSignalMessage(
+        'chat',
+        SignalType.PING,
+      )
 
       expect(isDataMessage(dataMessage)).toBe(true)
       expect(isDataMessage(signalMessage)).toBe(false)
@@ -93,7 +105,10 @@ describe('Protocol', () => {
 
     it('isSignalMessage should correctly identify signal messages', () => {
       const dataMessage: Message = createDataMessage('chat', { text: 'hello' })
-      const signalMessage: Message = createSignalMessage('chat', SignalType.PING)
+      const signalMessage: Message = createSignalMessage(
+        'chat',
+        SignalType.PING,
+      )
 
       expect(isSignalMessage(dataMessage)).toBe(false)
       expect(isSignalMessage(signalMessage)).toBe(true)

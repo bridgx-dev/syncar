@@ -12,7 +12,10 @@ export default function Notifications({ notifications }: NotificationsProps) {
   return (
     <div className="notifications">
       {notifications.map((notification) => (
-        <div key={notification.id} className={`notification ${notification.type}`}>
+        <div
+          key={notification.id}
+          className={`notification ${notification.type}`}
+        >
           {notification.message}
         </div>
       ))}

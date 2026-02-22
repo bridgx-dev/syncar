@@ -14,7 +14,9 @@ export type Notification = {
 
 // Create client outside component to prevent multiple instances in React StrictMode
 const client = createSynnelClient({
-  transport: new WebSocketClientTransport({ url: 'ws://localhost:3001/synnel' }),
+  transport: new WebSocketClientTransport({
+    url: 'ws://localhost:3001/synnel',
+  }),
   autoConnect: true,
 })
 

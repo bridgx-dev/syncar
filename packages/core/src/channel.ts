@@ -102,8 +102,10 @@ export class Channel<T = unknown> {
    * Check if channel is full
    */
   isFull(): boolean {
-    return this.options.maxSubscribers > 0
-      && this.subscribers.size >= this.options.maxSubscribers
+    return (
+      this.options.maxSubscribers > 0 &&
+      this.subscribers.size >= this.options.maxSubscribers
+    )
   }
 
   /**
@@ -191,7 +193,10 @@ export class Channel<T = unknown> {
   /**
    * Create a reserved channel
    */
-  static createReserved(name: ChannelName, options?: Omit<ChannelOptions, 'reserved'>): Channel {
+  static createReserved(
+    name: ChannelName,
+    options?: Omit<ChannelOptions, 'reserved'>,
+  ): Channel {
     if (!Channel.isReservedName(name)) {
       throw new Error(`Reserved channel names must start with '__': ${name}`)
     }

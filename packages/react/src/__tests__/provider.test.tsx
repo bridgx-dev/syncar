@@ -11,7 +11,11 @@ import type { Transport, Message } from '@synnel/client'
 
 // Mock transport
 class MockTransport implements Transport {
-  public _status: 'disconnected' | 'connecting' | 'connected' | 'disconnecting' = 'disconnected'
+  public _status:
+    | 'disconnected'
+    | 'connecting'
+    | 'connected'
+    | 'disconnecting' = 'disconnected'
   public eventHandlers: Map<string, Set<(...args: any[]) => void>> = new Map()
 
   get status() {
@@ -59,7 +63,10 @@ class MockTransport implements Transport {
   }
 
   getConnectionInfo() {
-    return { connectedAt: this._status === 'connected' ? Date.now() : undefined, url: 'ws://localhost:3000' }
+    return {
+      connectedAt: this._status === 'connected' ? Date.now() : undefined,
+      url: 'ws://localhost:3000',
+    }
   }
 }
 
@@ -95,7 +102,9 @@ describe('SynnelProvider', () => {
     it('should provide client to children', () => {
       function TestComponent() {
         const retrievedClient = useSynnelClient()
-        return <div data-testid="client-id">{retrievedClient.getStats().id}</div>
+        return (
+          <div data-testid="client-id">{retrievedClient.getStats().id}</div>
+        )
       }
 
       const { getByTestId } = render(
@@ -115,7 +124,9 @@ describe('SynnelProvider', () => {
       function TestComponent() {
         renderCount++
         const retrievedClient = useSynnelClient()
-        return <div data-testid="client-id">{retrievedClient.getStats().id}</div>
+        return (
+          <div data-testid="client-id">{retrievedClient.getStats().id}</div>
+        )
       }
 
       render(

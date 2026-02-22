@@ -21,8 +21,10 @@ import type { Message } from '@synnel/core'
 export class WebSocketClientTransport implements Transport {
   private ws: WebSocket | null = null
   private _status: TransportStatus = 'disconnected'
-  private eventHandlers: Map<TransportEventType, Set<TransportEventMap[TransportEventType]>> =
-    new Map()
+  private eventHandlers: Map<
+    TransportEventType,
+    Set<TransportEventMap[TransportEventType]>
+  > = new Map()
   private reconnectionState: ReconnectionState = {
     attempts: 0,
     currentDelay: 0,
@@ -207,7 +209,10 @@ export class WebSocketClientTransport implements Transport {
             const message = JSON.parse(event.data) as Message
             this.emit('message', message)
           } catch (error) {
-            this.emit('error', new Error(`Failed to parse message: ${event.data}`))
+            this.emit(
+              'error',
+              new Error(`Failed to parse message: ${event.data}`),
+            )
           }
         }
 
@@ -320,6 +325,8 @@ export class WebSocketClientTransport implements Transport {
 /**
  * Factory function to create a WebSocket client transport
  */
-export function createWebSocketClientTransport(config: TransportConfig): Transport {
+export function createWebSocketClientTransport(
+  config: TransportConfig,
+): Transport {
   return new WebSocketClientTransport(config)
 }

@@ -268,7 +268,11 @@ export interface ChannelTransport<T = unknown> {
    * Register a handler for incoming messages on this channel
    */
   onMessage(
-    handler: (data: T, client: ServerClient, message: DataMessage<T>) => void | Promise<void>,
+    handler: (
+      data: T,
+      client: ServerClient,
+      message: DataMessage<T>,
+    ) => void | Promise<void>,
   ): () => void
 
   /**
@@ -283,7 +287,11 @@ export interface ChannelTransport<T = unknown> {
    * ```
    */
   receive(
-    handler: (data: T, client: ServerClient, message: DataMessage<T>) => void | Promise<void>,
+    handler: (
+      data: T,
+      client: ServerClient,
+      message: DataMessage<T>,
+    ) => void | Promise<void>,
   ): () => void
 
   /**
@@ -330,7 +338,11 @@ export interface BroadcastTransport<T = unknown> {
    * Register a handler for incoming broadcast messages
    */
   onMessage(
-    handler: (data: T, client: ServerClient, message: DataMessage<T>) => void | Promise<void>,
+    handler: (
+      data: T,
+      client: ServerClient,
+      message: DataMessage<T>,
+    ) => void | Promise<void>,
   ): () => void
 }
 
@@ -390,7 +402,13 @@ export interface ChannelState<T = unknown> {
   /**
    * Message handlers
    */
-  messageHandlers: Set<(data: T, client: ServerClient, message: DataMessage<T>) => void | Promise<void>>
+  messageHandlers: Set<
+    (
+      data: T,
+      client: ServerClient,
+      message: DataMessage<T>,
+    ) => void | Promise<void>
+  >
 
   /**
    * Subscribe handlers

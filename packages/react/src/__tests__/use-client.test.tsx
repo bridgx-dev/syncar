@@ -11,7 +11,11 @@ import type { Transport } from '@synnel/client'
 
 // Mock transport
 class MockTransport implements Transport {
-  public _status: 'disconnected' | 'connecting' | 'connected' | 'disconnecting' = 'disconnected'
+  public _status:
+    | 'disconnected'
+    | 'connecting'
+    | 'connected'
+    | 'disconnecting' = 'disconnected'
   public eventHandlers: Map<string, Set<(...args: any[]) => void>> = new Map()
 
   get status() {
@@ -59,7 +63,10 @@ class MockTransport implements Transport {
   }
 
   getConnectionInfo() {
-    return { connectedAt: this._status === 'connected' ? Date.now() : undefined, url: 'ws://localhost:3000' }
+    return {
+      connectedAt: this._status === 'connected' ? Date.now() : undefined,
+      url: 'ws://localhost:3000',
+    }
   }
 }
 
@@ -148,10 +155,13 @@ describe('useSynnelClient', () => {
     it('should trigger re-render on status change', async () => {
       let renderCount = 0
 
-      const { result } = renderHook(() => {
-        renderCount++
-        return useSynnelClient()
-      }, { wrapper: wrapper(client) })
+      const { result } = renderHook(
+        () => {
+          renderCount++
+          return useSynnelClient()
+        },
+        { wrapper: wrapper(client) },
+      )
 
       const initialRenderCount = renderCount
 
@@ -166,18 +176,25 @@ describe('useSynnelClient', () => {
     it('should handle Strict Mode double-invocation', () => {
       let renderCount = 0
 
-      renderHook(() => {
-        renderCount++
-        return useSynnelClient()
-      }, {
-        wrapper: function StrictModeWrapper({ children }: { children: React.ReactNode }) {
-          return (
-            <StrictMode>
-              <SynnelProvider client={client}>{children}</SynnelProvider>
-            </StrictMode>
-          )
+      renderHook(
+        () => {
+          renderCount++
+          return useSynnelClient()
         },
-      })
+        {
+          wrapper: function StrictModeWrapper({
+            children,
+          }: {
+            children: React.ReactNode
+          }) {
+            return (
+              <StrictMode>
+                <SynnelProvider client={client}>{children}</SynnelProvider>
+              </StrictMode>
+            )
+          },
+        },
+      )
 
       // In Strict Mode, effects run twice but component should still work
       expect(renderCount).toBeGreaterThan(0)

@@ -98,15 +98,19 @@ await client.disconnect()
 Subscribe to a channel.
 
 ```typescript
-const subscription = await client.subscribe('chat', {
-  onMessage: (msg) => console.log(msg.data),
-  onSubscribed: () => console.log('Subscribed'),
-  onUnsubscribed: () => console.log('Unsubscribed'),
-  onError: (err) => console.error(err),
-}, {
-  autoResubscribe: true, // Re-subscribe after reconnection
-  data: { token: 'abc' }, // Data sent with subscribe message
-})
+const subscription = await client.subscribe(
+  'chat',
+  {
+    onMessage: (msg) => console.log(msg.data),
+    onSubscribed: () => console.log('Subscribed'),
+    onUnsubscribed: () => console.log('Unsubscribed'),
+    onError: (err) => console.error(err),
+  },
+  {
+    autoResubscribe: true, // Re-subscribe after reconnection
+    data: { token: 'abc' }, // Data sent with subscribe message
+  },
+)
 ```
 
 #### `unsubscribe(channel): Promise<void>`
@@ -165,6 +169,7 @@ unsubscribe()
 ```
 
 **Events:**
+
 - `connecting` - Client is connecting
 - `connected` - Client connected
 - `disconnected` - Client disconnected
@@ -276,7 +281,8 @@ await client.connect()
 
 await client.subscribe('chat', {
   onMessage: (msg) => {
-    document.getElementById('messages').innerHTML += `<div>${msg.data.text}</div>`
+    document.getElementById('messages').innerHTML +=
+      `<div>${msg.data.text}</div>`
   },
 })
 

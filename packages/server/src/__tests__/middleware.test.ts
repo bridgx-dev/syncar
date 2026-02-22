@@ -155,9 +155,9 @@ describe('MiddlewareManager', () => {
         reject('Not allowed')
       })
 
-      await expect(manager.executeConnection(mockClient, 'connect')).rejects.toThrow(
-        MiddlewareRejectionError,
-      )
+      await expect(
+        manager.executeConnection(mockClient, 'connect'),
+      ).rejects.toThrow(MiddlewareRejectionError)
     })
 
     it('should provide rejection reason', async () => {
@@ -276,9 +276,9 @@ describe('Middleware Factories', () => {
       const manager = new MiddlewareManager()
       manager.use(middleware)
 
-      await expect(manager.executeConnection(mockClient, 'connect')).rejects.toThrow(
-        'Authentication failed'
-      )
+      await expect(
+        manager.executeConnection(mockClient, 'connect'),
+      ).rejects.toThrow('Authentication failed')
     })
   })
 
@@ -295,7 +295,9 @@ describe('Middleware Factories', () => {
 
       manager.executeConnection(mockClient, 'connect')
 
-      expect(logger).toHaveBeenCalledWith(expect.stringContaining('Client connected'))
+      expect(logger).toHaveBeenCalledWith(
+        expect.stringContaining('Client connected'),
+      )
     })
 
     it('should log messages when enabled', () => {
@@ -336,7 +338,9 @@ describe('Middleware Factories', () => {
 
       manager.executeSubscribe(mockClient, 'chat')
 
-      expect(logger).toHaveBeenCalledWith(expect.stringContaining('subscribed to chat'))
+      expect(logger).toHaveBeenCalledWith(
+        expect.stringContaining('subscribed to chat'),
+      )
     })
   })
 
@@ -389,13 +393,18 @@ describe('Middleware Factories', () => {
       }
 
       // 4th message should be rejected
-      await expect(manager.executeMessage(mockClient, message)).rejects.toThrow('Rate limit exceeded')
+      await expect(manager.executeMessage(mockClient, message)).rejects.toThrow(
+        'Rate limit exceeded',
+      )
     })
   })
 
   describe('createChannelWhitelistMiddleware', () => {
     it('should allow whitelisted channels', async () => {
-      const middleware = createChannelWhitelistMiddleware(['chat', 'notifications'])
+      const middleware = createChannelWhitelistMiddleware([
+        'chat',
+        'notifications',
+      ])
 
       const manager = new MiddlewareManager()
       manager.use(middleware)
@@ -405,18 +414,24 @@ describe('Middleware Factories', () => {
     })
 
     it('should reject non-whitelisted channels', async () => {
-      const middleware = createChannelWhitelistMiddleware(['chat', 'notifications'])
+      const middleware = createChannelWhitelistMiddleware([
+        'chat',
+        'notifications',
+      ])
 
       const manager = new MiddlewareManager()
       manager.use(middleware)
 
-      await expect(manager.executeSubscribe(mockClient, 'random')).rejects.toThrow(
-        "Channel 'random' is not allowed",
-      )
+      await expect(
+        manager.executeSubscribe(mockClient, 'random'),
+      ).rejects.toThrow("Channel 'random' is not allowed")
     })
 
     it('should allow messages to whitelisted channels', async () => {
-      const middleware = createChannelWhitelistMiddleware(['chat', 'notifications'])
+      const middleware = createChannelWhitelistMiddleware([
+        'chat',
+        'notifications',
+      ])
 
       const message: DataMessage = {
         id: 'msg-1',
@@ -434,7 +449,10 @@ describe('Middleware Factories', () => {
     })
 
     it('should reject messages to non-whitelisted channels', async () => {
-      const middleware = createChannelWhitelistMiddleware(['chat', 'notifications'])
+      const middleware = createChannelWhitelistMiddleware([
+        'chat',
+        'notifications',
+      ])
 
       const message: DataMessage = {
         id: 'msg-1',

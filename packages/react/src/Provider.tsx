@@ -30,6 +30,13 @@ import type { SynnelProviderProps } from './types.js'
  * }
  * ```
  */
-export function SynnelProvider({ client, children }: SynnelProviderProps): ReactNode {
-  return <SynnelContext.Provider value={{ client }}>{children}</SynnelContext.Provider>
+export function SynnelProvider({
+  client,
+  children,
+}: SynnelProviderProps): ReactNode {
+  return (
+    <SynnelContext.Provider value={{ client }}>
+      {children}
+    </SynnelContext.Provider>
+  )
 }

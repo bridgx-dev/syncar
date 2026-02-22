@@ -35,7 +35,10 @@ interface ServerConnection {
  * Implements the ServerTransport interface using the ws library
  * Operates purely as a bound listener onto an externally provided HTTP server
  */
-export class WebSocketServerTransport extends EventEmitter implements ServerTransport {
+export class WebSocketServerTransport
+  extends EventEmitter
+  implements ServerTransport
+{
   private wsServer: WSWebSocketServer
   private connections: Map<string, ServerConnection> = new Map()
   private pingInterval: ReturnType<typeof setInterval> | null = null
