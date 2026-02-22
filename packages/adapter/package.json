@@ -1,5 +1,5 @@
 {
-  "name": "@synnel/adapter-ws",
+  "name": "@synnel/adapter",
   "version": "1.0.0-alpha.1",
   "description": "WebSocket transport adapter for Synnel",
   "type": "module",
@@ -9,15 +9,18 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./src/index.ts"
     },
     "./client": {
       "types": "./dist/client.d.ts",
-      "import": "./dist/client.js"
+      "import": "./dist/client.js",
+      "default": "./src/client.ts"
     },
     "./server": {
       "types": "./dist/server.d.ts",
-      "import": "./dist/server.js"
+      "import": "./dist/server.js",
+      "default": "./src/server.ts"
     }
   },
   "files": [

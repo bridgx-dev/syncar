@@ -21,7 +21,7 @@
     "paths": {
       "@synnel/core": ["../../packages/core/src/index.ts"],
       "@synnel/client": ["../../packages/client/src/index.ts"],
-      "@synnel/adapter-ws": ["../../packages/adapter-ws/src/index.ts"],
+      "@synnel/adapter": ["../../packages/adapter/src/index.ts"],
       "@synnel/react": ["../../packages/react/src/index.ts"],
       "@synnel/server": ["../../packages/server/src/index.ts"]
     }
@@ -30,7 +30,7 @@
   "references": [
     { "path": "../../packages/core" },
     { "path": "../../packages/client" },
-    { "path": "../../packages/adapter-ws" },
+    { "path": "../../packages/adapter" },
     { "path": "../../packages/react" },
     { "path": "../../packages/server" }
   ]

@@ -1,4 +1,4 @@
-# @synnel/adapter-ws
+# @synnel/adapter
 
 WebSocket transport adapter for Synnel v2. Provides client and server WebSocket implementations using the native WebSocket API (browser) and the `ws` library (Node.js).
 
@@ -9,11 +9,11 @@ This package implements the `Transport` and `ServerTransport` interfaces from `@
 ## Installation
 
 ```bash
-npm install @synnel/adapter-ws
+npm install @synnel/adapter
 # or
-pnpm add @synnel/adapter-ws
+pnpm add @synnel/adapter
 # or
-yarn add @synnel/adapter-ws
+yarn add @synnel/adapter
 ```
 
 **Peer Dependencies:**
@@ -25,7 +25,7 @@ yarn add @synnel/adapter-ws
 ### Client-Side
 
 ```typescript
-import { createWebSocketClientTransport } from '@synnel/adapter-ws/client'
+import { createWebSocketClientTransport } from '@synnel/adapter/client'
 import { createSynnelClient } from '@synnel/client'
 
 const transport = createWebSocketClientTransport({
@@ -40,7 +40,7 @@ await client.connect()
 ### Server-Side (Standalone)
 
 ```typescript
-import { createWebSocketServerTransport } from '@synnel/adapter-ws/server'
+import { createWebSocketServerTransport } from '@synnel/adapter/server'
 import { createSynnelServer } from '@synnel/server'
 
 const transport = createWebSocketServerTransport({
@@ -57,7 +57,7 @@ await server.start()
 ```typescript
 import express from 'express'
 import { createServer } from 'http'
-import { createWebSocketServerTransport } from '@synnel/adapter-ws/server'
+import { createWebSocketServerTransport } from '@synnel/adapter/server'
 
 const app = express()
 const httpServer = createServer(app)
@@ -82,7 +82,7 @@ app.get('/api', (req, res) => res.json({ status: 'ok' }))
 
 ```typescript
 import Fastify from 'fastify'
-import { createWebSocketServerTransport } from '@synnel/adapter-ws/server'
+import { createWebSocketServerTransport } from '@synnel/adapter/server'
 
 const fastify = Fastify()
 
@@ -106,7 +106,7 @@ await transport.start()
 Creates a new WebSocket client transport.
 
 ```typescript
-import { createWebSocketClientTransport } from '@synnel/adapter-ws/client'
+import { createWebSocketClientTransport } from '@synnel/adapter/client'
 
 const transport = createWebSocketClientTransport({
   url: 'ws://localhost:3000',
@@ -153,7 +153,7 @@ const transport = createWebSocketClientTransport({
 Creates a new WebSocket server transport.
 
 ```typescript
-import { createWebSocketServerTransport } from '@synnel/adapter-ws/server'
+import { createWebSocketServerTransport } from '@synnel/adapter/server'
 
 const server = createWebSocketServerTransport({
   port: 3000,
@@ -205,7 +205,7 @@ const server = createWebSocketServerTransport({
 
 ```typescript
 // For testing or custom implementations
-import { createWebSocketClientTransport } from '@synnel/adapter-ws/client'
+import { createWebSocketClientTransport } from '@synnel/adapter/client'
 
 class CustomWebSocket extends WebSocket {
   // Custom implementation
@@ -220,7 +220,7 @@ const transport = createWebSocketClientTransport({
 ### Event Handling
 
 ```typescript
-import { createWebSocketServerTransport } from '@synnel/adapter-ws/server'
+import { createWebSocketServerTransport } from '@synnel/adapter/server'
 
 const server = createWebSocketServerTransport({ port: 3000 })
 

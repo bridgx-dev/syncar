@@ -15,8 +15,8 @@ import type {
 } from './types.js'
 import type { Message, DataMessage, ChannelName, SignalType } from '@synnel/core'
 import { MessageType, SignalType as CoreSignalType } from '@synnel/core'
-import type { ServerTransport } from '@synnel/adapter-ws'
-import { WebSocketServerTransport } from '@synnel/adapter-ws'
+import type { ServerTransport } from '@synnel/adapter'
+import { WebSocketServerTransport } from '@synnel/adapter'
 import { ClientRegistry } from './client-registry.js'
 import { MiddlewareManager, MiddlewareRejectionError } from './middleware.js'
 // Import ChannelTransportImpl at the bottom to avoid circular dependency

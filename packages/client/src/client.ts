@@ -56,6 +56,12 @@ export class SynnelClient {
 
     // Set up connection manager handlers
     this.setupConnectionManagerHandlers()
+
+    // Handle auto-connect
+    if (config.autoConnect) {
+      // Background connect, errors are handled by ConnectionManager
+      void this.connect().catch(() => { })
+    }
   }
 
   /**
@@ -403,7 +409,7 @@ export class SynnelClient {
     if (handlers) {
       for (const handler of handlers) {
         try {
-          ;(handler as any)(...args)
+          ; (handler as any)(...args)
         } catch (error) {
           console.error(`Error in ${event} handler:`, error)
         }

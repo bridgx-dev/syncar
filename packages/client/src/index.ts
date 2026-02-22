@@ -6,7 +6,7 @@
  * @example
  * ```ts
  * import { createSynnelClient, createWebSocketClientTransport } from '@synnel/client'
- * import { createWebSocketClientTransport } from '@synnel/adapter-ws/client'
+ * import { createWebSocketClientTransport } from '@synnel/adapter/client'
  *
  * const transport = createWebSocketClientTransport({
  *   url: 'ws://localhost:3000',

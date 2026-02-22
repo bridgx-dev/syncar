@@ -15,18 +15,18 @@ This package provides a framework-agnostic client for real-time pub/sub communic
 ## Installation
 
 ```bash
-npm install @synnel/client-v2 @synnel/adapter-ws-v2
+npm install @synnel/client-v2 @synnel/adapter
 # or
-pnpm add @synnel/client-v2 @synnel/adapter-ws-v2
+pnpm add @synnel/client-v2 @synnel/adapter
 # or
-yarn add @synnel/client-v2 @synnel/adapter-ws-v2
+yarn add @synnel/client-v2 @synnel/adapter
 ```
 
 ## Quick Start
 
 ```typescript
 import { createSynnelClient } from '@synnel/client-v2'
-import { createWebSocketClientTransport } from '@synnel/adapter-ws-v2/client'
+import { createWebSocketClientTransport } from '@synnel/adapter/client'
 
 // Create transport
 const transport = createWebSocketClientTransport({
@@ -264,7 +264,7 @@ const info = subscription.getInfo()
 
 ```javascript
 import { createSynnelClient } from '@synnel/client-v2'
-import { createWebSocketClientTransport } from '@synnel/adapter-ws-v2/client'
+import { createWebSocketClientTransport } from '@synnel/adapter/client'
 
 const transport = createWebSocketClientTransport({
   url: 'ws://localhost:3000',
@@ -293,7 +293,7 @@ document.getElementById('send').onclick = async () => {
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
 import { createSynnelClient } from '@synnel/client-v2'
-import { createWebSocketClientTransport } from '@synnel/adapter-ws-v2/client'
+import { createWebSocketClientTransport } from '@synnel/adapter/client'
 
 const messages = ref([])
 
@@ -330,7 +330,7 @@ const sendMessage = async () => {
 <script>
 import { onMount, onDestroy } from 'svelte'
 import { createSynnelClient } from '@synnel/client-v2'
-import { createWebSocketClientTransport } from '@synnel/adapter-ws-v2/client'
+import { createWebSocketClientTransport } from '@synnel/adapter/client'
 
 let messages = []
 let client

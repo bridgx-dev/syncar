@@ -15,7 +15,7 @@ import type { SynnelProviderProps } from './types.js'
  * ```tsx
  * import { SynnelProvider } from '@synnel/react'
  * import { createSynnelClient } from '@synnel/client'
- * import { WebSocketTransport } from '@synnel/adapter-ws'
+ * import { WebSocketTransport } from '@synnel/adapter'
  *
  * const client = createSynnelClient({
  *   transport: new WebSocketTransport({ url: 'ws://localhost:3000' })

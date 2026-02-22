@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { SynnelProvider } from '@synnel/react'
 import { createSynnelClient } from '@synnel/client'
-import { WebSocketClientTransport } from '@synnel/adapter-ws'
+import { WebSocketClientTransport } from '@synnel/adapter'
 import Login from './components/Login'
 import Chat from './components/Chat'
 import Notifications from './components/Notifications'
@@ -11,6 +11,12 @@ export type Notification = {
   type: 'info' | 'success' | 'warning'
   message: string
 }
+
+// Create client outside component to prevent multiple instances in React StrictMode
+const client = createSynnelClient({
+  transport: new WebSocketClientTransport({ url: 'ws://localhost:3001/synnel' }),
+  autoConnect: true,
+})
 
 function App() {
   const [username, setUsername] = useState('')
@@ -29,16 +35,6 @@ function App() {
     setUsername(name)
     setIsLoggedIn(true)
   }
-
-  // Create client
-  const client = useMemo(
-    () =>
-      createSynnelClient({
-        transport: new WebSocketClientTransport({ url: 'ws://localhost:3001' }),
-        autoConnect: true,
-      }),
-    [],
-  )
 
   return (
     <SynnelProvider client={client}>

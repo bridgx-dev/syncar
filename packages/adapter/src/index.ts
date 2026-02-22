@@ -1,12 +1,12 @@
 /**
- * @synnel/adapter-ws
+ * @synnel/adapter
  *
  * WebSocket transport adapter for Synnel v2
  *
  * @example
  * ```ts
  * // Client-side
- * import { createWebSocketClientTransport } from '@synnel/adapter-ws/client'
+ * import { createWebSocketClientTransport } from '@synnel/adapter/client'
  *
  * const transport = createWebSocketClientTransport({
  *   url: 'ws://localhost:3000',
@@ -19,7 +19,7 @@
  * @example
  * ```ts
  * // Server-side (standalone)
- * import { createWebSocketServerTransport } from '@synnel/adapter-ws/server'
+ * import { createWebSocketServerTransport } from '@synnel/adapter/server'
  *
  * const server = createWebSocketServerTransport({
  *   port: 3000,
@@ -34,7 +34,7 @@
  * // Server-side (attached to Express)
  * import express from 'express'
  * import { createServer } from 'http'
- * import { createWebSocketServerTransport } from '@synnel/adapter-ws/server'
+ * import { createWebSocketServerTransport } from '@synnel/adapter/server'
  *
  * const app = express()
  * const httpServer = createServer(app)

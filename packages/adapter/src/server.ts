@@ -311,9 +311,7 @@ export class WebSocketServerTransport implements ServerTransport {
     this.connections.set(clientId, connection)
 
     // Set up ping timeout for this client
-    if (this.config.enablePing) {
-      this.setupClientPingTimeout(clientId)
-    }
+    // (We only start the timeout when we actually send a ping)
 
     // Handle incoming messages
     ws.on('message', (data: Buffer) => {
@@ -353,10 +351,11 @@ export class WebSocketServerTransport implements ServerTransport {
       const conn = this.connections.get(clientId)
       if (conn) {
         conn.info.lastPingAt = Date.now()
+        // Client sent a pong, they're alive. Cancel their death timer!
         if (conn.pingTimeout) {
           clearTimeout(conn.pingTimeout)
+          conn.pingTimeout = undefined
         }
-        this.setupClientPingTimeout(clientId)
       }
     })
 
@@ -372,6 +371,8 @@ export class WebSocketServerTransport implements ServerTransport {
       for (const [clientId, conn] of this.connections) {
         if (conn.ws.readyState === WebSocket.OPEN) {
           conn.ws.ping()
+          // Start the death timer *after* sending the ping
+          this.setupClientPingTimeout(clientId)
         }
       }
     }, this.config.pingInterval)
@@ -414,7 +415,7 @@ export class WebSocketServerTransport implements ServerTransport {
     if (handlers) {
       for (const handler of handlers) {
         try {
-          ;(handler as any)(...args)
+          ; (handler as any)(...args)
         } catch (error) {
           console.error(`Error in ${event} handler:`, error)
         }

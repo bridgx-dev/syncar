@@ -4,7 +4,7 @@
  */
 
 import type { Message, DataMessage, ChannelName } from '@synnel/core'
-import type { ServerTransport, ClientConnection } from '@synnel/adapter-ws'
+import type { ServerTransport, ClientConnection } from '@synnel/adapter'
 
 /**
  * Server configuration options

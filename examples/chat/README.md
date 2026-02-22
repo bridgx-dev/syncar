@@ -17,14 +17,14 @@ A full-stack chat application demonstrating the Synnel v2 real-time messaging fr
 
 ### Server
 - `@synnel/server-v2` - WebSocket server
-- `@synnel/adapter-ws-v2` - WebSocket transport
+- `@synnel/adapter` - WebSocket transport
 - `@synnel/core-v2` - Core types and protocols
 - Node.js + TypeScript
 
 ### Client
 - `@synnel/react-v2` - React hooks and provider
 - `@synnel/client-v2` - Core client
-- `@synnel/adapter-ws-v2` - WebSocket transport
+- `@synnel/adapter` - WebSocket transport
 - React 19 + Vite
 
 ## Project Structure

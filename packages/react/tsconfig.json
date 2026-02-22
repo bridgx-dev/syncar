@@ -11,7 +11,7 @@
     "paths": {
       "@synnel/core": ["../core/src"],
       "@synnel/client": ["../client/src"],
-      "@synnel/adapter-ws": ["../adapter-ws/src"]
+      "@synnel/adapter": ["../adapter/src"]
     }
   },
   "include": ["src/**/*"],
@@ -19,6 +19,6 @@
   "references": [
     { "path": "../core" },
     { "path": "../client" },
-    { "path": "../adapter-ws" }
+    { "path": "../adapter" }
   ]
 }

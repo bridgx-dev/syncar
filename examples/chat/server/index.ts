@@ -14,7 +14,7 @@ import {
   createLoggingMiddleware,
   createRateLimitMiddleware,
 } from '@synnel/server'
-import { WebSocketServerTransport } from '@synnel/adapter-ws'
+import { WebSocketServerTransport } from '@synnel/adapter'
 import { MessageType } from '@synnel/core'
 
 // Message types

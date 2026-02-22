@@ -5,7 +5,7 @@
 
 import type { ServerClient } from './types.js'
 import type { ChannelName, Message } from '@synnel/core'
-import type { ServerTransport, ClientConnection } from '@synnel/adapter-ws'
+import type { ServerTransport, ClientConnection } from '@synnel/adapter'
 
 /**
  * Internal client data structure
