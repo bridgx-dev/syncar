@@ -6,10 +6,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSynnelClient } from './use-client.js'
-import type {
-  UseBroadcastOptions,
-  UseBroadcastReturn,
-} from './types.js'
+import type { UseBroadcastOptions, UseBroadcastReturn } from './types.js'
 import type { Message, DataMessage } from '@synnel/core-v2'
 
 /**
@@ -133,11 +130,25 @@ export function useBroadcast<T = unknown>(
     [client, enabled],
   )
 
+  // Register a message handler
+  const onMessage = useCallback(
+    (handler: (data: T, message: DataMessage<T>) => void) => {
+      return client.on('message', (message: Message) => {
+        if (message.type === 'data' && message.channel === BROADCAST_CHANNEL) {
+          const dataMessage = message as DataMessage<T>
+          handler(dataMessage.data, dataMessage)
+        }
+      })
+    },
+    [client],
+  )
+
   return {
     status: client.status,
     isConnected: client.status === 'connected',
     data,
     error,
     broadcast,
+    onMessage,
   }
 }

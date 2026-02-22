@@ -40,7 +40,7 @@ export { SynnelClient, createSynnelClient } from './client.js'
 export { ConnectionManager } from './connection-manager.js'
 
 // Channel subscription
-export { ChannelSubscriptionImpl as ChannelSubscription } from './channel-subscription.js'
+export { ChannelSubscriptionImpl } from './channel-subscription.js'
 
 // Types
 export type {
@@ -59,7 +59,7 @@ export type {
   ClientEventMap,
 
   // Interfaces
-  ChannelSubscription as IChannelSubscription,
+  ChannelSubscription,
   MessageHandler,
   MessageFilter,
 

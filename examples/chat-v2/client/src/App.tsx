@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { SynnelProvider } from '@synnel/react-v2'
+import { createSynnelClient } from '@synnel/client-v2'
 import { WebSocketClientTransport } from '@synnel/adapter-ws-v2'
 import Login from './components/Login'
 import Chat from './components/Chat'
@@ -29,11 +30,17 @@ function App() {
     setIsLoggedIn(true)
   }
 
-  // Create client transport
-  const transport = new WebSocketClientTransport({ url: 'ws://localhost:3001' })
+  // Create client
+  const client = useMemo(
+    () =>
+      createSynnelClient({
+        transport: new WebSocketClientTransport({ url: 'ws://localhost:3001' }),
+      }),
+    [],
+  )
 
   return (
-    <SynnelProvider transport={transport}>
+    <SynnelProvider client={client}>
       <div className="app">
         <Notifications notifications={notifications} />
 

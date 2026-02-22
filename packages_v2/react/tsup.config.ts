@@ -7,6 +7,5 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   target: 'es2022',
-  jsx: 'automatic',
   external: ['react', 'react-dom', '@synnel/client-v2'],
 })

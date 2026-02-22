@@ -41,7 +41,7 @@ export default function Chat({ username, onNotification }: ChatProps) {
 
   // Handle incoming chat messages
   useEffect(() => {
-    const unsubscribe = chat.onMessage((data, message) => {
+    const unsubscribe = chat.onMessage((data, _message) => {
       setMessages((prev) => [...prev, data])
     })
     return unsubscribe

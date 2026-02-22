@@ -3,8 +3,25 @@
  * Framework-agnostic real-time synchronization client
  */
 
-import { generateMessageId, createDataMessage, MessageType, SignalType, type Message, type DataMessage, type ChannelName } from '@synnel/core-v2'
-import type { ClientConfig, ClientStatus, ClientEventType, ClientEventMap, ChannelSubscription, SubscribeOptions, SubscriptionCallbacks, ClientStats } from './types.js'
+import {
+  generateMessageId,
+  createDataMessage,
+  MessageType,
+  SignalType,
+  type Message,
+  type DataMessage,
+  type ChannelName,
+} from '@synnel/core-v2'
+import type {
+  ClientConfig,
+  ClientStatus,
+  ClientEventType,
+  ClientEventMap,
+  ChannelSubscription,
+  SubscribeOptions,
+  SubscriptionCallbacks,
+  ClientStats,
+} from './types.js'
 import { ConnectionManager } from './connection-manager.js'
 import { ChannelSubscriptionImpl } from './channel-subscription.js'
 
@@ -13,11 +30,14 @@ import { ChannelSubscriptionImpl } from './channel-subscription.js'
  * Main client class for real-time communication
  */
 export class SynnelClient {
-  private readonly id: string
+  public readonly id: string
   private connectionManager: ConnectionManager
   private subscriptions: Map<ChannelName, ChannelSubscriptionImpl> = new Map()
 
-  private eventHandlers: Map<ClientEventType, Set<ClientEventMap[ClientEventType]>> = new Map()
+  private eventHandlers: Map<
+    ClientEventType,
+    Set<ClientEventMap[ClientEventType]>
+  > = new Map()
 
   private messagesReceived = 0
   private messagesSent = 0
@@ -67,9 +87,9 @@ export class SynnelClient {
     callbacks?: SubscriptionCallbacks<T>,
     options?: SubscribeOptions,
   ): Promise<ChannelSubscription<T>> {
-    let subscription = this.subscriptions.get(
-      channel,
-    ) as ChannelSubscriptionImpl<T> | undefined
+    let subscription = this.subscriptions.get(channel) as
+      | ChannelSubscriptionImpl<T>
+      | undefined
 
     if (!subscription) {
       // Create new subscription
@@ -135,10 +155,7 @@ export class SynnelClient {
   /**
    * Publish a message to a channel
    */
-  async publish<T = unknown>(
-    channel: ChannelName,
-    data: T,
-  ): Promise<void> {
+  async publish<T = unknown>(channel: ChannelName, data: T): Promise<void> {
     const message = createDataMessage(channel, data)
     await this.send(message)
     this.messagesSent++
@@ -194,7 +211,9 @@ export class SynnelClient {
       messagesReceived: this.messagesReceived,
       messagesSent: this.messagesSent,
       reconnectAttempts: this.connectionManager.getReconnectionState().attempts,
-      connectedAt: this.connectionManager['config'].transport.getConnectionInfo?.()?.connectedAt,
+      connectedAt:
+        this.connectionManager['config'].transport.getConnectionInfo?.()
+          ?.connectedAt,
       channels: this.getSubscribedChannels(),
     }
   }
@@ -230,11 +249,14 @@ export class SynnelClient {
     this.transportUnsubs.push(unsubError)
 
     // Handle close
-    const unsubClose = transport.on('close', (event?: { code?: number; reason?: string }) => {
-      this.connectionManager.onTransportClose(event)
-      this.handleDisconnect()
-      this.emit('disconnected', event)
-    })
+    const unsubClose = transport.on(
+      'close',
+      (event?: { code?: number; reason?: string }) => {
+        this.connectionManager.onTransportClose(event)
+        this.handleDisconnect()
+        this.emit('disconnected', event)
+      },
+    )
     this.transportUnsubs.push(unsubClose)
   }
 
@@ -282,7 +304,9 @@ export class SynnelClient {
   /**
    * Handle signal message
    */
-  private handleSignalMessage(message: Message & { signal?: SignalType }): void {
+  private handleSignalMessage(
+    message: Message & { signal?: SignalType },
+  ): void {
     const { signal, channel } = message
 
     if (!signal || !channel) {
@@ -309,11 +333,17 @@ export class SynnelClient {
     const resubscribe = async () => {
       if (this.status === 'connected') {
         for (const subscription of this.subscriptions.values()) {
-          if (subscription.autoResubscribe && subscription.state === 'unsubscribed') {
+          if (
+            subscription.autoResubscribe &&
+            subscription.state === 'unsubscribed'
+          ) {
             try {
               await subscription.subscribe()
             } catch (error) {
-              console.error(`Failed to resubscribe to ${subscription.channel}:`, error)
+              console.error(
+                `Failed to resubscribe to ${subscription.channel}:`,
+                error,
+              )
             }
           }
         }

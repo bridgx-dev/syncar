@@ -5,6 +5,7 @@
 
 import type { SynnelClient, ClientStatus } from '@synnel/client-v2'
 import type { ChannelName, DataMessage } from '@synnel/core-v2'
+import type { ReactNode } from 'react'
 
 /**
  * Synnel React Context Value
@@ -48,7 +49,11 @@ export interface UseChannelState<T = unknown> {
   /**
    * Subscription state
    */
-  subscriptionState: 'unsubscribed' | 'subscribing' | 'subscribed' | 'unsubscribing'
+  subscriptionState:
+    | 'unsubscribed'
+    | 'subscribing'
+    | 'subscribed'
+    | 'unsubscribing'
 }
 
 /**
@@ -100,6 +105,13 @@ export interface UseChannelReturn<T = unknown> extends UseChannelState<T> {
    * Re-subscribe to the channel
    */
   resubscribe: () => Promise<void>
+
+  /**
+   * Register a message handler
+   * @param handler - Function to call when a message is received
+   * @returns Unsubscribe function
+   */
+  onMessage: (handler: (data: T, message: DataMessage<T>) => void) => () => void
 }
 
 /**
@@ -151,6 +163,12 @@ export interface UseBroadcastReturn<T = unknown> {
    * Broadcast data to all connected clients
    */
   broadcast: (data: T) => Promise<void>
+  /**
+   * Register a message handler
+   * @param handler - Function to call when a message is received
+   * @returns Unsubscribe function
+   */
+  onMessage: (handler: (data: T, message: DataMessage<T>) => void) => () => void
 }
 
 /**
@@ -165,7 +183,7 @@ export interface SynnelProviderProps {
   /**
    * React children
    */
-  children: React.ReactNode
+  children: ReactNode
 }
 
 /**
