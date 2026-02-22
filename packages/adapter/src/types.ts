@@ -3,6 +3,7 @@
  * WebSocket transport adapter types for Synnel v2
  */
 
+import type { WebSocket } from 'ws'
 import type { Message } from '@synnel/core'
 
 /**
@@ -184,6 +185,13 @@ export interface ClientConnection {
    * Custom metadata
    */
   metadata: Record<string, unknown>
+}
+
+/**
+ * Wrapper for WebSocket server connections
+ */
+export interface ServerConnection extends ClientConnection {
+  ws: InstanceType<typeof WebSocket>
 }
 
 /**

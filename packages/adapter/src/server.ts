@@ -8,7 +8,7 @@ import type {
   ServerTransportConfig,
   ServerTransportEventType,
   ServerTransportEventMap,
-  ClientConnection,
+  ServerConnection,
   CloseEvent,
 } from './types.js'
 import type { Message } from '@synnel/core'
@@ -20,14 +20,6 @@ declare module 'ws' {
   interface WebSocket {
     isAlive: boolean
   }
-}
-
-/**
- * Wrapper for WebSocket server connections
- */
-interface ServerConnection {
-  ws: InstanceType<typeof WebSocket>
-  info: ClientConnection
 }
 
 /**
@@ -122,12 +114,10 @@ export class WebSocketServerTransport
 
     const connection: ServerConnection = {
       ws,
-      info: {
-        id: clientId,
-        status: 'connected',
-        connectedAt: Date.now(),
-        metadata: {},
-      },
+      id: clientId,
+      status: 'connected',
+      connectedAt: Date.now(),
+      metadata: {},
     }
 
     this.connections.set(clientId, connection)
@@ -204,15 +194,15 @@ export class WebSocketServerTransport
   /**
    * Get all connected clients
    */
-  getClients(): ClientConnection[] {
-    return Array.from(this.connections.values()).map((conn) => conn.info)
+  getClients() {
+    return Array.from(this.connections.values())
   }
 
   /**
    * Get a specific client by ID
    */
-  getClient(clientId: string): ClientConnection | undefined {
-    return this.connections.get(clientId)?.info
+  getClient(clientId: string) {
+    return this.connections.get(clientId)
   }
 
   /**
