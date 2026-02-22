@@ -98,13 +98,20 @@ export default function Chat({ username, onNotification }: ChatProps) {
 
   const handleSend = () => {
     if (message.trim()) {
-      chat.send({
+      const newMessage: ChatMessage = {
         id: Date.now().toString(),
         type: 'message',
         text: message.trim(),
         user: username,
         timestamp: Date.now(),
-      })
+      }
+
+      // Send to server
+      chat.send(newMessage)
+
+      // Optimistic UI: Add user's own message immediately
+      setMessages((prev) => [...prev, newMessage])
+
       setMessage('')
     }
   }

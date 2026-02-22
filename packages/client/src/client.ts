@@ -273,6 +273,10 @@ export class SynnelClient {
     this.connectionManager.onStatusChange((status) => {
       if (status === 'connecting' || status === 'reconnecting') {
         this.emit('connecting')
+      } else if (status === 'connected') {
+        this.emit('connected')
+      } else if (status === 'disconnected') {
+        this.emit('disconnected')
       }
     })
 
