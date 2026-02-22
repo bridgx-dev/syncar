@@ -286,8 +286,6 @@ export class WebSocketServerTransport implements ServerTransport {
         clearTimeout(conn.pingTimeout)
       }
 
-      this.connections.delete(clientId)
-
       const closeEvent: CloseEvent = {
         wasClean: code === 1000,
         code,
@@ -295,6 +293,9 @@ export class WebSocketServerTransport implements ServerTransport {
       }
 
       this.emit('disconnection', clientId, closeEvent)
+
+      // Only delete AFTER emitting so the main server registry can retrieve the client object for cleanup
+      this.connections.delete(clientId)
     })
 
     // Handle connection errors

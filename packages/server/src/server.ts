@@ -66,6 +66,9 @@ export class SynnelServer {
       this.transport = new WebSocketServerTransport({
         server: config.server,
         path: '/synnel',
+        enablePing: config.enablePing ?? (config.pingInterval !== undefined ? true : true),
+        pingInterval: config.pingInterval ?? 5000,
+        pingTimeout: config.pingTimeout,
       })
     } else {
       // Create standalone HTTP server, then attach WebSocket transport to it
@@ -76,6 +79,9 @@ export class SynnelServer {
       this.transport = new WebSocketServerTransport({
         server: this.httpServer,
         path: '/synnel',
+        enablePing: config.enablePing ?? (config.pingInterval !== undefined ? true : true),
+        pingInterval: config.pingInterval ?? 5000,
+        pingTimeout: config.pingTimeout,
       })
     }
 
@@ -764,7 +770,7 @@ export class SynnelServer {
     if (handlers) {
       for (const handler of handlers) {
         try {
-          ;(handler as any)(...args)
+          ; (handler as any)(...args)
         } catch (error) {
           console.error(`Error in ${event} handler:`, error)
         }

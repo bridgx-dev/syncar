@@ -46,6 +46,25 @@ export interface ServerConfig {
   transport?: ServerTransport
 
   /**
+   * Enable WebSocket ping/pong messages to keep connections alive
+   * If `pingInterval` is set, this is automatically considered true
+   * @default true
+   */
+  enablePing?: boolean
+
+  /**
+   * Interval in milliseconds to send ping messages
+   * @default 5000
+   */
+  pingInterval?: number
+
+  /**
+   * Timeout in milliseconds to wait for a pong response before disconnecting
+   * @default 5000
+   */
+  pingTimeout?: number
+
+  /**
    * Middleware functions for processing messages and connections
    */
   middleware?: ServerMiddleware[]
