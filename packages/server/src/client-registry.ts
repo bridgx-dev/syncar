@@ -230,7 +230,13 @@ export class ClientRegistry {
     const self = this
 
     return {
-      ...connection,
+      // Include all properties from ClientConnection
+      id: connection.id,
+      status: connection.status,
+      connectedAt: connection.connectedAt,
+      lastPingAt: connection.lastPingAt,
+      metadata: connection.metadata,
+      // Add server-specific methods
       send: async (message: Message) => {
         await clientData.transport.sendToClient(clientData.id, message)
       },

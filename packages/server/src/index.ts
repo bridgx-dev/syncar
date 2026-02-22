@@ -6,6 +6,9 @@
 // Main server class and factory
 export { SynnelServer, createSynnelServer } from './server.js'
 
+// Synnel class alias for cleaner API
+export { SynnelServer as Synnel } from './server.js'
+
 // Middleware
 export {
   MiddlewareManager,

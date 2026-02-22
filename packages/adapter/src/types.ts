@@ -4,7 +4,6 @@
  */
 
 import type { Message } from '@synnel/core'
-import type { EventEmitter } from 'events'
 
 /**
  * Transport status
@@ -86,7 +85,6 @@ export interface TransportConfig {
 export interface ServerTransportConfig {
   /**
    * Existing HTTP server to attach WebSocket to
-   * If provided, port/host options are ignored
    * Works with Express, Fastify, plain Node.js http.Server, etc.
    *
    * @example
@@ -100,26 +98,11 @@ export interface ServerTransportConfig {
    * const transport = createWebSocketServerTransport({ server })
    * ```
    */
-  server?: {
-    /** The underlying HTTP server instance */
-    readonly server: unknown
-  }
-
-  /**
-   * Server port (only used if `server` option is not provided)
-   * @default 3000
-   */
-  port?: number
-
-  /**
-   * Server host (only used if `server` option is not provided)
-   * @default '0.0.0.0'
-   */
-  host?: string
+  server: unknown
 
   /**
    * Path for WebSocket connections
-   * @default '/synnel'
+   * If not provided, the WebSocket server will use its default path
    */
   path?: string
 
@@ -231,7 +214,10 @@ export interface Transport {
   /**
    * Register an event handler
    */
-  on<E extends TransportEventType>(event: E, handler: TransportEventMap[E]): () => void
+  on<E extends TransportEventType>(
+    event: E,
+    handler: TransportEventMap[E],
+  ): () => void
 
   /**
    * Get connection info
@@ -266,7 +252,11 @@ export interface ServerTransport {
   /**
    * Disconnect a specific client
    */
-  disconnectClient(clientId: string, code?: number, reason?: string): Promise<void>
+  disconnectClient(
+    clientId: string,
+    code?: number,
+    reason?: string,
+  ): Promise<void>
 
   /**
    * Get all connected clients
@@ -290,10 +280,7 @@ export interface ServerTransport {
    * Get server info
    */
   getServerInfo(): {
-    mode?: 'standalone' | 'attached'
-    port?: number
-    host?: string
-    path: string
+    path?: string
     startedAt?: number
   }
 }
@@ -306,7 +293,6 @@ export type ServerTransportEventType =
   | 'disconnection'
   | 'message'
   | 'error'
-  | 'listening'
 
 /**
  * Server transport event map
@@ -316,7 +302,6 @@ export interface ServerTransportEventMap {
   disconnection: (clientId: string, event: CloseEvent) => void
   message: (clientId: string, message: Message) => void
   error: (error: Error) => void
-  listening: (port: number) => void
 }
 
 /**

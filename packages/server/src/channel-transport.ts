@@ -74,6 +74,23 @@ export class ChannelTransportImpl<T = unknown> implements IChannelTransport<T> {
   }
 
   /**
+   * Register a handler for incoming messages (alias for onMessage)
+   * Provides a more intuitive API for receiving messages on a channel
+   * @example
+   * ```ts
+   * const chat = synnel.multicast('chat')
+   * chat.receive((data, client) => {
+   *   console.log(`Received from ${client.id}:`, data)
+   * })
+   * ```
+   */
+  receive(
+    handler: (data: T, client: ServerClient, message: DataMessage<T>) => void | Promise<void>,
+  ): () => void {
+    return this.onMessage(handler)
+  }
+
+  /**
    * Register a handler for new subscriptions
    */
   onSubscribe(

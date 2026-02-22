@@ -74,5 +74,3 @@ export {
   createWebSocketServerTransport,
 } from './server.js'
 
-// Re-export ServerMode for type checking
-export type { ServerMode } from './server.js'

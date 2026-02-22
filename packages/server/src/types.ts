@@ -5,22 +5,45 @@
 
 import type { Message, DataMessage, ChannelName } from '@synnel/core'
 import type { ServerTransport, ClientConnection } from '@synnel/adapter'
+import type { Server as HttpServer } from 'http'
 
 /**
  * Server configuration options
  */
 export interface ServerConfig {
   /**
-   * Transport layer for WebSocket communication
-   * If not provided, a default WebSocketServerTransport will be created
+   * Existing HTTP server to attach WebSocket to
+   * If provided, port/host options are ignored
+   * Works with Express, Fastify, plain Node.js http.Server, etc.
+   *
+   * @example
+   * ```ts
+   * import express from 'express'
+   * const app = express()
+   * const server = app.listen(3000)
+   * const synnel = new Synnel({ server })
+   * ```
    */
-  transport?: ServerTransport
+  server?: HttpServer
 
   /**
-   * Optional whitelist of allowed channel names
-   * If provided, clients can only subscribe to these channels
+   * Server port (only used if `server` option is not provided)
+   * @default 3000
    */
-  channels?: ChannelName[]
+  port?: number
+
+  /**
+   * Server host (only used if `server` option is not provided)
+   * @default '0.0.0.0'
+   */
+  host?: string
+
+  /**
+   * Transport layer for WebSocket communication (advanced use)
+   * If not provided, a default WebSocketServerTransport will be created
+   * Mutually exclusive with `server` option
+   */
+  transport?: ServerTransport
 
   /**
    * Middleware functions for processing messages and connections
@@ -66,9 +89,7 @@ export interface ServerStats {
    * Transport info
    */
   transport: {
-    mode?: string
     path?: string
-    port?: number
   }
 }
 
@@ -144,6 +165,31 @@ export interface DisconnectionEvent {
  */
 export interface ServerClient extends ClientConnection {
   /**
+   * Unique client ID (re-declared for type safety)
+   */
+  id: string
+
+  /**
+   * Connection status (re-declared for type safety)
+   */
+  status: 'connected' | 'disconnected' | 'connecting' | 'disconnecting'
+
+  /**
+   * Connected timestamp (re-declared for type safety)
+   */
+  connectedAt: number
+
+  /**
+   * Last ping timestamp (re-declared for type safety)
+   */
+  lastPingAt?: number
+
+  /**
+   * Custom metadata (re-declared for type safety)
+   */
+  metadata: Record<string, unknown>
+
+  /**
    * Send a message to this client
    */
   send(message: Message): Promise<void>
@@ -203,6 +249,21 @@ export interface ChannelTransport<T = unknown> {
    * Register a handler for incoming messages on this channel
    */
   onMessage(
+    handler: (data: T, client: ServerClient, message: DataMessage<T>) => void | Promise<void>,
+  ): () => void
+
+  /**
+   * Register a handler for incoming messages (alias for onMessage)
+   * Provides a more intuitive API for receiving messages on a channel
+   * @example
+   * ```ts
+   * const chat = synnel.multicast('chat')
+   * chat.receive((data, client) => {
+   *   console.log(`Received from ${client.id}:`, data)
+   * })
+   * ```
+   */
+  receive(
     handler: (data: T, client: ServerClient, message: DataMessage<T>) => void | Promise<void>,
   ): () => void
 

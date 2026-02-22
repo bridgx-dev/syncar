@@ -15,11 +15,6 @@ import type { Message } from '@synnel/core'
 import { WebSocketServer as WSWebSocketServer, WebSocket } from 'ws'
 
 /**
- * Server mode - standalone or attached to existing server
- */
-export type ServerMode = 'standalone' | 'attached'
-
-/**
  * Wrapper for WebSocket server connections
  */
 interface ServerConnection {
@@ -35,11 +30,12 @@ interface ServerConnection {
 export class WebSocketServerTransport implements ServerTransport {
   private wsServer: WSWebSocketServer | null = null
   private connections: Map<string, ServerConnection> = new Map()
-  private eventHandlers: Map<ServerTransportEventType, Set<ServerTransportEventMap[ServerTransportEventType]>> =
-    new Map()
+  private eventHandlers: Map<
+    ServerTransportEventType,
+    Set<ServerTransportEventMap[ServerTransportEventType]>
+  > = new Map()
   private pingInterval: ReturnType<typeof setInterval> | null = null
   private startedAt: number | null = null
-  private mode: ServerMode = 'standalone'
 
   private readonly config: ServerTransportConfig & {
     path: string
@@ -49,10 +45,10 @@ export class WebSocketServerTransport implements ServerTransport {
     pingTimeout: number
   }
 
-  constructor(config: ServerTransportConfig = {}) {
+  constructor(config: ServerTransportConfig) {
     this.config = {
       ...config,
-      path: config.path ?? '/synnel',
+      path: config.path ?? '/',
       maxPayload: config.maxPayload ?? 1048576,
       enablePing: config.enablePing ?? true,
       pingInterval: config.pingInterval ?? 30000,
@@ -70,67 +66,34 @@ export class WebSocketServerTransport implements ServerTransport {
 
     return new Promise((resolve, reject) => {
       try {
-        const ServerConstructor = (this.config.ServerConstructor as typeof WSWebSocketServer) ?? WSWebSocketServer
+        const ServerConstructor =
+          (this.config.ServerConstructor as typeof WSWebSocketServer) ??
+          WSWebSocketServer
 
-        // Check if an existing server was provided
-        if (this.config.server) {
-          // Attach to existing server
-          this.mode = 'attached'
-          this.wsServer = new ServerConstructor({
-            server: this.config.server as any,
-            path: this.config.path,
-            maxPayload: this.config.maxPayload,
-          })
+        // Attach to the provided HTTP server
+        this.wsServer = new ServerConstructor({
+          server: this.config.server as any,
+          path: this.config.path,
+          maxPayload: this.config.maxPayload,
+        })
 
-          // For attached servers, we consider it "started" immediately
-          this.startedAt = Date.now()
+        // For attached servers, we consider it "started" immediately
+        this.startedAt = Date.now()
 
-          // Start ping interval if enabled
-          if (this.config.enablePing) {
-            this.startPingInterval()
-          }
-
-          this.wsServer.on('connection', (ws: WebSocket) => {
-            this.handleConnection(ws)
-          })
-
-          this.wsServer.on('error', (error: Error) => {
-            this.emit('error', error)
-          })
-
-          resolve()
-        } else {
-          // Create standalone server
-          this.mode = 'standalone'
-          this.wsServer = new ServerConstructor({
-            port: this.config.port ?? 3000,
-            host: this.config.host ?? '0.0.0.0',
-            path: this.config.path,
-            maxPayload: this.config.maxPayload,
-          })
-
-          this.wsServer.on('listening', () => {
-            this.startedAt = Date.now()
-            const port = this.wsServer?.address() as { port: number }
-            this.emit('listening', port?.port ?? this.config.port ?? 3000)
-
-            // Start ping interval if enabled
-            if (this.config.enablePing) {
-              this.startPingInterval()
-            }
-
-            resolve()
-          })
-
-          this.wsServer.on('connection', (ws: WebSocket) => {
-            this.handleConnection(ws)
-          })
-
-          this.wsServer.on('error', (error: Error) => {
-            this.emit('error', error)
-            reject(error)
-          })
+        // Start ping interval if enabled
+        if (this.config.enablePing) {
+          this.startPingInterval()
         }
+
+        this.wsServer.on('connection', (ws: WebSocket) => {
+          this.handleConnection(ws)
+        })
+
+        this.wsServer.on('error', (error: Error) => {
+          this.emit('error', error)
+        })
+
+        resolve()
       } catch (error) {
         reject(error)
       }
@@ -157,13 +120,12 @@ export class WebSocketServerTransport implements ServerTransport {
     }
     this.connections.clear()
 
-    // Close WebSocket server (but not the underlying HTTP server if attached)
+    // Close WebSocket server (but not the underlying HTTP server)
     if (this.wsServer) {
       return new Promise((resolve) => {
         this.wsServer!.close((err) => {
           this.wsServer = null
           this.startedAt = null
-          this.mode = 'standalone'
           if (err) {
             console.error('Error closing WebSocket server:', err)
           }
@@ -273,19 +235,10 @@ export class WebSocketServerTransport implements ServerTransport {
    * Get server info
    */
   getServerInfo(): {
-    mode?: ServerMode
-    port?: number
-    host?: string
-    path: string
+    path?: string
     startedAt?: number
   } {
-    const address = this.wsServer?.address()
-    const hasStarted = this.startedAt !== null
-
     return {
-      mode: hasStarted ? this.mode : undefined,
-      port: hasStarted && this.mode === 'standalone' ? (address as { port: number } | undefined)?.port ?? (this.config.port ?? 3000) : undefined,
-      host: hasStarted && this.mode === 'standalone' ? (this.config.host ?? '0.0.0.0') : undefined,
       path: this.config.path,
       startedAt: this.startedAt ?? undefined,
     }
@@ -319,7 +272,10 @@ export class WebSocketServerTransport implements ServerTransport {
         const message = JSON.parse(data.toString()) as Message
         this.emit('message', clientId, message)
       } catch (error) {
-        this.emit('error', new Error(`Failed to parse message from ${clientId}`))
+        this.emit(
+          'error',
+          new Error(`Failed to parse message from ${clientId}`),
+        )
       }
     })
 
@@ -415,7 +371,7 @@ export class WebSocketServerTransport implements ServerTransport {
     if (handlers) {
       for (const handler of handlers) {
         try {
-          ; (handler as any)(...args)
+          ;(handler as any)(...args)
         } catch (error) {
           console.error(`Error in ${event} handler:`, error)
         }
@@ -428,7 +384,7 @@ export class WebSocketServerTransport implements ServerTransport {
  * Factory function to create a WebSocket server transport
  */
 export function createWebSocketServerTransport(
-  config?: ServerTransportConfig,
+  config: ServerTransportConfig,
 ): ServerTransport {
   return new WebSocketServerTransport(config)
 }

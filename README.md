@@ -7,119 +7,221 @@ Think of it as the real-time layer of platforms like Convex or Supabase, but com
 ## 🌟 Key Features
 
 - **Isomorphic Core**: Seamlessly share model types and logic between client and server.
-- **Fluent API**: A clean, chainable API that makes socket management feel like native events.
-- **Channel Isolation**: Built-in Multicast, Unicast, and Broadcast patterns.
-- **React-Native Integration**: Battle-tested hooks that handle React components' lifecycle (including Strict Mode) without connection drops.
+- **Express Integration**: Native support for Express.js with WebSocket attachment.
+- **Channel Isolation**: Built-in Multicast and Broadcast patterns.
+- **React Integration**: Battle-tested hooks that handle React components' lifecycle (including Strict Mode) without connection drops.
 - **Smart Signaling**: Automatic deduplication of signals to ensure minimal network overhead during complex UI re-renders.
-- **Security-First**: Optional "Strict Mode" to restrict client-side channel creation to only pre-defined server channels.
+- **Channel Enforcement**: Channels must be explicitly created on the server before clients can join them.
+- **Type-Safe**: Full TypeScript support with shared types across frontend and backend.
 
 ## 🏗️ Workspace Structure
 
-- `packages/core`: The isomorphic transport layer (Server/Client).
+- `packages/core`: The isomorphic transport layer.
+- `packages/server`: Node.js server for Synnel with Express integration.
+- `packages/client`: Framework-agnostic real-time client.
+- `packages/adapter`: WebSocket transport adapters.
 - `packages/react`: React components and hooks for state synchronization.
-- `example/`: A full-stack demonstration (Chat & Mouse Tracking).
 
 ## 🚀 Quick Start
 
-### 1. Server Setup (Node.js)
+### 1. Server Setup (with Express)
 
 ```typescript
 import express from 'express'
-import { Synnel } from '@synnel/core'
+import { createServer } from 'http'
+import { Synnel } from '@synnel/server'
 
 const app = express()
-const server = app.listen(3000)
+const httpServer = createServer(app)
 
-// Initialize Synnel
-const synnel = new Synnel(server, { strict: true })
+// Initialize Synnel with Express server
+const synnel = new Synnel({ server: httpServer })
 
-// Define a multicast channel
-const chat = synnel.multicast('chat')
+// Create a multicast channel (returns a Promise)
+const chat = await synnel.multicast<{ text: string; user: string }>('chat')
 
-// Intercept and manipulate data on the server
-chat.receive((data: any, client) => {
-  console.log(`Received from ${client.getId()}:`, data)
+// Handle incoming messages
+chat.receive((data, client) => {
+  console.log(`Received from ${client.id}:`, data)
 })
 
-// Send data to all subscribers of the channel
-chat.send({ text: 'Welcome to Synnel!' })
+// Start the server
+await synnel.start()
+httpServer.listen(3000)
 ```
 
-### 2. Provider Setup (React)
+### 2. Standalone Server (no Express)
+
+```typescript
+import { Synnel } from '@synnel/server'
+
+// Creates HTTP server on port 3000
+const synnel = new Synnel({ port: 3000 })
+
+await synnel.start()
+
+const chat = await synnel.multicast('chat')
+chat.send({ text: 'Welcome!' })
+```
+
+### 3. Provider Setup (React)
 
 Wrap your application in the `SynnelProvider`:
 
 ```tsx
 import { SynnelProvider } from '@synnel/react'
+import { createSynnelClient } from '@synnel/client'
+import { WebSocketClientTransport } from '@synnel/adapter'
+
+const client = createSynnelClient({
+  transport: new WebSocketClientTransport({ url: 'ws://localhost:3000/synnel' }),
+})
 
 function Root() {
   return (
-    <SynnelProvider url="ws://localhost:3000">
+    <SynnelProvider client={client}>
       <App />
     </SynnelProvider>
   )
 }
 ```
 
-### 3. Usage in Hooks
+### 4. Usage in Hooks
 
 ```tsx
 import { useChannel } from '@synnel/react'
 
 function ChatRoom() {
-  const { data, send, status } = useChannel('chat')
+  const chat = useChannel<{ text: string }>('chat', {
+    onMessage: (data) => {
+      console.log('Received:', data.text)
+    }
+  })
 
   return (
     <div>
-      <p>Connection: {status}</p>
-      <button onClick={() => send({ text: 'Hello World' })}>
+      <button onClick={() => chat.send({ text: 'Hello World' })}>
         Send Message
       </button>
-      <pre>{JSON.stringify(data)}</pre>
     </div>
   )
 }
 ```
 
-## 🔐 Security & Governance
+## 🔐 Channel Enforcement
 
-Synnel supports an optional **Strict Mode**. When enabled, the server will reject any subscription attempt to a channel that wasn't explicitly created on the server via `multicast` or `broadcast`.
+Synnel enforces explicit channel creation. Channels must be created on the server before clients can join them.
 
 ```typescript
-// On the server
-const synnel = new Synnel(server, { strict: true })
+// Server - Create channels explicitly
+const chat = await synnel.multicast('chat')       // ✅ Clients CAN join
+const notifications = synnel.broadcast()            // ✅ Clients CAN join
+// 'admin' NOT created                                   // ❌ Clients CANNOT join
+```
 
-// Only 'global' can be joined by frontends
-synnel.broadcast('global')
+```typescript
+// Client trying to join non-created channel
+await client.subscribe('admin')                     // ❌ ERROR: Channel not allowed
+```
 
-// You can also add custom authorization logic
+## 📡 Channel Types
+
+### Multicast Channel
+Many-to-many messaging. All subscribers can send and receive messages.
+
+```typescript
+const chat = await synnel.multicast<MessageType>('chat')
+
+// Receive messages from clients
+chat.receive((data, client) => {
+  console.log(`${client.id}: ${data.text}`)
+})
+
+// Send to all subscribers (optionally exclude sender)
+await chat.send(data, excludeClientId)
+```
+
+### Broadcast Channel
+Server-to-all messaging. Only the server can send; all clients receive.
+
+```typescript
+const notifications = synnel.broadcast<NotificationType>()
+
+// Send to all connected clients
+await notifications.send({
+  type: 'info',
+  message: 'Server maintenance in 5 minutes'
+})
+```
+
+## 🔑 Authorization
+
+Add custom authorization logic:
+
+```typescript
 synnel.authorize(async (clientId, channel, action) => {
-  if (channel === 'admin' && !isUserAdmin(clientId)) return false
+  if (channel === 'admin') {
+    return await isAdminUser(clientId)
+  }
   return true
 })
 ```
 
 ## 🛠 Advanced Features
 
-### Server-Side Global Interceptors
+### Global Message Interceptor
 
-You can listen to all messages passing through the system for logging, metrics, or auditing:
+Listen to all messages passing through the system:
 
 ```typescript
-synnel.onMessage((msg, client) => {
-  console.log(`Global Trace: ${client.getId()} sent ${msg.type}`)
+synnel.onMessage((client, message) => {
+  console.log(`Client ${client.id} sent message type: ${message.type}`)
 })
 ```
 
-### Unicast: Direct Client Communication
-
-Target specific clients by their unique ID:
+### Connection Events
 
 ```typescript
-synnel.unicast('user-123').send({
-  type: 'NOTIFICATION',
-  text: 'Direct Message!',
+synnel.on('connection', (client) => {
+  console.log(`Client connected: ${client.id}`)
 })
+
+synnel.on('disconnection', (client) => {
+  console.log(`Client disconnected: ${client.id}`)
+})
+
+synnel.on('subscribe', (client, channel) => {
+  console.log(`${client.id} subscribed to ${channel}`)
+})
+```
+
+### Server Statistics
+
+```typescript
+const stats = synnel.getStats()
+console.log({
+  clients: stats.clientCount,
+  channels: stats.channelCount,
+  subscriptions: stats.subscriptionCount,
+  messagesReceived: stats.messagesReceived,
+  messagesSent: stats.messagesSent,
+  uptime: stats.startedAt
+    ? Math.floor((Date.now() - stats.startedAt) / 1000) + 's'
+    : 'N/A',
+})
+```
+
+## 📦 Installation
+
+```bash
+# Core packages
+npm install @synnel/core @synnel/server @synnel/client
+
+# Adapter (WebSocket transport)
+npm install @synnel/adapter
+
+# React integration
+npm install @synnel/react
 ```
 
 ## 📄 License

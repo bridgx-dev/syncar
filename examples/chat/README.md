@@ -1,38 +1,41 @@
-# Synnel v2 Chat Example
+# Synnel Chat Example
 
-A full-stack chat application demonstrating the Synnel v2 real-time messaging framework.
+A full-stack chat application demonstrating the Synnel real-time messaging framework with Express.js integration.
 
 ## Features
 
 - **Real-time messaging** using WebSockets
+- **Express.js integration** - Synnel attaches to your existing HTTP server
 - **Channel-based communication** (chat, notifications, presence)
-- **Broadcast support** for server-wide announcements
+- **Multicast channels** - Many-to-many messaging for chat and presence
+- **Broadcast channel** - Server-to-all notifications
 - **Typing indicators** using presence channel
 - **User presence** (online/offline status)
-- **Rate limiting** and logging middleware on server
-- **React hooks** for easy integration
-- **Beautiful UI** with smooth animations
+- **Live user count** displayed in the header
+- **React hooks** for easy integration with onMessage callbacks
+- **Beautiful UI** with smooth animations and avatars
 
 ## Tech Stack
 
 ### Server
-- `@synnel/server-v2` - WebSocket server
+- `@synnel/server` - WebSocket server with Express integration
 - `@synnel/adapter` - WebSocket transport
-- `@synnel/core-v2` - Core types and protocols
+- `@synnel/core` - Core types and protocols
+- Express.js - HTTP server
 - Node.js + TypeScript
 
 ### Client
-- `@synnel/react-v2` - React hooks and provider
-- `@synnel/client-v2` - Core client
+- `@synnel/react` - React hooks and provider
+- `@synnel/client` - Core client
 - `@synnel/adapter` - WebSocket transport
 - React 19 + Vite
 
 ## Project Structure
 
 ```
-chat-v2/
+chat/
 ├── server/
-│   └── index.ts          # WebSocket server
+│   └── index.ts          # WebSocket server with Express
 ├── client/
 │   ├── index.html
 │   ├── src/
@@ -55,7 +58,7 @@ chat-v2/
 
 ```bash
 # From the Synnel root directory
-cd examples/chat-v2
+cd examples/chat
 bun install
 ```
 
@@ -67,7 +70,7 @@ bun run dev
 ```
 
 This will start:
-- **Server** on `ws://localhost:3001`
+- **Server** on `http://localhost:3001` (HTTP + WebSocket)
 - **Client** on `http://localhost:3000`
 
 ### Individual Commands
@@ -93,62 +96,115 @@ Open multiple browser tabs to test real-time communication between different use
 
 ## Key Concepts Demonstrated
 
-### Server-side
+### Server-side (Express Integration)
 
 ```typescript
-// Create server with middleware
-const server = createSynnelServer({
-  transport,
-  channels: ['chat', 'notifications', 'presence'],
-  middleware: [
-    createLoggingMiddleware({ logConnections: true }),
-    createRateLimitMiddleware({ maxMessages: 60, windowMs: 60000 }),
-  ],
+import express from 'express'
+import { createServer } from 'http'
+import { Synnel } from '@synnel/server'
+
+const app = express()
+const httpServer = createServer(app)
+
+// Initialize Synnel with Express server
+const synnel = new Synnel({ server: httpServer })
+
+// Create multicast channels (returns Promise)
+const chat = await synnel.multicast<ChatMessage>('chat')
+const presence = await synnel.multicast<PresenceMessage>('presence')
+const notifications = synnel.broadcast<NotificationMessage>()
+
+// Handle incoming messages (no manual relay needed - automatic)
+chat.receive((data, client) => {
+  console.log(`[Chat] ${data.user}: ${data.text}`)
 })
 
-// Get a channel
-const chat = server.channel<MessageType>('chat')
-
-// Handle messages
-chat.onMessage((data, client) => {
-  console.log(`Received:`, data)
+// Handle presence updates
+presence.receive((data, client) => {
+  console.log(`[Presence] ${data.username}: ${data.status}`)
 })
 
-// Handle events
-server.on('connection', (client) => { /* ... */ })
-server.on('disconnection', (client, event) => { /* ... */ })
+// Connection events with live user count
+synnel.on('connection', (client) => {
+  const userCount = synnel.getStats().clientCount
+  notifications.send({
+    type: 'info',
+    message: `Users online: ${userCount}`,
+    timestamp: Date.now(),
+  })
+})
+
+// Start the server
+await synnel.start()
+httpServer.listen(3001)
 ```
 
-### Client-side (React)
+### Client-side (React with onMessage callbacks)
 
 ```typescript
+// Create client outside component (prevents Strict Mode issues)
+const client = createSynnelClient({
+  transport: new WebSocketClientTransport({
+    url: 'ws://localhost:3001/synnel'
+  }),
+  autoConnect: true,
+})
+
 // Wrap app with provider
-<SynnelProvider transport={transport}>
+<SynnelProvider client={client}>
   <App />
 </SynnelProvider>
 
-// Use channels in components
-const chat = useChannel<MessageType>('chat')
-const broadcast = useBroadcast<AnnouncementType>()
+// Use channels with onMessage in options (no race conditions!)
+const chat = useChannel<ChatMessage>('chat', {
+  onMessage: (data) => {
+    setMessages((prev) => [...prev, data])
+  }
+})
+
+const presence = useChannel<PresenceMessage>('presence', {
+  onMessage: (data) => {
+    if (data.status === 'typing') {
+      setTypingUsers((prev) => [...prev, data.username])
+    }
+  }
+})
 
 // Send messages
-chat.send({ text: 'Hello!', user: username })
-
-// Receive messages
-useEffect(() => {
-  const unsubscribe = chat.onMessage((data) => {
-    setMessages((prev) => [...prev, data])
-  })
-  return unsubscribe
-}, [chat])
+chat.send({ text: 'Hello!', user: username, type: 'message' })
 ```
 
 ## Channels Used
 
-1. **chat** - Main chat messages
-2. **notifications** - Server notifications (welcome, alerts)
-3. **presence** - User status (online, offline, typing)
-4. **__broadcast__** - Server-wide announcements
+1. **chat** (multicast) - Main chat messages, relayed to all subscribers except sender
+2. **notifications** (broadcast) - Server announcements and user count updates
+3. **presence** (multicast) - User status (online, offline, typing indicators)
+
+## API Highlights
+
+### Server API
+
+| Method | Description |
+|--------|-------------|
+| `new Synnel({ server })` | Attach to existing Express server |
+| `new Synnel({ port })` | Create standalone server on port |
+| `await synnel.multicast(name)` | Create multicast channel (returns Promise) |
+| `synnel.broadcast()` | Create broadcast channel |
+| `channel.receive(handler)` | Handle incoming messages |
+| `channel.send(data, excludeId?)` | Send to all (optionally exclude sender) |
+| `synnel.on('connection', handler)` | Handle new connections |
+| `synnel.on('disconnection', handler)` | Handle disconnections |
+| `synnel.getStats()` | Get server statistics |
+
+### Client React API
+
+| Hook/Method | Description |
+|-------------|-------------|
+| `useChannel(name, { onMessage })` | Subscribe with callback (no race condition) |
+| `useBroadcast({ onMessage })` | Subscribe to broadcast channel |
+| `channel.send(data)` | Send data to channel |
+| `client.subscribe(channel)` | Subscribe to channel |
+| `client.publish(channel, data)` | Publish data to channel |
 
 ## License
 

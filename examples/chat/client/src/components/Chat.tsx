@@ -15,49 +15,36 @@ interface ChatMessage {
   timestamp: number
 }
 
-interface NotificationMessage {
-  type: 'info' | 'warning' | 'success'
-  message: string
-  timestamp: number
-}
-
-export default function Chat({ username, onNotification }: ChatProps) {
+export default function Chat({ username }: ChatProps) {
   const [message, setMessage] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [typingUsers, setTypingUsers] = useState<string[]>([])
+  const [userCount, setUserCount] = useState<number>(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const client = useSynnelClient()
+  const messageIdsRef = useRef<Set<string>>(new Set())
+  const typingTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  )
 
-  // Subscribe to chat channel
-  const chat = useChannel<ChatMessage>('chat')
-  const notifications = useChannel<NotificationMessage>('notifications')
-  const presence = useChannel<{ userId: string; username: string; status: 'online' | 'offline' | 'typing' }>('presence')
-  const broadcast = useBroadcast<{ announcement: string }>()
-
-  // Auto-scroll to bottom when new messages arrive
-  useLayoutEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
-  // Handle incoming chat messages
-  useEffect(() => {
-    const unsubscribe = chat.onMessage((data, _message) => {
+  // Subscribe to chat channel with onMessage callback in options
+  const chat = useChannel<ChatMessage>('chat', {
+    onMessage: (data) => {
+      // Prevent duplicate messages by ID
+      if (messageIdsRef.current.has(data.id)) {
+        return
+      }
+      messageIdsRef.current.add(data.id)
       setMessages((prev) => [...prev, data])
-    })
-    return unsubscribe
-  }, [chat])
+    },
+  })
 
-  // Handle notifications
-  useEffect(() => {
-    const unsubscribe = notifications.onMessage((data) => {
-      onNotification(data.type, data.message)
-    })
-    return unsubscribe
-  }, [notifications, onNotification])
-
-  // Handle presence (typing indicators)
-  useEffect(() => {
-    const unsubscribe = presence.onMessage((data) => {
+  const presence = useChannel<{
+    userId: string
+    username: string
+    status: 'online' | 'offline' | 'typing'
+  }>('presence', {
+    onMessage: (data) => {
       if (data.status === 'typing' && data.username !== username) {
         setTypingUsers((prev) => {
           if (!prev.includes(data.username)) {
@@ -65,36 +52,57 @@ export default function Chat({ username, onNotification }: ChatProps) {
           }
           return prev
         })
-        // Clear typing indicator after 3 seconds
-        setTimeout(() => {
-          setTypingUsers((prev) => prev.filter((u) => u !== data.username))
-        }, 3000)
-      }
-    })
-    return unsubscribe
-  }, [presence, username])
 
-  // Handle broadcast announcements
-  useEffect(() => {
-    const unsubscribe = broadcast.onMessage((data) => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `broadcast-${Date.now()}`,
-          type: 'system',
-          text: data.announcement,
-          user: 'System',
-          timestamp: Date.now(),
-        },
-      ])
-    })
-    return unsubscribe
-  }, [broadcast])
+        // Clear any existing timeout for this user
+        const existingTimeout = typingTimeoutsRef.current.get(data.username)
+        if (existingTimeout) {
+          clearTimeout(existingTimeout)
+        }
+
+        // Set new timeout and store it
+        const timeoutId = setTimeout(() => {
+          setTypingUsers((prev) => prev.filter((u) => u !== data.username))
+          typingTimeoutsRef.current.delete(data.username)
+        }, 3000)
+        typingTimeoutsRef.current.set(data.username, timeoutId)
+      }
+    },
+  })
+
+  useBroadcast<{ message: string }>({
+    onMessage: (data) => {
+      console.log(data.message)
+      setUserCount(
+        data.message.includes('Users online:')
+          ? parseInt(data.message.split(': ')[1])
+          : userCount,
+      )
+    },
+  })
+
+  // Auto-scroll to bottom when new messages arrive
+  useLayoutEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   // Send presence notification when joining
   useEffect(() => {
     presence.send({ userId: client.id, username, status: 'online' })
-  }, [presence, username, client.id])
+  }, [presence.send, username, client.id])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Clear all typing timeouts
+      for (const timeout of typingTimeoutsRef.current.values()) {
+        clearTimeout(timeout)
+      }
+      typingTimeoutsRef.current.clear()
+
+      // Clear message IDs to prevent memory leak
+      messageIdsRef.current.clear()
+    }
+  }, [])
 
   const handleSend = () => {
     if (message.trim()) {
@@ -105,6 +113,9 @@ export default function Chat({ username, onNotification }: ChatProps) {
         user: username,
         timestamp: Date.now(),
       }
+
+      // Track this message ID to prevent duplicates when we receive it back
+      messageIdsRef.current.add(newMessage.id)
 
       // Send to server
       chat.send(newMessage)
@@ -151,13 +162,20 @@ export default function Chat({ username, onNotification }: ChatProps) {
         <div className="status">
           <span className="statusDot" />
           <span>{username}</span>
+          {userCount > 0 && (
+            <span className="userCount">
+              • {userCount} {userCount === 1 ? 'user' : 'users'} online
+            </span>
+          )}
         </div>
       </div>
       <div className="chat">
         <div className="messages">
           {messages.length === 0 && (
             <div className="message system">
-              <div className="messageText">Welcome to the chat! Send a message to start.</div>
+              <div className="messageText">
+                Welcome to the chat! Send a message to start.
+              </div>
             </div>
           )}
           {messages.map((msg) => (
@@ -166,19 +184,25 @@ export default function Chat({ username, onNotification }: ChatProps) {
               className={`message ${msg.type === 'system' ? 'system' : ''} ${msg.user === username ? 'own' : ''}`}
             >
               {msg.type !== 'system' && (
-                <div className="messageAvatar" style={{ background: getAvatarColor(msg.user) }}>
+                <div
+                  className="messageAvatar"
+                  style={{ background: getAvatarColor(msg.user) }}
+                >
                   {msg.user[0].toUpperCase()}
                 </div>
               )}
               <div className="messageContent">
-                {msg.type !== 'system' && <div className="messageName">{msg.user}</div>}
+                {msg.type !== 'system' && (
+                  <div className="messageName">{msg.user}</div>
+                )}
                 <div className="messageText">{msg.text}</div>
               </div>
             </div>
           ))}
           {typingUsers.length > 0 && (
             <div className="typingIndicator">
-              {typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
+              {typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'}{' '}
+              typing...
             </div>
           )}
           <div ref={messagesEndRef} />
@@ -192,7 +216,11 @@ export default function Chat({ username, onNotification }: ChatProps) {
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
           />
-          <button className="sendButton" onClick={handleSend} disabled={!message.trim()}>
+          <button
+            className="sendButton"
+            onClick={handleSend}
+            disabled={!message.trim()}
+          >
             Send
           </button>
         </div>

@@ -12,6 +12,7 @@ import type {
   ServerEventType,
   ServerEventMap,
   DisconnectionEvent,
+  MiddlewareContext,
 } from './types.js'
 import type { Message, DataMessage, ChannelName, SignalType } from '@synnel/core'
 import { MessageType, SignalType as CoreSignalType } from '@synnel/core'
@@ -19,6 +20,7 @@ import type { ServerTransport } from '@synnel/adapter'
 import { WebSocketServerTransport } from '@synnel/adapter'
 import { ClientRegistry } from './client-registry.js'
 import { MiddlewareManager, MiddlewareRejectionError } from './middleware.js'
+import { createServer } from 'http'
 // Import ChannelTransportImpl at the bottom to avoid circular dependency
 import type { ChannelTransportImpl } from './channel-transport.js'
 
@@ -36,6 +38,9 @@ interface InternalChannel<T = unknown> {
  */
 export class SynnelServer {
   private transport: ServerTransport
+  private httpServer?: ReturnType<typeof createServer>
+  private ownHttpServer: boolean = false
+  private config: ServerConfig
   private registry: ClientRegistry
   private middleware: MiddlewareManager
   private channels: Map<ChannelName, InternalChannel> = new Map()
@@ -43,34 +48,40 @@ export class SynnelServer {
     (data: unknown, client: ServerClient, message: DataMessage<unknown>) => void | Promise<void>
   > = new Set()
   private eventHandlers: Map<ServerEventType, Set<any>> = new Map()
-  private allowedChannels?: Set<ChannelName>
+  private createdChannels: Set<ChannelName> = new Set()
   private started = false
   private messagesReceived = 0
   private messagesSent = 0
   private startedAt?: number
 
   constructor(config: ServerConfig = {}) {
-    // Use provided transport or create default
-    this.transport = config.transport ?? new WebSocketServerTransport()
+    // Store config for later use
+    this.config = config
+    // Determine transport source
+    if (config.transport) {
+      // Use provided transport (advanced use)
+      this.transport = config.transport
+    } else if (config.server) {
+      // Attach to existing http.Server (Express, Fastify, etc.)
+      this.transport = new WebSocketServerTransport({
+        server: config.server,
+        path: '/synnel',
+      })
+    } else {
+      // Create standalone HTTP server, then attach WebSocket transport to it
+      this.httpServer = createServer()
+      this.ownHttpServer = true
+
+      // The adapter only attaches to a server - we create the HTTP server here
+      this.transport = new WebSocketServerTransport({
+        server: this.httpServer,
+        path: '/synnel',
+      })
+    }
 
     // Initialize components
     this.registry = new ClientRegistry()
     this.middleware = new MiddlewareManager()
-
-    // Store allowed channels if provided
-    if (config.channels) {
-      this.allowedChannels = new Set(config.channels)
-      // Add channel whitelist middleware
-      this.middleware.use(
-        ((allowed: Set<string>) => {
-          return async ({ action, channel, reject }) => {
-            if ((action === 'subscribe' || action === 'message') && channel && !allowed.has(channel)) {
-              reject(`Channel '${channel}' is not allowed`)
-            }
-          }
-        })(this.allowedChannels),
-      )
-    }
 
     // Add provided middleware
     if (config.middleware) {
@@ -91,7 +102,22 @@ export class SynnelServer {
       throw new Error('Server is already started')
     }
 
+    // Start the WebSocket transport
     await this.transport.start()
+
+    // If we created the HTTP server, start listening on it
+    if (this.ownHttpServer && this.httpServer) {
+      const port = this.config.port ?? 3000
+      const host = this.config.host ?? '0.0.0.0'
+
+      await new Promise<void>((resolve, reject) => {
+        this.httpServer!.listen(port, host, () => {
+          resolve()
+        })
+        this.httpServer!.on('error', reject)
+      })
+    }
+
     this.started = true
     this.startedAt = Date.now()
   }
@@ -109,18 +135,23 @@ export class SynnelServer {
     this.startedAt = undefined
     this.registry.clear()
     this.channels.clear()
+
+    // Close HTTP server if we created it
+    if (this.ownHttpServer && this.httpServer) {
+      await new Promise<void>((resolve) => {
+        this.httpServer!.close(() => resolve())
+      })
+      this.httpServer = undefined
+      this.ownHttpServer = false
+    }
   }
 
   /**
    * Get a channel transport
    * Creates the channel if it doesn't exist
+   * Note: For client subscriptions, channel must be created via multicast() first
    */
   async channel<T = unknown>(name: ChannelName): Promise<ChannelTransport<T>> {
-    // Check if channel is allowed
-    if (this.allowedChannels && !this.allowedChannels.has(name)) {
-      throw new Error(`Channel '${name}' is not allowed`)
-    }
-
     let channel = this.channels.get(name)
     if (!channel) {
       // Import ChannelTransportImpl dynamically to avoid circular dependency
@@ -275,9 +306,7 @@ export class SynnelServer {
       messagesSent: this.messagesSent,
       startedAt: this.startedAt,
       transport: {
-        mode: transportInfo.mode,
         path: transportInfo.path,
-        port: transportInfo.port,
       },
     }
   }
@@ -290,26 +319,106 @@ export class SynnelServer {
   }
 
   /**
+   * Create a multicast channel (many-to-many messaging)
+   * All subscribers can send and receive messages
+   * This marks the channel as "created" - only created channels can be subscribed to by clients
+   * @param name - Channel name
+   * @returns Channel transport with send/receive methods
+   */
+  async multicast<T = unknown>(name: ChannelName): Promise<ChannelTransport<T>> {
+    // Mark this channel as created/allowed
+    this.createdChannels.add(name)
+    return await this.channel<T>(name)
+  }
+
+  /**
+   * Create a broadcast channel (server-to-all messaging)
+   * Messages sent to all connected clients
+   * @returns Broadcast transport
+   */
+  broadcast<T = unknown>(): BroadcastTransport<T> {
+    return this.broadcastTransport<T>()
+  }
+
+  /**
+   * Set authorization handler for connection/subscription/message actions
+   * @param handler - Return false to reject, true to allow
+   * @returns Unsubscribe function
+   *
+   * @example
+   * ```ts
+   * synnel.authorize(async (clientId, channel, action) => {
+   *   if (channel === 'admin') {
+   *     return await isAdmin(clientId)
+   *   }
+   *   return true
+   * })
+   * ```
+   */
+  authorize(
+    handler: (clientId: string, channel: string, action: string) => boolean | Promise<boolean>,
+  ): () => void {
+    const middleware = async ({ client, channel, action, reject }: MiddlewareContext) => {
+      const clientId = client?.id ?? 'unknown'
+      const channelName = channel ?? ''
+      const actionName = action
+
+      try {
+        const allowed = await handler(clientId, channelName, actionName)
+        if (!allowed) {
+          reject('Unauthorized')
+        }
+      } catch (error) {
+        reject(`Authorization error: ${error}`)
+      }
+    }
+
+    this.middleware.use(middleware)
+
+    // Return unsubscribe function (middleware doesn't support removal, so this is a no-op)
+    return () => {
+      // Middleware cannot be removed after registration
+    }
+  }
+
+  /**
+   * Global message interceptor
+   * Called for every message received from any client
+   * @param handler - Message handler function
+   * @returns Unsubscribe function
+   *
+   * @example
+   * ```ts
+   * synnel.onMessage((message, client) => {
+   *   console.log(`Client ${client.id} sent:`, message)
+   * })
+   * ```
+   */
+  onMessage(handler: (client: ServerClient, message: Message) => void): () => void {
+    return this.on('message', handler)
+  }
+
+  /**
    * Set up transport event handlers
    */
   private setupTransportHandlers(): void {
     // Handle new connections
-    this.transport.on('connection', async (clientId) => {
+    this.transport.on('connection', async (clientId: string) => {
       await this.handleConnection(clientId)
     })
 
     // Handle disconnections
-    this.transport.on('disconnection', async (clientId, event) => {
+    this.transport.on('disconnection', async (clientId: string, event: { wasClean: boolean; code: number; reason: string }) => {
       await this.handleDisconnection(clientId, event)
     })
 
     // Handle incoming messages
-    this.transport.on('message', async (clientId, message) => {
+    this.transport.on('message', async (clientId: string, message: Message) => {
       await this.handleMessage(clientId, message)
     })
 
     // Handle errors
-    this.transport.on('error', (error) => {
+    this.transport.on('error', (error: Error) => {
       this.emit('error', error)
     })
   }
@@ -488,8 +597,9 @@ export class SynnelServer {
     }
 
     if (signal === CoreSignalType.SUBSCRIBE) {
-      // Check if channel is allowed
-      if (this.allowedChannels && !this.allowedChannels.has(channel)) {
+      // Check if channel was explicitly created via multicast()
+      // Broadcast channel is always allowed
+      if (channel !== '__broadcast__' && !this.createdChannels.has(channel)) {
         await serverClient.send({
           id: `error-${Date.now()}`,
           type: MessageType.ERROR,
@@ -527,7 +637,7 @@ export class SynnelServer {
 
       if (subscribed) {
         // Get or create channel transport
-        const channelTransport = this.channel(channel)
+        const channelTransport = await this.channel(channel)
         const impl = channelTransport as any
 
         // Call internal handleSubscribe if available
