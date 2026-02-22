@@ -4,9 +4,7 @@
   "type": "module",
   "private": true,
   "workspaces": [
-    "example",
     "packages/*",
-    "packages_v2/*",
     "examples/*"
   ],
   "scripts": {

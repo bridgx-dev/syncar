@@ -8,8 +8,12 @@
     "declarationMap": true,
     "sourceMap": true,
     "emitDeclarationOnly": false,
-    "noEmit": false
+    "noEmit": false,
+    "paths": {
+      "@synnel/core": ["../core/src"]
+    }
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+  "exclude": ["node_modules", "dist", "**/*.test.ts"],
+  "references": [{ "path": "../core" }]
 }

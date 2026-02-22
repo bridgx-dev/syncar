@@ -1,7 +1,7 @@
 {
-  "name": "@synnel/core",
+  "name": "@synnel/client",
   "version": "1.0.0-alpha.1",
-  "description": "Platform-agnostic core for Synnel real-time synchronization",
+  "description": "Framework-agnostic client for Synnel real-time synchronization",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -28,10 +28,14 @@
     "realtime",
     "websocket",
     "synchronization",
-    "pubsub"
+    "pubsub",
+    "client"
   ],
   "author": "Synnel",
   "license": "MIT",
+  "dependencies": {
+    "@synnel/core": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "^22.13.10",
     "typescript": "^5.8.2",

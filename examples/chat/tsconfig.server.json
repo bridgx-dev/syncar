@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "outDir": "./dist",
+    "rootDir": "./server",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@synnel/core": ["../../packages/core/src/index.ts"],
+      "@synnel/client": ["../../packages/client/src/index.ts"],
+      "@synnel/adapter-ws": ["../../packages/adapter-ws/src/index.ts"],
+      "@synnel/server": ["../../packages/server/src/index.ts"]
+    }
+  },
+  "include": ["server/**/*"],
+  "exclude": ["node_modules", "dist", "client"],
+  "references": [
+    { "path": "../../packages/core" },
+    { "path": "../../packages/client" },
+    { "path": "../../packages/adapter-ws" },
+    { "path": "../../packages/server" }
+  ]
+}
