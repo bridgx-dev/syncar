@@ -67,10 +67,3 @@ export {
   WebSocketClientTransport,
   createWebSocketClientTransport,
 } from './client.js'
-
-// Server
-export {
-  WebSocketServerTransport,
-  createWebSocketServerTransport,
-} from './server.js'
-

@@ -17,7 +17,7 @@ import type {
 import type { Message, DataMessage, ChannelName, SignalType } from '@synnel/core'
 import { MessageType, SignalType as CoreSignalType } from '@synnel/core'
 import type { ServerTransport } from '@synnel/adapter'
-import { WebSocketServerTransport } from '@synnel/adapter'
+import { WebSocketServerTransport } from '@synnel/adapter/server'
 import { ClientRegistry } from './client-registry.js'
 import { MiddlewareManager, MiddlewareRejectionError } from './middleware.js'
 import { createServer } from 'http'
@@ -108,9 +108,6 @@ export class SynnelServer {
       throw new Error('Server is already started')
     }
 
-    // Start the WebSocket transport
-    await this.transport.start()
-
     // If we created the HTTP server, start listening on it
     if (this.ownHttpServer && this.httpServer) {
       const port = this.config.port ?? 3000
@@ -136,7 +133,6 @@ export class SynnelServer {
       return
     }
 
-    await this.transport.stop()
     this.started = false
     this.startedAt = undefined
     this.registry.clear()

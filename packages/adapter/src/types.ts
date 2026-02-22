@@ -225,29 +225,16 @@ export interface Transport {
   getConnectionInfo(): { connectedAt?: number; url?: string }
 }
 
+import type EventEmitter from 'node:events'
+
 /**
  * Server transport interface
  */
-export interface ServerTransport {
-  /**
-   * Start the server
-   */
-  start(): Promise<void>
-
-  /**
-   * Stop the server
-   */
-  stop(): Promise<void>
-
+export interface ServerTransport extends Omit<EventEmitter, 'on'> {
   /**
    * Send a message to a specific client
    */
   sendToClient(clientId: string, message: Message): Promise<void>
-
-  /**
-   * Send a message to all clients
-   */
-  broadcast(message: Message): Promise<void>
 
   /**
    * Disconnect a specific client
@@ -274,7 +261,7 @@ export interface ServerTransport {
   on<E extends ServerTransportEventType>(
     event: E,
     handler: ServerTransportEventMap[E],
-  ): () => void
+  ): this
 
   /**
    * Get server info
