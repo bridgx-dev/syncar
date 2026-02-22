@@ -41,8 +41,8 @@ export class SynnelServer {
   private httpServer?: ReturnType<typeof createServer>
   private ownHttpServer: boolean = false
   private config: ServerConfig
-  private registry: ClientRegistry
-  private middleware: MiddlewareManager
+  private registry: ClientRegistry = new ClientRegistry()
+  private middleware: MiddlewareManager = new MiddlewareManager()
   private channels: Map<ChannelName, InternalChannel> = new Map()
   private broadcastHandlers: Set<
     (data: unknown, client: ServerClient, message: DataMessage<unknown>) => void | Promise<void>
@@ -55,46 +55,29 @@ export class SynnelServer {
   private startedAt?: number
 
   constructor(config: ServerConfig = {}) {
-    // Store config for later use
     this.config = config
+
     // Determine transport source
     if (config.transport) {
-      // Use provided transport (advanced use)
       this.transport = config.transport
-    } else if (config.server) {
-      // Attach to existing http.Server (Express, Fastify, etc.)
-      this.transport = new WebSocketServerTransport({
-        server: config.server,
-        path: '/synnel',
-        enablePing: config.enablePing ?? (config.pingInterval !== undefined ? true : true),
-        pingInterval: config.pingInterval ?? 5000,
-        pingTimeout: config.pingTimeout,
-      })
     } else {
-      // Create standalone HTTP server, then attach WebSocket transport to it
-      this.httpServer = createServer()
-      this.ownHttpServer = true
+      // If no server is provided, we create one ourselves
+      if (!config.server) {
+        this.httpServer = createServer()
+        this.ownHttpServer = true
+      }
 
-      // The adapter only attaches to a server - we create the HTTP server here
       this.transport = new WebSocketServerTransport({
-        server: this.httpServer,
+        server: config.server ?? this.httpServer,
         path: '/synnel',
-        enablePing: config.enablePing ?? (config.pingInterval !== undefined ? true : true),
+        enablePing: config.enablePing ?? true,
         pingInterval: config.pingInterval ?? 5000,
         pingTimeout: config.pingTimeout,
       })
     }
-
-    // Initialize components
-    this.registry = new ClientRegistry()
-    this.middleware = new MiddlewareManager()
 
     // Add provided middleware
-    if (config.middleware) {
-      for (const mw of config.middleware) {
-        this.middleware.use(mw)
-      }
-    }
+    config.middleware?.forEach((mw) => this.middleware.use(mw))
 
     // Set up transport event handlers
     this.setupTransportHandlers()
