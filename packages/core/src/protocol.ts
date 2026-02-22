@@ -164,7 +164,7 @@ export function isAckMessage(message: Message): message is AckMessage {
  * Generate a unique message ID
  */
 export function generateMessageId(): MessageId {
-  return `msg_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
 }
 
 /**
