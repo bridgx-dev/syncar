@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { ClientRegistry } from '../client-registry.js'
-import type { ServerTransport, ClientConnection } from '@synnel/adapter'
+import type { ServerTransport, ClientConnection } from '../types.js'
 import { MessageType } from '@synnel/types'
 
 // Mock transport

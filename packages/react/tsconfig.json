@@ -12,8 +12,7 @@
       "@synnel/types": ["../types/src"],
       "@synnel/lib": ["../lib/src"],
       "@synnel/core": ["../core/src"],
-      "@synnel/client": ["../client/src"],
-      "@synnel/adapter": ["../adapter/src"]
+      "@synnel/client": ["../client/src"]
     }
   },
   "include": ["src/**/*"],
@@ -22,7 +21,6 @@
     { "path": "../types" },
     { "path": "../lib" },
     { "path": "../core" },
-    { "path": "../client" },
-    { "path": "../adapter" }
+    { "path": "../client" }
   ]
 }

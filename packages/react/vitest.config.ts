@@ -16,7 +16,6 @@ export default defineConfig({
       '@synnel/react': path.resolve(__dirname, './src'),
       '@synnel/client': path.resolve(__dirname, '../client/src'),
       '@synnel/core': path.resolve(__dirname, '../core/src'),
-      '@synnel/adapter': path.resolve(__dirname, '../adapter/src'),
     },
   },
 })

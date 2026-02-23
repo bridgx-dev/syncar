@@ -15,21 +15,21 @@ This package provides a framework-agnostic client for real-time pub/sub communic
 ## Installation
 
 ```bash
-npm install @synnel/client-v2 @synnel/adapter
+npm install @synnel/client-v2
 # or
-pnpm add @synnel/client-v2 @synnel/adapter
+pnpm add @synnel/client-v2
 # or
-yarn add @synnel/client-v2 @synnel/adapter
+yarn add @synnel/client-v2
 ```
 
 ## Quick Start
 
 ```typescript
 import { createSynnelClient } from '@synnel/client-v2'
-import { createWebSocketClientTransport } from '@synnel/adapter/client'
+import { WebSocketClientTransport } from '@synnel/client-v2'
 
 // Create transport
-const transport = createWebSocketClientTransport({
+const transport = new WebSocketClientTransport({
   url: 'ws://localhost:3000',
   reconnect: true,
 })
@@ -269,9 +269,9 @@ const info = subscription.getInfo()
 
 ```javascript
 import { createSynnelClient } from '@synnel/client-v2'
-import { createWebSocketClientTransport } from '@synnel/adapter/client'
+import { WebSocketClientTransport } from '@synnel/client-v2'
 
-const transport = createWebSocketClientTransport({
+const transport = new WebSocketClientTransport({
   url: 'ws://localhost:3000',
 })
 
@@ -299,14 +299,14 @@ document.getElementById('send').onclick = async () => {
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
 import { createSynnelClient } from '@synnel/client-v2'
-import { createWebSocketClientTransport } from '@synnel/adapter/client'
+import { WebSocketClientTransport } from '@synnel/client-v2'
 
 const messages = ref([])
 
 let client
 
 onMounted(async () => {
-  const transport = createWebSocketClientTransport({
+  const transport = new WebSocketClientTransport({
     url: 'ws://localhost:3000',
   })
 
@@ -336,13 +336,13 @@ const sendMessage = async () => {
 <script>
 import { onMount, onDestroy } from 'svelte'
 import { createSynnelClient } from '@synnel/client-v2'
-import { createWebSocketClientTransport } from '@synnel/adapter/client'
+import { WebSocketClientTransport } from '@synnel/client-v2'
 
 let messages = []
 let client
 
 onMount(async () => {
-  const transport = createWebSocketClientTransport({
+  const transport = new WebSocketClientTransport({
     url: 'ws://localhost:3000',
   })
 

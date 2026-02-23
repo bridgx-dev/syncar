@@ -21,8 +21,7 @@
       "@synnel/core": ["./packages/core/src"],
       "@synnel/client": ["./packages/client/src"],
       "@synnel/server": ["./packages/server/src"],
-      "@synnel/react": ["./packages/react/src"],
-      "@synnel/adapter": ["./packages/adapter/src"]
+      "@synnel/react": ["./packages/react/src"]
     },
 
     // Best practices

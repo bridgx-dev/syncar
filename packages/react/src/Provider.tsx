@@ -15,10 +15,10 @@ import type { SynnelProviderProps } from './types.js'
  * ```tsx
  * import { SynnelProvider } from '@synnel/react'
  * import { createSynnelClient } from '@synnel/client'
- * import { WebSocketTransport } from '@synnel/adapter'
+ * import { WebSocketClientTransport } from '@synnel/client'
  *
  * const client = createSynnelClient({
- *   transport: new WebSocketTransport({ url: 'ws://localhost:3000' })
+ *   transport: new WebSocketClientTransport({ url: 'ws://localhost:3000' })
  * })
  *
  * function App() {
