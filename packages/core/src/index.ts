@@ -18,6 +18,7 @@
 
 // Types
 export type {
+  ClientId,
   ConnectionStatus,
   SubscriberId,
   ChannelName,

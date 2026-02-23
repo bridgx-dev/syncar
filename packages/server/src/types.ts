@@ -3,9 +3,47 @@
  * Type definitions for the @synnel/server package
  */
 
-import type { Message, DataMessage, ChannelName } from '@synnel/core'
-import type { ServerTransport, ClientConnection } from '@synnel/adapter'
+import type {
+  Message,
+  DataMessage,
+  ChannelName,
+  ClientId,
+  Timestamp,
+} from '@synnel/core'
+import type { ClientConnection } from '@synnel/core/ws-server'
 import type { Server as HttpServer } from 'http'
+
+/**
+ * Server transport interface
+ */
+export interface ServerTransport {
+  /**
+   * Send a message to a specific client
+   */
+  sendToClient(clientId: ClientId, message: Message): Promise<void>
+
+  /**
+   * Get all connected clients
+   */
+  getClients(): ClientConnection[]
+
+  /**
+   * Get client by ID
+   */
+  getClient(clientId: ClientId): ClientConnection | undefined
+
+  /**
+   * Register an event handler
+   */
+  on(event: 'connection', handler: (connection: ClientConnection) => void): void
+  on(event: 'disconnection', handler: (clientId: ClientId) => void): void
+  on(
+    event: 'message',
+    handler: (clientId: ClientId, message: Message) => void,
+  ): void
+  on(event: 'error', handler: (error: Error) => void): void
+  on(event: string, handler: (...args: any[]) => void): void
+}
 
 /**
  * Server configuration options
@@ -37,6 +75,12 @@ export interface ServerConfig {
    * @default '0.0.0.0'
    */
   host?: string
+
+  /**
+   * Path for WebSocket connections
+   * @default '/synnel'
+   */
+  path?: string
 
   /**
    * Transport layer for WebSocket communication (advanced use)
@@ -103,13 +147,6 @@ export interface ServerStats {
    * Server start time
    */
   startedAt?: number
-
-  /**
-   * Transport info
-   */
-  transport: {
-    path?: string
-  }
 }
 
 /**
@@ -135,7 +172,7 @@ export interface ServerEventMap {
   /**
    * Fired when a client disconnects
    */
-  disconnection: (client: ServerClient, event: DisconnectionEvent) => void
+  disconnection: (client: ServerClient) => void
 
   /**
    * Fired when a message is received from a client
@@ -159,26 +196,6 @@ export interface ServerEventMap {
 }
 
 /**
- * Disconnection event details
- */
-export interface DisconnectionEvent {
-  /**
-   * Whether the disconnection was clean (WebSocket close code 1000)
-   */
-  wasClean: boolean
-
-  /**
-   * WebSocket close code
-   */
-  code: number
-
-  /**
-   * Close reason
-   */
-  reason: string
-}
-
-/**
  * Server client wrapper
  * Extends ClientConnection with server-side methods
  */
@@ -186,27 +203,17 @@ export interface ServerClient extends ClientConnection {
   /**
    * Unique client ID (re-declared for type safety)
    */
-  id: string
-
-  /**
-   * Connection status (re-declared for type safety)
-   */
-  status: 'connected' | 'disconnected' | 'connecting' | 'disconnecting'
+  id: ClientId
 
   /**
    * Connected timestamp (re-declared for type safety)
    */
-  connectedAt: number
+  connectedAt: Timestamp
 
   /**
    * Last ping timestamp (re-declared for type safety)
    */
-  lastPingAt?: number
-
-  /**
-   * Custom metadata (re-declared for type safety)
-   */
-  metadata: Record<string, unknown>
+  lastPingAt?: Timestamp
 
   /**
    * Send a message to this client
@@ -227,16 +234,6 @@ export interface ServerClient extends ClientConnection {
    * Check if client is subscribed to a channel
    */
   hasSubscription(channel: ChannelName): boolean
-
-  /**
-   * Set custom metadata on the client
-   */
-  setMetadata(key: string, value: unknown): void
-
-  /**
-   * Get custom metadata from the client
-   */
-  getMetadata<T = unknown>(key: string): T | undefined
 }
 
 /**
@@ -257,12 +254,12 @@ export interface ChannelTransport<T = unknown> {
   /**
    * Send data to all subscribers except the sender
    */
-  send(data: T, excludeClientId?: string): Promise<void>
+  send(data: T, excludeClientId?: ClientId): Promise<void>
 
   /**
    * Send data to a specific client in the channel
    */
-  sendTo(clientId: string, data: T): Promise<void>
+  sendTo(clientId: ClientId, data: T): Promise<void>
 
   /**
    * Register a handler for incoming messages on this channel
@@ -332,7 +329,7 @@ export interface BroadcastTransport<T = unknown> {
   /**
    * Send data to all clients except the sender
    */
-  sendExcept(data: T, excludeClientId: string): Promise<void>
+  sendExcept(data: T, excludeClientId: ClientId): Promise<void>
 
   /**
    * Register a handler for incoming broadcast messages
@@ -397,7 +394,7 @@ export interface ChannelState<T = unknown> {
   /**
    * Subscribed client IDs
    */
-  subscribers: Set<string>
+  subscribers: Set<ClientId>
 
   /**
    * Message handlers

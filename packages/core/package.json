@@ -13,6 +13,13 @@
       "development": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./src/index.ts"
+    },
+    "./ws-server": {
+      "types": "./dist/ws-server.d.ts",
+      "bun": "./src/ws-server.ts",
+      "development": "./src/ws-server.ts",
+      "import": "./dist/ws-server.js",
+      "default": "./src/ws-server.ts"
     }
   },
   "files": [

@@ -192,15 +192,8 @@ export function createAuthMiddleware(options: {
     try {
       // Verify token
       const result = await options.verify?.(token)
-      if (result) {
-        // Attach user info to client metadata
-        if (typeof result === 'string') {
-          client.setMetadata('userId', result)
-        } else {
-          Object.entries(result).forEach(([key, value]) => {
-            client.setMetadata(key, value)
-          })
-        }
+      if (!result) {
+        reject('Authentication failed')
       }
     } catch (error) {
       reject('Authentication failed')

@@ -3,9 +3,10 @@
  * Server-side WebSocket transport using ws library
  */
 
-import type { Message } from './protocol.js'
-import { WebSocketServer as WSWebSocketServer, WebSocket } from 'ws'
 import { EventEmitter } from 'node:events'
+import { WebSocketServer as WSWebSocketServer, WebSocket } from 'ws'
+
+import type { Message } from './protocol.js'
 import type { Timestamp, ClientId } from './types.js'
 
 export type ServerTransportEvent =
@@ -75,7 +76,7 @@ export interface ServerTransportConfig {
   ServerConstructor?: unknown
 }
 
-export type ServerConnection = {
+export type ClientConnection = {
   id: string
 
   /**
@@ -99,7 +100,7 @@ export type ServerConnection = {
  */
 export class WebSocketServerTransport extends EventEmitter {
   private wsServer: WSWebSocketServer
-  private connections: Map<string, ServerConnection> = new Map()
+  private connections: Map<string, ClientConnection> = new Map()
   private pingInterval: ReturnType<typeof setInterval> | null = null
   private startedAt: number
 
@@ -179,7 +180,7 @@ export class WebSocketServerTransport extends EventEmitter {
       ws.isAlive = true
     })
 
-    const connection: ServerConnection = {
+    const connection: ClientConnection = {
       socket: ws,
       id: clientId,
       connectedAt: Date.now(),

@@ -10,8 +10,7 @@
     "types": ["node"],
     "baseUrl": ".",
     "paths": {
-      "@synnel/core": ["../core/src"],
-      "@synnel/adapter": ["../adapter/src"]
+      "@synnel/core": ["../core/src"]
     }
   },
   "include": ["src/**/*"],

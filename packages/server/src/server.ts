@@ -11,8 +11,8 @@ import type {
   BroadcastTransport,
   ServerEventType,
   ServerEventMap,
-  DisconnectionEvent,
   MiddlewareContext,
+  ServerTransport,
 } from './types.js'
 import type {
   Message,
@@ -21,8 +21,7 @@ import type {
   SignalType,
 } from '@synnel/core'
 import { MessageType, SignalType as CoreSignalType } from '@synnel/core'
-import type { ServerTransport } from '@synnel/adapter'
-import { WebSocketServerTransport } from '@synnel/adapter/server'
+import { WebSocketServerTransport } from '@synnel/core/ws-server'
 import { ClientRegistry } from './client-registry.js'
 import { MiddlewareManager, MiddlewareRejectionError } from './middleware.js'
 import { createServer } from 'http'
@@ -84,7 +83,7 @@ export class SynnelServer {
 
       this.transport = new WebSocketServerTransport({
         server: config.server ?? this.httpServer,
-        path: '/synnel',
+        path: config.path ?? '/synnel',
         enablePing: config.enablePing ?? true,
         pingInterval: config.pingInterval ?? 5000,
         pingTimeout: config.pingTimeout,
@@ -314,8 +313,6 @@ export class SynnelServer {
    * Get server statistics
    */
   getStats(): ServerStats {
-    const transportInfo = this.transport.getServerInfo()
-
     return {
       clientCount: this.registry.getCount(),
       channelCount: this.channels.size,
@@ -323,9 +320,6 @@ export class SynnelServer {
       messagesReceived: this.messagesReceived,
       messagesSent: this.messagesSent,
       startedAt: this.startedAt,
-      transport: {
-        path: transportInfo.path,
-      },
     }
   }
 
@@ -434,20 +428,20 @@ export class SynnelServer {
    */
   private setupTransportHandlers(): void {
     // Handle new connections
-    this.transport.on('connection', async (clientId: string) => {
-      await this.handleConnection(clientId)
+    // Core transport emits connection object, adapter emits clientId
+    this.transport.on('connection', async (connection: any) => {
+      const clientId =
+        typeof connection === 'string' ? connection : connection.id
+      await this.handleConnection(
+        clientId,
+        typeof connection === 'string' ? undefined : connection,
+      )
     })
 
     // Handle disconnections
-    this.transport.on(
-      'disconnection',
-      async (
-        clientId: string,
-        event: { wasClean: boolean; code: number; reason: string },
-      ) => {
-        await this.handleDisconnection(clientId, event)
-      },
-    )
+    this.transport.on('disconnection', async (clientId: string) => {
+      await this.handleDisconnection(clientId)
+    })
 
     // Handle incoming messages
     this.transport.on('message', async (clientId: string, message: Message) => {
@@ -463,8 +457,11 @@ export class SynnelServer {
   /**
    * Handle a new client connection
    */
-  private async handleConnection(clientId: string): Promise<void> {
-    const connection = this.transport.getClient(clientId)
+  private async handleConnection(
+    clientId: string,
+    connectionObject?: any,
+  ): Promise<void> {
+    const connection = connectionObject || this.transport.getClient(clientId)
     if (!connection) {
       return
     }
@@ -496,10 +493,7 @@ export class SynnelServer {
   /**
    * Handle a client disconnection
    */
-  private async handleDisconnection(
-    clientId: string,
-    event: { wasClean: boolean; code: number; reason: string },
-  ): Promise<void> {
+  private async handleDisconnection(clientId: string): Promise<void> {
     const serverClient = this.registry.get(clientId)
     if (!serverClient) {
       return
@@ -529,12 +523,7 @@ export class SynnelServer {
     this.registry.unregister(clientId)
 
     // Emit disconnection event
-    const disconnectionEvent: DisconnectionEvent = {
-      wasClean: event.wasClean,
-      code: event.code,
-      reason: event.reason,
-    }
-    this.emit('disconnection', serverClient, disconnectionEvent)
+    this.emit('disconnection', serverClient)
   }
 
   /**

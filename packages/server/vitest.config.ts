@@ -12,7 +12,6 @@ export default defineConfig({
     alias: {
       '@synnel/server': path.resolve(__dirname, './src'),
       '@synnel/core': path.resolve(__dirname, '../core/src'),
-      '@synnel/adapter': path.resolve(__dirname, '../adapter/src'),
     },
   },
 })

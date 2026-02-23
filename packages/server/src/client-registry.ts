@@ -3,9 +3,9 @@
  * Manages connected clients and their subscriptions
  */
 
-import type { ServerClient } from './types.js'
+import type { ServerClient, ServerTransport } from './types.js'
 import type { ChannelName, Message } from '@synnel/core'
-import type { ServerTransport, ClientConnection } from '@synnel/adapter'
+import type { ClientConnection } from '@synnel/core/ws-server'
 
 /**
  * Internal client data structure
@@ -14,7 +14,6 @@ interface ClientData {
   id: string
   transport: ServerTransport
   subscriptions: Set<ChannelName>
-  metadata: Map<string, unknown>
 }
 
 /**
@@ -37,7 +36,6 @@ export class ClientRegistry {
       id: clientId,
       transport,
       subscriptions: new Set(),
-      metadata: new Map(),
     }
 
     this.clients.set(clientId, clientData)
@@ -232,16 +230,17 @@ export class ClientRegistry {
     return {
       // Include all properties from ClientConnection
       id: connection.id,
-      status: connection.status,
       connectedAt: connection.connectedAt,
       lastPingAt: connection.lastPingAt,
-      metadata: connection.metadata,
       // Add server-specific methods
       send: async (message: Message) => {
         await clientData.transport.sendToClient(clientData.id, message)
       },
       disconnect: async (code?: number, reason?: string) => {
-        await clientData.transport.disconnectClient(clientData.id, code, reason)
+        const conn = clientData.transport.getClient(clientData.id)
+        if (conn && conn.socket) {
+          conn.socket.close(code ?? 1000, reason ?? 'Disconnected')
+        }
       },
       getSubscriptions: () => {
         return Array.from(clientData.subscriptions)
@@ -249,12 +248,7 @@ export class ClientRegistry {
       hasSubscription: (channel: ChannelName) => {
         return clientData.subscriptions.has(channel)
       },
-      setMetadata: (key: string, value: unknown) => {
-        clientData.metadata.set(key, value)
-      },
-      getMetadata: <T = unknown>(key: string) => {
-        return clientData.metadata.get(key) as T | undefined
-      },
+      socket: connection.socket,
     }
   }
 }

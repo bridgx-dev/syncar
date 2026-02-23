@@ -74,8 +74,12 @@
     "packages/core": {
       "name": "@synnel/core",
       "version": "1.0.0-alpha.1",
+      "dependencies": {
+        "ws": "^8.19.0",
+      },
       "devDependencies": {
         "@types/node": "^22.13.10",
+        "@types/ws": "^8.18.1",
         "typescript": "^5.8.2",
         "vitest": "^3.0.7",
       },
@@ -112,7 +116,6 @@
       "name": "@synnel/server",
       "version": "1.0.0-alpha.1",
       "dependencies": {
-        "@synnel/adapter": "workspace:*",
         "@synnel/core": "workspace:*",
       },
       "devDependencies": {
