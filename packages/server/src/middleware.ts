@@ -8,7 +8,7 @@ import type {
   MiddlewareContext,
   ServerClient,
 } from './types.js'
-import type { Message, ChannelName } from '@synnel/core'
+import type { Message, ChannelName } from '@synnel/types'
 
 /**
  * Middleware execution error

@@ -7,8 +7,8 @@ import type {
   BroadcastTransport as IBroadcastTransport,
   ServerClient,
 } from './types.js'
-import type { DataMessage, Message } from '@synnel/core'
-import { createDataMessage } from '@synnel/core'
+import type { DataMessage, Message } from '@synnel/types'
+import { createDataMessage } from '@synnel/lib'
 import type { ClientRegistry } from './client-registry.js'
 
 /**

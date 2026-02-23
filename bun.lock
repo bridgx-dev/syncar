@@ -132,6 +132,8 @@
       "version": "1.0.0-alpha.1",
       "dependencies": {
         "@synnel/core": "workspace:*",
+        "@synnel/lib": "workspace:*",
+        "@synnel/types": "workspace:*",
       },
       "devDependencies": {
         "@types/node": "^20.10.0",

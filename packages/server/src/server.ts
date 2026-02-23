@@ -19,9 +19,9 @@ import type {
   DataMessage,
   ChannelName,
   SignalType,
-} from '@synnel/core'
-import { MessageType, SignalType as CoreSignalType } from '@synnel/core'
-import { WebSocketServerTransport } from '@synnel/core/ws-server'
+} from '@synnel/types'
+import { MessageType, SignalType as CoreSignalType } from '@synnel/types'
+import { WebSocketServerTransport } from './base.js'
 import { ClientRegistry } from './client-registry.js'
 import { MiddlewareManager, MiddlewareRejectionError } from './middleware.js'
 import { createServer } from 'http'

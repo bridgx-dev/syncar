@@ -19,6 +19,9 @@ export {
   createChannelWhitelistMiddleware,
 } from './middleware.js'
 
+// Base WebSocket transport
+export { WebSocketServerTransport } from './base.js'
+
 // Types
 export type {
   ServerConfig,

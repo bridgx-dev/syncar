@@ -27,7 +27,9 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
-    "@synnel/core": "workspace:*"
+    "@synnel/core": "workspace:*",
+    "@synnel/types": "workspace:*",
+    "@synnel/lib": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

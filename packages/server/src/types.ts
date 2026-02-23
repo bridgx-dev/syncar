@@ -9,12 +9,107 @@ import type {
   ChannelName,
   ClientId,
   Timestamp,
-} from '@synnel/core'
-import type { ClientConnection } from '@synnel/core/ws-server'
+} from '@synnel/types'
 import type { Server as HttpServer } from 'http'
+
+// ============================================================
+// BASE TRANSPORT TYPES (from base.ts)
+// ============================================================
+
+/**
+ * Server transport event types
+ */
+export type ServerTransportEvent =
+  | 'connection'
+  | 'disconnection'
+  | 'message'
+  | 'error'
+
+/**
+ * Server transport configuration
+ */
+export interface ServerTransportConfig {
+  /**
+   * Existing HTTP server to attach WebSocket to
+   * Works with Express, Fastify, plain Node.js http.Server, etc.
+   *
+   * @example
+   * ```ts
+   * import express from 'express'
+   * import { createServer } from 'http'
+   *
+   * const app = express()
+   * const server = createServer(app)
+   *
+   * const transport = new WebSocketServerTransport({ server })
+   * ```
+   */
+  server: unknown
+
+  /**
+   * Path for WebSocket connections
+   * If not provided, the WebSocket server will use its default path
+   */
+  path?: string
+
+  /**
+   * Maximum message size in bytes
+   * @default 1048576 (1MB)
+   */
+  maxPayload?: number
+
+  /**
+   * Enable client ping/pong
+   * @default true
+   */
+  enablePing?: boolean
+
+  /**
+   * Ping interval in ms
+   * @default 30000
+   */
+  pingInterval?: number
+
+  /**
+   * Ping timeout in ms
+   * @default 5000
+   */
+  pingTimeout?: number
+
+  /**
+   * Custom WebSocket Server (for testing)
+   */
+  ServerConstructor?: unknown
+}
+
+/**
+ * Client connection representation
+ */
+export type ClientConnection = {
+  /** Unique client identifier */
+  id: string
+
+  /**
+   * Connected timestamp
+   */
+  connectedAt: Timestamp
+
+  /**
+   * Last ping timestamp
+   */
+  lastPingAt?: Timestamp
+
+  /** WebSocket instance for this connection */
+  socket: unknown
+}
+
+// ============================================================
+// SERVER TRANSPORT INTERFACE
+// ============================================================
 
 /**
  * Server transport interface
+ * Abstracts the underlying WebSocket implementation
  */
 export interface ServerTransport {
   /**
@@ -44,6 +139,10 @@ export interface ServerTransport {
   on(event: 'error', handler: (error: Error) => void): void
   on(event: string, handler: (...args: any[]) => void): void
 }
+
+// ============================================================
+// SERVER CONFIGURATION
+// ============================================================
 
 /**
  * Server configuration options
@@ -114,6 +213,10 @@ export interface ServerConfig {
   middleware?: ServerMiddleware[]
 }
 
+// ============================================================
+// SERVER STATISTICS
+// ============================================================
+
 /**
  * Server statistics
  */
@@ -148,6 +251,10 @@ export interface ServerStats {
    */
   startedAt?: number
 }
+
+// ============================================================
+// SERVER EVENTS
+// ============================================================
 
 /**
  * Server event types
@@ -195,6 +302,10 @@ export interface ServerEventMap {
   error: (error: Error) => void
 }
 
+// ============================================================
+// SERVER CLIENT
+// ============================================================
+
 /**
  * Server client wrapper
  * Extends ClientConnection with server-side methods
@@ -235,6 +346,22 @@ export interface ServerClient extends ClientConnection {
    */
   hasSubscription(channel: ChannelName): boolean
 }
+
+/**
+ * Disconnection event
+ */
+export interface DisconnectionEvent {
+  /** Client ID */
+  clientId: ClientId
+  /** Disconnection code */
+  code?: number
+  /** Disconnection reason */
+  reason?: string
+}
+
+// ============================================================
+// CHANNEL TRANSPORT
+// ============================================================
 
 /**
  * Channel transport API
@@ -316,6 +443,10 @@ export interface ChannelTransport<T = unknown> {
   hasSubscriber(clientId: string): boolean
 }
 
+// ============================================================
+// BROADCAST TRANSPORT
+// ============================================================
+
 /**
  * Broadcast transport API
  * Used for sending messages to all connected clients
@@ -342,6 +473,10 @@ export interface BroadcastTransport<T = unknown> {
     ) => void | Promise<void>,
   ): () => void
 }
+
+// ============================================================
+// MIDDLEWARE
+// ============================================================
 
 /**
  * Middleware function
@@ -382,8 +517,12 @@ export interface MiddlewareContext {
   reject(reason: string): void
 }
 
+// ============================================================
+// CHANNEL STATE
+// ============================================================
+
 /**
- * Channel state
+ * Channel state (internal)
  */
 export interface ChannelState<T = unknown> {
   /**

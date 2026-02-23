@@ -8,8 +8,8 @@ import type {
   ChannelState,
   ServerClient,
 } from './types.js'
-import type { ChannelName, DataMessage, Message } from '@synnel/core'
-import { generateMessageId, createDataMessage } from '@synnel/core'
+import type { ChannelName, DataMessage, Message } from '@synnel/types'
+import { createDataMessage } from '@synnel/lib'
 import type { ClientRegistry } from './client-registry.js'
 
 /**

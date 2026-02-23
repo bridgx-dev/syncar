@@ -3,9 +3,8 @@
  * Manages connected clients and their subscriptions
  */
 
-import type { ServerClient, ServerTransport } from './types.js'
-import type { ChannelName, Message } from '@synnel/core'
-import type { ClientConnection } from '@synnel/core/ws-server'
+import type { ServerClient, ServerTransport, ClientConnection } from './types.js'
+import type { ChannelName, Message } from '@synnel/types'
 
 /**
  * Internal client data structure
@@ -239,7 +238,8 @@ export class ClientRegistry {
       disconnect: async (code?: number, reason?: string) => {
         const conn = clientData.transport.getClient(clientData.id)
         if (conn && conn.socket) {
-          conn.socket.close(code ?? 1000, reason ?? 'Disconnected')
+          const socket = conn.socket as { close: (code: number, reason: string) => void }
+          socket.close(code ?? 1000, reason ?? 'Disconnected')
         }
       },
       getSubscriptions: () => {
