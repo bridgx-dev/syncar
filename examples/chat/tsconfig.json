@@ -30,7 +30,6 @@
   "references": [
     { "path": "../../packages/core" },
     { "path": "../../packages/client" },
-    { "path": "../../packages/adapter" },
     { "path": "../../packages/react" },
     { "path": "../../packages/server" }
   ]

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { SynnelProvider } from '@synnel/react'
 import { createSynnelClient } from '@synnel/client'
-import { WebSocketClientTransport } from '@synnel/adapter'
+import { WebSocketClientTransport } from '@synnel/client'
 import Login from './components/Login'
 import Chat from './components/Chat'
 import Notifications from './components/Notifications'
