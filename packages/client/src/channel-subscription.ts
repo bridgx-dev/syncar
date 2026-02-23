@@ -3,13 +3,13 @@
  * Manages a single channel subscription lifecycle
  */
 
-import type { ChannelName, DataMessage } from '@synnel/core'
-import { SignalType } from '@synnel/core'
+import type { ChannelName, DataMessage } from '@synnel/types'
+import { SignalType } from '@synnel/types'
 import type {
   SubscriptionState,
   SubscribeOptions,
   SubscriptionCallbacks,
-  MessageHandler,
+  ClientMessageHandler as MessageHandler,
 } from './types.js'
 
 /**

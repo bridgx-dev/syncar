@@ -5,10 +5,9 @@
  *
  * @example
  * ```ts
- * import { createSynnelClient, createWebSocketClientTransport } from '@synnel/client'
- * import { createWebSocketClientTransport } from '@synnel/adapter/client'
+ * import { createSynnelClient, WebSocketClientTransport } from '@synnel/client'
  *
- * const transport = createWebSocketClientTransport({
+ * const transport = new WebSocketClientTransport({
  *   url: 'ws://localhost:3000',
  *   reconnect: true,
  * })
@@ -42,6 +41,9 @@ export { ConnectionManager } from './connection-manager.js'
 // Channel subscription
 export { ChannelSubscriptionImpl } from './channel-subscription.js'
 
+// Base WebSocket transport
+export { WebSocketClientTransport } from './base.js'
+
 // Types
 export type {
   // Config
@@ -60,9 +62,16 @@ export type {
 
   // Interfaces
   ChannelSubscription,
-  MessageHandler,
+  ClientMessageHandler as MessageHandler,
   MessageFilter,
 
   // Stats
   ClientStats,
+
+  // Transport types
+  ClientTransportConfig,
+  TransportEventType,
+  TransportEventMap,
+  TransportCloseEvent,
+  ConnectionStatus,
 } from './types.js'

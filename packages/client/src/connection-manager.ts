@@ -5,6 +5,7 @@
 
 import type { Transport } from './types.js'
 import type { ClientStatus, ClientConfig } from './types.js'
+import { createDefaultLogger, type LoggerFn, type LogLevel } from '@synnel/lib'
 
 /**
  * Reconnection state
@@ -43,8 +44,20 @@ export class ConnectionManager {
 
   private statusChangeHandlers: Set<(status: ClientStatus) => void> = new Set()
   private reconnectHandlers: Set<(attempt: number) => void> = new Set()
+  private readonly logger: LoggerFn
 
   constructor(config: ClientConfig) {
+    // Create or adapt logger to LoggerFn type
+    const rawLogger = config.logger ?? createDefaultLogger('Synnel Client')
+    this.logger = ((level: LogLevel, message: string, ...args: unknown[]) => {
+      // Filter out debug messages if debug is disabled
+      if (level === 'debug' && !config.debug) {
+        return
+      }
+      // Call the user's logger (which doesn't support 'debug')
+      rawLogger(level as 'info' | 'warn' | 'error', message, ...args)
+    }) as LoggerFn
+
     this.config = {
       transport: config.transport,
       autoReconnect: config.autoReconnect ?? true,
@@ -52,7 +65,7 @@ export class ConnectionManager {
       reconnectDelay: config.reconnectDelay ?? 1000,
       maxReconnectDelay: config.maxReconnectDelay ?? 30000,
       debug: config.debug ?? false,
-      logger: config.logger ?? this.defaultLogger,
+      logger: rawLogger,
     }
 
     this.reconnectionState = {
@@ -90,7 +103,7 @@ export class ConnectionManager {
       this.reconnectionState.currentDelay = this.config.reconnectDelay
     } catch (error) {
       this.setStatus('disconnected')
-      this.config.logger('error', 'Connection failed', error)
+      this.logger('error', 'Connection failed', error)
 
       if (this.reconnectionState.enabled) {
         this.scheduleReconnect()
@@ -117,7 +130,7 @@ export class ConnectionManager {
       this.setStatus('disconnected')
     } catch (error) {
       this.setStatus('disconnected')
-      this.config.logger('error', 'Disconnect error', error)
+      this.logger('error', 'Disconnect error', error)
       throw error
     }
   }
@@ -143,7 +156,7 @@ export class ConnectionManager {
    * Handle transport error event
    */
   onTransportError(error: Error): void {
-    this.config.logger('error', 'Transport error', error)
+    this.logger('error', 'Transport error', error)
 
     if (this._status === 'connected') {
       // Error while connected - might be a transient issue
@@ -227,7 +240,7 @@ export class ConnectionManager {
     }
 
     if (this.reconnectionState.attempts >= this.config.maxReconnectAttempts) {
-      this.config.logger(
+      this.logger(
         'warn',
         `Max reconnection attempts (${this.config.maxReconnectAttempts}) reached`,
       )
@@ -237,7 +250,7 @@ export class ConnectionManager {
     this.reconnectionState.attempts++
     const delay = this.reconnectionState.currentDelay
 
-    this.config.logger(
+    this.logger(
       'info',
       `Reconnection attempt ${this.reconnectionState.attempts}/${this.config.maxReconnectAttempts} in ${delay}ms`,
     )
@@ -251,7 +264,7 @@ export class ConnectionManager {
           try {
             handler(this.reconnectionState.attempts)
           } catch (error) {
-            this.config.logger('error', 'Reconnect handler error', error)
+            this.logger('error', 'Reconnect handler error', error)
           }
         }
 
@@ -262,7 +275,7 @@ export class ConnectionManager {
         this.reconnectionState.attempts = 0
         this.reconnectionState.currentDelay = this.config.reconnectDelay
       } catch (error) {
-        this.config.logger('error', 'Reconnection failed', error)
+        this.logger('error', 'Reconnection failed', error)
         this.setStatus('disconnected')
 
         // Schedule next attempt
@@ -284,38 +297,15 @@ export class ConnectionManager {
   private setStatus(status: ClientStatus): void {
     if (this._status !== status) {
       this._status = status
-      this.config.logger('info', `Status changed: ${status}`)
+      this.logger('info', `Status changed: ${status}`)
 
       for (const handler of this.statusChangeHandlers) {
         try {
           handler(status)
         } catch (error) {
-          this.config.logger('error', 'Status change handler error', error)
+          this.logger('error', 'Status change handler error', error)
         }
       }
-    }
-  }
-
-  /**
-   * Default logger implementation
-   */
-  private defaultLogger(
-    level: 'info' | 'warn' | 'error',
-    message: string,
-    ...args: any[]
-  ): void {
-    const timestamp = new Date().toISOString()
-    const logMessage = `[Synnel Client ${timestamp}] [${level.toUpperCase()}] ${message}`
-
-    switch (level) {
-      case 'error':
-        console.error(logMessage, ...args)
-        break
-      case 'warn':
-        console.warn(logMessage, ...args)
-        break
-      default:
-        console.log(logMessage, ...args)
     }
   }
 }

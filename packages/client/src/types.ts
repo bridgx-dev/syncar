@@ -1,25 +1,42 @@
 /**
  * Client Types
- * Framework-agnostic client types for Synnel v2
+ * Type definitions for the @synnel/client package
  */
 
 import type {
-  ChannelName,
   Message,
-  MessageType,
   DataMessage,
+  ChannelName,
   SubscriberId,
-} from '@synnel/core'
+} from '@synnel/types'
+
+// ============================================================
+// TRANSPORT TYPES (from base.ts)
+// ============================================================
 
 /**
- * Client connection status
+ * Transport event types
  */
-export type ClientStatus =
-  | 'disconnected'
-  | 'connecting'
-  | 'connected'
-  | 'disconnecting'
-  | 'reconnecting'
+export type TransportEventType = 'open' | 'close' | 'message' | 'error'
+
+/**
+ * Transport close event
+ */
+export interface TransportCloseEvent {
+  wasClean: boolean
+  code: number
+  reason: string
+}
+
+/**
+ * Transport event map
+ */
+export type TransportEventMap = {
+  open: () => void
+  close: (event: TransportCloseEvent) => void
+  message: (message: Message) => void
+  error: (error: Error) => void
+}
 
 /**
  * Transport interface - must be implemented by any transport adapter
@@ -28,7 +45,7 @@ export interface Transport {
   /**
    * Current transport status
    */
-  readonly status: 'disconnected' | 'connecting' | 'connected' | 'disconnecting'
+  readonly status: ConnectionStatus
 
   /**
    * Connect to the server
@@ -48,9 +65,9 @@ export interface Transport {
   /**
    * Register an event handler
    */
-  on(
-    event: 'open' | 'message' | 'error' | 'close',
-    handler: (...args: any[]) => void,
+  on<E extends TransportEventType>(
+    event: E,
+    handler: TransportEventMap[E],
   ): () => void
 
   /**
@@ -58,6 +75,78 @@ export interface Transport {
    */
   getConnectionInfo?(): { connectedAt?: number; url?: string }
 }
+
+/**
+ * Client transport configuration
+ */
+export interface ClientTransportConfig {
+  /**
+   * WebSocket URL
+   */
+  url: string
+
+  /**
+   * Enable automatic reconnection
+   * @default false
+   */
+  reconnect?: boolean
+
+  /**
+   * Maximum reconnection attempts
+   * @default 5
+   */
+  maxReconnectAttempts?: number
+
+  /**
+   * Initial reconnection delay in ms
+   * @default 1000
+   */
+  reconnectDelay?: number
+
+  /**
+   * Maximum reconnection delay in ms
+   * @default 30000
+   */
+  maxReconnectDelay?: number
+
+  /**
+   * Connection timeout in ms
+   * @default 10000
+   */
+  connectionTimeout?: number
+
+  /**
+   * Custom WebSocket constructor (for testing or custom implementations)
+   */
+  WebSocketConstructor?: unknown
+}
+
+// ============================================================
+// CLIENT STATUS
+// ============================================================
+
+/**
+ * Client connection status
+ */
+export type ClientStatus =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'disconnecting'
+  | 'reconnecting'
+
+/**
+ * Connection status (shared with transport)
+ */
+export type ConnectionStatus =
+  | 'disconnected'
+  | 'connecting'
+  | 'connected'
+  | 'disconnecting'
+
+// ============================================================
+// CLIENT CONFIGURATION
+// ============================================================
 
 /**
  * Client configuration
@@ -116,9 +205,13 @@ export interface ClientConfig {
   logger?: (
     level: 'info' | 'warn' | 'error',
     message: string,
-    ...args: any[]
+    ...args: unknown[]
   ) => void
 }
+
+// ============================================================
+// CHANNEL SUBSCRIPTION TYPES
+// ============================================================
 
 /**
  * Channel subscription state
@@ -171,7 +264,7 @@ export interface SubscriptionCallbacks<T = unknown> {
 }
 
 /**
- * Channel subscription
+ * Channel subscription interface
  */
 export interface ChannelSubscription<T = unknown> {
   /**
@@ -215,6 +308,10 @@ export interface ChannelSubscription<T = unknown> {
   }
 }
 
+// ============================================================
+// CLIENT EVENTS
+// ============================================================
+
 /**
  * Client event types
  */
@@ -237,6 +334,10 @@ export interface ClientEventMap {
   error: (error: Error) => void
   message: (message: Message) => void
 }
+
+// ============================================================
+// CLIENT STATISTICS
+// ============================================================
 
 /**
  * Client statistics
@@ -283,6 +384,10 @@ export interface ClientStats {
   channels: ChannelName[]
 }
 
+// ============================================================
+// UTILITY TYPES
+// ============================================================
+
 /**
  * Message filter function
  */
@@ -291,4 +396,4 @@ export type MessageFilter = (message: Message) => boolean
 /**
  * Message handler function
  */
-export type MessageHandler<T = unknown> = (message: DataMessage<T>) => void
+export type ClientMessageHandler<T = unknown> = (message: DataMessage<T>) => void
