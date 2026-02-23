@@ -17,6 +17,8 @@ import type {
   DataMessage,
   ChannelName,
   SignalType,
+  Timestamp,
+  ChannelOptions,
 } from '@synnel/types'
 import { MessageType, SignalType as CoreSignalType } from '@synnel/types'
 import { WebSocketServerTransport } from './base.js'
@@ -47,7 +49,7 @@ export class SynnelServer {
   private started = false
   private messagesReceived = 0
   private messagesSent = 0
-  private startedAt?: number
+  private startedAt?: Timestamp
   private broadcast: BroadcastTransport
   private multicasts: Map<ChannelName, MulticastTransport> = new Map()
 
@@ -132,13 +134,6 @@ export class SynnelServer {
   }
 
   /**
-   * Get the broadcast transport
-   */
-  broadcastTransport<T = unknown>(): BroadcastTransport<T> {
-    return this.broadcast as BroadcastTransport<T>
-  }
-
-  /**
    * Create and return a new broadcast transport instance
    * This returns the shared broadcast transport
    */
@@ -163,7 +158,7 @@ export class SynnelServer {
    */
   createMulticast<T = unknown>(
     name: ChannelName,
-    options?: import('@synnel/types').ChannelOptions,
+    options?: ChannelOptions,
   ): MulticastTransport<T> {
     // Check if already exists
     let multicast = this.multicasts.get(name)
