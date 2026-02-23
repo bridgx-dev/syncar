@@ -385,14 +385,14 @@ export interface ChannelTransport<T = unknown> {
   readonly subscriberCount: number
 
   /**
-   * Send data to all subscribers except the sender
+   * Publish data to all subscribers except optionally excluded client
    */
-  send(data: T, excludeClientId?: ClientId): Promise<void>
+  publish(data: T, excludeClientId?: ClientId): void
 
   /**
-   * Send data to a specific client in the channel
+   * Publish data to a specific client in the channel
    */
-  sendTo(clientId: ClientId, data: T): Promise<void>
+  publishTo(clientId: ClientId, data: T): void
 
   /**
    * Register a handler for incoming messages on this channel
@@ -410,7 +410,7 @@ export interface ChannelTransport<T = unknown> {
    * Provides a more intuitive API for receiving messages on a channel
    * @example
    * ```ts
-   * const chat = synnel.multicast('chat')
+   * const chat = server.createMulticast('chat')
    * chat.receive((data, client) => {
    *   console.log(`Received from ${client.id}:`, data)
    * })
@@ -437,16 +437,6 @@ export interface ChannelTransport<T = unknown> {
   onUnsubscribe(
     handler: (client: ServerClient) => void | Promise<void>,
   ): () => void
-
-  /**
-   * Get all subscribers
-   */
-  getSubscribers(): ServerClient[]
-
-  /**
-   * Check if a client is subscribed
-   */
-  hasSubscriber(clientId: string): boolean
 }
 
 // ============================================================
@@ -472,6 +462,72 @@ export interface BroadcastTransport<T = unknown> {
    * Publish data to all clients except the specified one
    */
   publishExcept(data: T, excludeClientId: ClientId): void
+}
+
+// ============================================================
+// MULTICAST TRANSPORT
+// ============================================================
+
+/**
+ * Multicast transport API
+ * Used for sending messages to subscribed clients only
+ */
+export interface MulticastTransport<T = unknown> {
+  /**
+   * Channel name
+   */
+  readonly name: ChannelName
+
+  /**
+   * Number of subscribers
+   */
+  readonly subscriberCount: number
+
+  /**
+   * Publish data to all subscribers except optionally excluded client
+   */
+  publish(data: T, excludeClientId?: ClientId): void
+
+  /**
+   * Publish data to a specific client in the channel
+   */
+  publishTo(clientId: ClientId, data: T): void
+
+  /**
+   * Register a handler for incoming messages on this channel
+   */
+  onMessage(
+    handler: (
+      data: T,
+      client: ServerClient,
+      message: DataMessage<T>,
+    ) => void | Promise<void>,
+  ): () => void
+
+  /**
+   * Register a handler for incoming messages (alias for onMessage)
+   */
+  receive(
+    handler: (
+      data: T,
+      client: ServerClient,
+      message: DataMessage<T>,
+    ) => void | Promise<void>,
+  ): () => void
+
+  /**
+   * Register a handler for new subscriptions
+   */
+  onSubscribe(
+    handler: (client: ServerClient) => void | Promise<void>,
+  ): () => void
+
+  /**
+   * Register a handler for unsubscriptions
+   */
+  onUnsubscribe(
+    handler: (client: ServerClient) => void | Promise<void>,
+  ): () => void
 }
 
 // ============================================================

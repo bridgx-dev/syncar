@@ -7,7 +7,6 @@ import type {
   ServerConfig,
   ServerStats,
   ServerClient,
-  ChannelTransport,
   ServerEventType,
   ServerEventMap,
   MiddlewareContext,
@@ -23,24 +22,8 @@ import { MessageType, SignalType as CoreSignalType } from '@synnel/types'
 import { WebSocketServerTransport } from './base.js'
 import { ClientRegistry } from './client-registry.js'
 import { MiddlewareManager, MiddlewareRejectionError } from './middleware.js'
-import { BroadcastTransport } from './channel.js'
+import { BroadcastTransport, MulticastTransport } from './channel.js'
 import { createServer } from 'http'
-// Import ChannelTransportImpl at the bottom to avoid circular dependency
-import type { ChannelTransportImpl } from './channel-transport.js'
-
-/**
- * Internal channel state
- */
-interface InternalChannel<T = unknown> {
-  transport: ChannelTransport<T>
-  messageHandlers: Set<
-    (
-      data: T,
-      client: ServerClient,
-      message: DataMessage<T>,
-    ) => void | Promise<void>
-  >
-}
 
 /**
  * Synnel Server
@@ -53,7 +36,6 @@ export class SynnelServer {
   private config: ServerConfig
   private registry: ClientRegistry = new ClientRegistry()
   private middleware: MiddlewareManager = new MiddlewareManager()
-  private channels: Map<ChannelName, InternalChannel> = new Map()
   private broadcastHandlers: Set<
     (
       data: unknown,
@@ -62,12 +44,12 @@ export class SynnelServer {
     ) => void | Promise<void>
   > = new Set()
   private eventHandlers: Map<ServerEventType, Set<any>> = new Map()
-  private createdChannels: Set<ChannelName> = new Set()
   private started = false
   private messagesReceived = 0
   private messagesSent = 0
   private startedAt?: number
   private broadcast: BroadcastTransport
+  private multicasts: Map<ChannelName, MulticastTransport> = new Map()
 
   constructor(config: ServerConfig = {}) {
     this.config = config
@@ -137,7 +119,7 @@ export class SynnelServer {
     this.started = false
     this.startedAt = undefined
     this.registry.clear()
-    this.channels.clear()
+    this.multicasts.clear()
 
     // Close HTTP server if we created it
     if (this.ownHttpServer && this.httpServer) {
@@ -147,50 +129,6 @@ export class SynnelServer {
       this.httpServer = undefined
       this.ownHttpServer = false
     }
-  }
-
-  /**
-   * Get a channel transport
-   * Creates the channel if it doesn't exist
-   * Note: For client subscriptions, channel must be created via multicast() first
-   */
-  async channel<T = unknown>(name: ChannelName): Promise<ChannelTransport<T>> {
-    let channel = this.channels.get(name)
-    if (!channel) {
-      // Import ChannelTransportImpl dynamically to avoid circular dependency
-      const { ChannelTransportImpl } = await import('./channel-transport.js')
-      const impl = new ChannelTransportImpl(
-        name,
-        this.registry,
-      ) as ChannelTransportImpl<T>
-
-      // Set up message handler for this channel
-      impl.onMessage(
-        (data: T, client: ServerClient, message: DataMessage<T>) => {
-          const handlers = this.channels.get(name)?.messageHandlers
-          if (handlers) {
-            for (const handler of handlers) {
-              try {
-                handler(data, client, message as any)
-              } catch (error) {
-                console.error(
-                  `Error in message handler for channel ${name}:`,
-                  error,
-                )
-              }
-            }
-          }
-        },
-      )
-
-      channel = {
-        transport: impl,
-        messageHandlers: new Set(),
-      }
-      this.channels.set(name, channel)
-    }
-
-    return channel.transport as ChannelTransport<T>
   }
 
   /**
@@ -209,17 +147,50 @@ export class SynnelServer {
   }
 
   /**
+   * Create or get a multicast transport for the given channel
+   * @param name - Channel name
+   * @param options - Channel options (maxSubscribers, reserved, historySize)
+   * @returns Multicast transport instance
+   *
+   * @example
+   * ```ts
+   * const chat = server.createMulticast('chat', { maxSubscribers: 100 })
+   * chat.publish({ message: 'Hello everyone!' })
+   * chat.receive((data, client) => {
+   *   console.log(`Received from ${client.id}:`, data)
+   * })
+   * ```
+   */
+  createMulticast<T = unknown>(
+    name: ChannelName,
+    options?: import('@synnel/types').ChannelOptions,
+  ): MulticastTransport<T> {
+    // Check if already exists
+    let multicast = this.multicasts.get(name)
+    if (!multicast) {
+      multicast = new MulticastTransport(
+        name,
+        this.transport.connections,
+        options,
+      )
+      this.multicasts.set(name, multicast)
+    }
+
+    return multicast as MulticastTransport<T>
+  }
+
+  /**
    * Check if a channel exists
    */
   hasChannel(name: ChannelName): boolean {
-    return this.channels.has(name)
+    return this.multicasts.has(name)
   }
 
   /**
    * Get all active channels
    */
   getChannels(): ChannelName[] {
-    return Array.from(this.channels.keys())
+    return Array.from(this.multicasts.keys())
   }
 
   /**
@@ -248,7 +219,7 @@ export class SynnelServer {
   getStats(): ServerStats {
     return {
       clientCount: this.registry.getCount(),
-      channelCount: this.channels.size,
+      channelCount: this.multicasts.size,
       subscriptionCount: this.registry.getTotalSubscriptionCount(),
       messagesReceived: this.messagesReceived,
       messagesSent: this.messagesSent,
@@ -261,21 +232,6 @@ export class SynnelServer {
    */
   use(middleware: Parameters<MiddlewareManager['use']>[0]): void {
     this.middleware.use(middleware)
-  }
-
-  /**
-   * Create a multicast channel (many-to-many messaging)
-   * All subscribers can send and receive messages
-   * This marks the channel as "created" - only created channels can be subscribed to by clients
-   * @param name - Channel name
-   * @returns Channel transport with send/receive methods
-   */
-  async multicast<T = unknown>(
-    name: ChannelName,
-  ): Promise<ChannelTransport<T>> {
-    // Mark this channel as created/allowed
-    this.createdChannels.add(name)
-    return await this.channel<T>(name)
   }
 
   /**
@@ -432,14 +388,11 @@ export class SynnelServer {
 
     // Unsubscribe from all channels
     const subscriptions = serverClient.getSubscriptions()
-    for (const channel of subscriptions) {
-      const channelData = this.channels.get(channel)
-      if (channelData) {
+    for (const channelName of subscriptions) {
+      const multicast = this.multicasts.get(channelName)
+      if (multicast) {
         // Call unsubscribe handlers
-        const impl = channelData.transport as any
-        if (impl.handleUnsubscribe) {
-          await impl.handleUnsubscribe(serverClient)
-        }
+        await multicast.handleUnsubscribe(serverClient)
       }
     }
 
@@ -527,17 +480,19 @@ export class SynnelServer {
       // Emit message event
       this.emit('message', serverClient, message)
 
-      // Get or create channel and trigger handlers
-      const channelData = this.channels.get(channel)
-      if (channelData) {
-        const impl = channelData.transport as any
-        if (impl.handleMessage) {
-          await impl.handleMessage(dataMessage.data, serverClient, dataMessage)
-        }
-      }
+      // Get multicast and trigger handlers
+      const multicast = this.multicasts.get(channel)
+      if (multicast) {
+        // Trigger server-side receive handlers
+        await multicast.handleMessage(
+          dataMessage.data,
+          serverClient,
+          dataMessage,
+        )
 
-      // Relay to other subscribers
-      await this.relayMessage(serverClient, dataMessage)
+        // Relay the message to all other subscribers
+        multicast.publish(dataMessage.data, serverClient.id)
+      }
       return
     }
 
@@ -558,16 +513,14 @@ export class SynnelServer {
     }
 
     if (signal === CoreSignalType.SUBSCRIBE) {
-      // Check if channel was explicitly created via multicast()
       // Broadcast channel is always allowed
-      if (channel !== '__broadcast__' && !this.createdChannels.has(channel)) {
+      if (channel === '__broadcast__') {
+        // Send subscribed signal
         await serverClient.send({
-          id: `error-${Date.now()}`,
-          type: MessageType.ERROR,
-          data: {
-            message: `Channel '${channel}' is not allowed`,
-            code: 'CHANNEL_NOT_ALLOWED',
-          },
+          id: `signal-${Date.now()}`,
+          type: MessageType.SIGNAL,
+          signal: CoreSignalType.SUBSCRIBED,
+          channel,
           timestamp: Date.now(),
         })
         return
@@ -593,18 +546,21 @@ export class SynnelServer {
         throw error
       }
 
-      // Subscribe to channel
+      // Get or create multicast transport (auto-create on subscribe)
+      let multicast = this.multicasts.get(channel)
+      if (!multicast) {
+        multicast = this.createMulticast(channel)
+      }
+
+      // Subscribe to channel in registry
       const subscribed = this.registry.subscribe(serverClient.id, channel)
 
       if (subscribed) {
-        // Get or create channel transport
-        const channelTransport = await this.channel(channel)
-        const impl = channelTransport as any
+        // Subscribe to multicast transport
+        multicast.subscribe(serverClient.id)
 
-        // Call internal handleSubscribe if available
-        if (impl.handleSubscribe) {
-          await impl.handleSubscribe(serverClient)
-        }
+        // Call handleSubscribe
+        await multicast.handleSubscribe(serverClient)
 
         // Send subscribed signal
         await serverClient.send({
@@ -643,12 +599,13 @@ export class SynnelServer {
       const unsubscribed = this.registry.unsubscribe(serverClient.id, channel)
 
       if (unsubscribed) {
-        const channelData = this.channels.get(channel)
-        if (channelData) {
-          const impl = channelData.transport as any
-          if (impl.handleUnsubscribe) {
-            await impl.handleUnsubscribe(serverClient)
-          }
+        const multicast = this.multicasts.get(channel)
+        if (multicast) {
+          // Unsubscribe from multicast transport
+          multicast.unsubscribe(serverClient.id)
+
+          // Call handleUnsubscribe
+          await multicast.handleUnsubscribe(serverClient)
         }
 
         // Send unsubscribed signal
@@ -672,46 +629,6 @@ export class SynnelServer {
         timestamp: Date.now(),
       })
     }
-  }
-
-  /**
-   * Relay a message to all subscribers except the sender
-   */
-  private async relayMessage(
-    sender: ServerClient,
-    message: DataMessage,
-  ): Promise<void> {
-    const channel = message.channel
-    if (!channel) {
-      return
-    }
-
-    const channelTransport = this.channels.get(channel)
-    if (!channelTransport) {
-      return
-    }
-
-    const subscribers = this.registry.getSubscribers(channel)
-    const promises: Promise<void>[] = []
-
-    for (const subscriber of subscribers) {
-      if (subscriber.id === sender.id) {
-        continue // Don't echo back to sender
-      }
-
-      promises.push(
-        (async () => {
-          try {
-            await subscriber.send(message)
-            this.messagesSent++
-          } catch (error) {
-            console.error(`Failed to relay message to ${subscriber.id}:`, error)
-          }
-        })(),
-      )
-    }
-
-    await Promise.all(promises)
   }
 
   /**

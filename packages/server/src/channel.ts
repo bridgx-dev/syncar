@@ -233,39 +233,29 @@ export class MulticastTransport<T = unknown> {
   }
 
   /**
-   * Send data to all subscribers except optionally excluded client
+   * Publish data to all subscribers except optionally excluded client
    */
-  async send(data: T, excludeClientId?: ClientId): Promise<void> {
+  publish(data: T, excludeClientId?: ClientId): void {
     const message = createDataMessage(this.name, data)
     this.addToHistory(message)
-
-    const promises: Promise<void>[] = []
 
     for (const [id, client] of this.clients) {
       // Only send to subscribers, and exclude specified client
       if (!this.subscribers.has(id)) continue
       if (excludeClientId && id === excludeClientId) continue
 
-      promises.push(
-        new Promise<void>((resolve) => {
-          try {
-            client.socket.send(JSON.stringify(message))
-            resolve()
-          } catch (error) {
-            console.error(`Failed to send to ${client.id}:`, error)
-            resolve()
-          }
-        })
-      )
+      try {
+        client.socket.send(JSON.stringify(message))
+      } catch (error) {
+        console.error(`Failed to publish to ${client.id}:`, error)
+      }
     }
-
-    await Promise.all(promises)
   }
 
   /**
-   * Send data to a specific client in the channel
+   * Publish data to a specific client in the channel
    */
-  async sendTo(clientId: ClientId, data: T): Promise<void> {
+  publishTo(clientId: ClientId, data: T): void {
     const client = this.clients.get(clientId)
     if (!client || !this.subscribers.has(clientId)) {
       return

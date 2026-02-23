@@ -47,8 +47,8 @@ const synnel = new Synnel({ server: httpServer })
 
 // Create channels - only these channels can be joined by clients
 // Note: multicast() now returns a Promise
-const chat = await synnel.multicast<ChatMessage>('chat')
-const presence = await synnel.multicast<PresenceMessage>('presence')
+const chat = synnel.createMulticast<ChatMessage>('chat')
+const presence = synnel.createMulticast<PresenceMessage>('presence')
 const notifications = synnel.createBroadcast<NotificationMessage>()
 
 // Handle incoming chat messages
@@ -74,7 +74,7 @@ presence.receive(async (data, client) => {
   }
 
   // Broadcast presence update to all subscribers
-  await presence.send(data)
+  presence.publish(data)
 })
 
 // Handle connection events
@@ -91,7 +91,7 @@ synnel.on('connection', (client) => {
 })
 
 // Handle disconnection events
-synnel.on('disconnection', async (client) => {
+synnel.on('disconnection', (client) => {
   console.log(`[Disconnection] Client disconnected: ${client.id}`)
 
   const user = users.get(client.id)
@@ -100,14 +100,14 @@ synnel.on('disconnection', async (client) => {
     users.delete(client.id)
 
     // Broadcast user offline notification via presence channel
-    await presence.send({
+    presence.publish({
       userId: client.id,
       username: user.username,
       status: 'offline',
     })
 
     // Send a system message to chat that user left
-    await chat.send({
+    chat.publish({
       id: `system-${Date.now()}`,
       type: 'system',
       text: `${user.username} left the chat`,
@@ -126,7 +126,7 @@ synnel.on('disconnection', async (client) => {
 })
 
 // Handle subscription events
-synnel.on('subscribe', async (client, channel) => {
+synnel.on('subscribe', (client, channel) => {
   console.log(`[Subscribe] ${client.id} -> ${channel}`)
 
   // When someone subscribes to chat, update the user count
@@ -134,7 +134,7 @@ synnel.on('subscribe', async (client, channel) => {
     const user = users.get(client.id)
     if (user) {
       // Send system message to chat
-      await chat.send({
+      chat.publish({
         id: `system-${Date.now()}`,
         type: 'system',
         text: `${user.username} joined the chat`,
@@ -145,7 +145,7 @@ synnel.on('subscribe', async (client, channel) => {
 
     // Broadcast updated user count
     const userCount = synnel.getStats().clientCount
-    await notifications.publish({
+    notifications.publish({
       type: 'info',
       message: `Users online: ${userCount}`,
       timestamp: Date.now(),
