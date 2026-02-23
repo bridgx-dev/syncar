@@ -49,7 +49,7 @@ const synnel = new Synnel({ server: httpServer })
 // Note: multicast() now returns a Promise
 const chat = await synnel.multicast<ChatMessage>('chat')
 const presence = await synnel.multicast<PresenceMessage>('presence')
-const notifications = synnel.broadcast<NotificationMessage>()
+const notifications = synnel.createBroadcast<NotificationMessage>()
 
 // Handle incoming chat messages
 chat.receive(async (data, client) => {
@@ -83,7 +83,7 @@ synnel.on('connection', (client) => {
 
   // Broadcast updated user count to all clients
   const userCount = synnel.getStats().clientCount
-  notifications.send({
+  notifications.publish({
     type: 'info',
     message: `Users online: ${userCount}`,
     timestamp: Date.now(),
@@ -118,7 +118,7 @@ synnel.on('disconnection', async (client) => {
 
   // Broadcast updated user count to all clients
   const userCount = synnel.getStats().clientCount
-  notifications.send({
+  notifications.publish({
     type: 'info',
     message: `Users online: ${userCount}`,
     timestamp: Date.now(),
@@ -145,7 +145,7 @@ synnel.on('subscribe', async (client, channel) => {
 
     // Broadcast updated user count
     const userCount = synnel.getStats().clientCount
-    await notifications.send({
+    await notifications.publish({
       type: 'info',
       message: `Users online: ${userCount}`,
       timestamp: Date.now(),

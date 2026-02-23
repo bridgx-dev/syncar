@@ -10,6 +10,7 @@ import type {
   ClientId,
   Timestamp,
 } from '@synnel/types'
+import type WebSocket from 'ws'
 import type { Server as HttpServer } from 'http'
 
 // ============================================================
@@ -100,7 +101,7 @@ export type ClientConnection = {
   lastPingAt?: Timestamp
 
   /** WebSocket instance for this connection */
-  socket: unknown
+  socket: WebSocket
 }
 
 // ============================================================
@@ -112,6 +113,11 @@ export type ClientConnection = {
  * Abstracts the underlying WebSocket implementation
  */
 export interface ServerTransport {
+  /**
+   * Map of connected clients
+   */
+  connections: Map<ClientId, ClientConnection>
+
   /**
    * Send a message to a specific client
    */
@@ -449,29 +455,23 @@ export interface ChannelTransport<T = unknown> {
 
 /**
  * Broadcast transport API
- * Used for sending messages to all connected clients
+ * Used for sending messages to all connected clients (server-to-client only)
  */
 export interface BroadcastTransport<T = unknown> {
   /**
-   * Send data to all connected clients
+   * Channel name (always __broadcast__)
    */
-  send(data: T): Promise<void>
+  readonly name: string
 
   /**
-   * Send data to all clients except the sender
+   * Publish data to all connected clients
    */
-  sendExcept(data: T, excludeClientId: ClientId): Promise<void>
+  publish(data: T): void
 
   /**
-   * Register a handler for incoming broadcast messages
+   * Publish data to all clients except the specified one
    */
-  onMessage(
-    handler: (
-      data: T,
-      client: ServerClient,
-      message: DataMessage<T>,
-    ) => void | Promise<void>,
-  ): () => void
+  publishExcept(data: T, excludeClientId: ClientId): void
 }
 
 // ============================================================

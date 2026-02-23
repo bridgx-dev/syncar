@@ -8,7 +8,6 @@ import type {
   ServerStats,
   ServerClient,
   ChannelTransport,
-  BroadcastTransport,
   ServerEventType,
   ServerEventMap,
   MiddlewareContext,
@@ -24,6 +23,7 @@ import { MessageType, SignalType as CoreSignalType } from '@synnel/types'
 import { WebSocketServerTransport } from './base.js'
 import { ClientRegistry } from './client-registry.js'
 import { MiddlewareManager, MiddlewareRejectionError } from './middleware.js'
+import { BroadcastTransport } from './channel.js'
 import { createServer } from 'http'
 // Import ChannelTransportImpl at the bottom to avoid circular dependency
 import type { ChannelTransportImpl } from './channel-transport.js'
@@ -67,6 +67,7 @@ export class SynnelServer {
   private messagesReceived = 0
   private messagesSent = 0
   private startedAt?: number
+  private broadcast: BroadcastTransport
 
   constructor(config: ServerConfig = {}) {
     this.config = config
@@ -95,6 +96,9 @@ export class SynnelServer {
 
     // Set up transport event handlers
     this.setupTransportHandlers()
+
+    // Initialize broadcast transport
+    this.broadcast = new BroadcastTransport(this.transport.connections)
   }
 
   /**
@@ -193,86 +197,15 @@ export class SynnelServer {
    * Get the broadcast transport
    */
   broadcastTransport<T = unknown>(): BroadcastTransport<T> {
-    const self = this
+    return this.broadcast as BroadcastTransport<T>
+  }
 
-    return {
-      async send(data: T): Promise<void> {
-        const message = {
-          id: `broadcast-${Date.now()}`,
-          type: MessageType.DATA,
-          channel: '__broadcast__',
-          data,
-          timestamp: Date.now(),
-        } as DataMessage<T>
-
-        const clients = self.registry.getAll()
-        const promises: Promise<void>[] = []
-
-        for (const client of clients) {
-          promises.push(
-            (async () => {
-              try {
-                await client.send(message)
-                self.messagesSent++
-              } catch (error) {
-                console.error(
-                  `Failed to send broadcast to ${client.id}:`,
-                  error,
-                )
-              }
-            })(),
-          )
-        }
-
-        await Promise.all(promises)
-      },
-
-      async sendExcept(data: T, excludeClientId: string): Promise<void> {
-        const message = {
-          id: `broadcast-${Date.now()}`,
-          type: MessageType.DATA,
-          channel: '__broadcast__',
-          data,
-          timestamp: Date.now(),
-        } as DataMessage<T>
-
-        const clients = self.registry.getAll()
-        const promises: Promise<void>[] = []
-
-        for (const client of clients) {
-          if (client.id === excludeClientId) continue
-
-          promises.push(
-            (async () => {
-              try {
-                await client.send(message)
-                self.messagesSent++
-              } catch (error) {
-                console.error(
-                  `Failed to send broadcast to ${client.id}:`,
-                  error,
-                )
-              }
-            })(),
-          )
-        }
-
-        await Promise.all(promises)
-      },
-
-      onMessage(
-        handler: (
-          data: T,
-          client: ServerClient,
-          message: DataMessage<T>,
-        ) => void | Promise<void>,
-      ): () => void {
-        self.broadcastHandlers.add(handler as any)
-        return () => {
-          self.broadcastHandlers.delete(handler as any)
-        }
-      },
-    }
+  /**
+   * Create and return a new broadcast transport instance
+   * This returns the shared broadcast transport
+   */
+  createBroadcast<T = unknown>(): BroadcastTransport<T> {
+    return this.broadcast as BroadcastTransport<T>
   }
 
   /**
@@ -343,15 +276,6 @@ export class SynnelServer {
     // Mark this channel as created/allowed
     this.createdChannels.add(name)
     return await this.channel<T>(name)
-  }
-
-  /**
-   * Create a broadcast channel (server-to-all messaging)
-   * Messages sent to all connected clients
-   * @returns Broadcast transport
-   */
-  broadcast<T = unknown>(): BroadcastTransport<T> {
-    return this.broadcastTransport<T>()
   }
 
   /**

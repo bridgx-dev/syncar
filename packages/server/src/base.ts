@@ -29,7 +29,7 @@ declare module 'ws' {
  */
 export class WebSocketServerTransport extends EventEmitter {
   private wsServer: WSWebSocketServer
-  private connections: Map<string, ClientConnection> = new Map()
+  public connections: Map<string, ClientConnection> = new Map()
   private pingInterval: ReturnType<typeof setInterval> | null = null
   private startedAt: number
 
