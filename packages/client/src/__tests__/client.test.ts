@@ -5,8 +5,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { SynnelClient, createSynnelClient } from '../client.js'
 import type { ClientConfig } from '../types.js'
-import type { Message, DataMessage } from '@synnel/core'
-import { SignalType } from '@synnel/core'
+import type { Message, DataMessage } from '@synnel/types'
+import { SignalType } from '@synnel/types'
 
 // Mock transport
 class MockTransport {

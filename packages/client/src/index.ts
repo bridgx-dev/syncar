@@ -51,10 +51,11 @@ export type {
   SubscribeOptions,
   SubscriptionCallbacks,
 
-  // Core types
+  // Core types (re-exported from @synnel/types)
   Transport,
   ClientStatus,
   SubscriptionState,
+  ChannelName,
 
   // Events
   ClientEventType,
@@ -74,4 +75,11 @@ export type {
   TransportEventMap,
   TransportCloseEvent,
   ConnectionStatus,
+
+  // Message types (re-exported from @synnel/types)
+  Message,
+  DataMessage,
+  MessageType,
+  SignalType,
+  SubscriberId,
 } from './types.js'

@@ -11,10 +11,16 @@
     "noEmit": false,
     "baseUrl": ".",
     "paths": {
+      "@synnel/types": ["../types/src"],
+      "@synnel/lib": ["../lib/src"],
       "@synnel/core": ["../core/src"]
     }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"],
-  "references": [{ "path": "../core" }]
+  "references": [
+    { "path": "../types" },
+    { "path": "../lib" },
+    { "path": "../core" }
+  ]
 }

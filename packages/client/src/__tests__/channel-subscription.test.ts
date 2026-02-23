@@ -4,8 +4,8 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { ChannelSubscriptionImpl } from '../channel-subscription.js'
-import type { DataMessage } from '@synnel/core'
-import { SignalType } from '@synnel/core'
+import type { DataMessage } from '@synnel/types'
+import { SignalType } from '@synnel/types'
 import type { SubscriptionCallbacks, SubscribeOptions } from '../types.js'
 
 describe('ChannelSubscription', () => {

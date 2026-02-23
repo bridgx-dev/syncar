@@ -132,7 +132,6 @@
       "name": "@synnel/server",
       "version": "1.0.0-alpha.1",
       "dependencies": {
-        "@synnel/core": "workspace:*",
         "@synnel/lib": "workspace:*",
         "@synnel/types": "workspace:*",
       },

@@ -12,8 +12,8 @@ import {
   createChannelWhitelistMiddleware,
 } from '../middleware.js'
 import type { ServerClient } from '../types.js'
-import type { Message, DataMessage } from '@synnel/core'
-import { MessageType } from '@synnel/core'
+import type { Message, DataMessage } from '@synnel/types'
+import { MessageType } from '@synnel/types'
 
 // Mock client
 const createMockClient = (id: string): ServerClient => {

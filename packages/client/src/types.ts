@@ -8,7 +8,12 @@ import type {
   DataMessage,
   ChannelName,
   SubscriberId,
+  MessageType,
+  SignalType,
 } from '@synnel/types'
+
+// Re-export common types from @synnel/types for convenience
+export type { Message, DataMessage, ChannelName, SubscriberId, MessageType, SignalType }
 
 // ============================================================
 // TRANSPORT TYPES (from base.ts)
