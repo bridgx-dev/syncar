@@ -37,10 +37,14 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.13.10",
+    "@types/ws": "^8.18.1",
     "typescript": "^5.8.2",
     "vitest": "^3.0.7"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "ws": "^8.19.0"
   }
 }

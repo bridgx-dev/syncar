@@ -24,8 +24,6 @@ export type {
   MessageId,
   Timestamp,
   DataPayload,
-  TransportEvents,
-  TransportEventListener,
   TransportConfig,
   ChannelState,
   SubscriptionState,
@@ -62,3 +60,10 @@ export {
   type MessageHandler,
   type MessageBusOptions,
 } from './message-bus.js'
+
+export {
+  type Transport,
+  type TransportEventMap,
+  type TransportCloseEvent,
+  WebSocketClientTransport,
+} from './ws-client.js'
