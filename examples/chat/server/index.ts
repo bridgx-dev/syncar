@@ -1,18 +1,26 @@
 /**
- * Synnel Chat Server - Express Integration
+ * Synnel Chat Server V2 - Express Integration
  *
- * A chat server demonstrating:
+ * A chat server demonstrating the new V2 API:
  * - Express.js integration with @synnel/server
  * - Channel-based messaging (chat, notifications, presence)
  * - Broadcast functionality
  * - Explicit channel creation (multicast, broadcast)
  * - Connection event handling
  * - Authorization middleware
+ *
+ * V2 API Changes:
+ * - Use `createSynnelServer()` instead of `new Synnel()`
+ * - Use `server.createMulticast()` instead of `synnel.multicast()`
+ * - Use `server.createBroadcast()` instead of `synnel.broadcast()`
+ * - Messages are NOT auto-relayed - call `channel.publish()` explicitly in handlers
+ * - Use `channel.onMessage()` or `channel.receive()` for message handling
  */
 
 import express from 'express'
 import { createServer } from 'http'
-import { Synnel } from '@synnel/server'
+import { createSynnelServer } from '@synnel/server'
+import type { IServerClient } from '@synnel/server'
 
 // Message types
 interface ChatMessage {
@@ -42,149 +50,180 @@ const users = new Map<string, { username: string; status: string }>()
 const app = express()
 const httpServer = createServer(app)
 
-// Initialize Synnel with the Express server
-const synnel = new Synnel({ server: httpServer })
+// Initialize Synnel V2 server with the Express server
+const server = createSynnelServer({ server: httpServer })
 
-// Create channels - only these channels can be joined by clients
-// Note: multicast() now returns a Promise
-const chat = synnel.createMulticast<ChatMessage>('chat')
-const presence = synnel.createMulticast<PresenceMessage>('presence')
-const notifications = synnel.createBroadcast<NotificationMessage>()
+// Global variables for channels (will be initialized after start())
+let chat: ReturnType<typeof server.createMulticast<ChatMessage>>
+let presence: ReturnType<typeof server.createMulticast<PresenceMessage>>
+let notifications: ReturnType<typeof server.createBroadcast<NotificationMessage>>
 
-// Handle incoming chat messages
-chat.receive(async (data, client) => {
-  console.log(`[Chat] ${data.user}: ${data.text}`)
+async function main() {
+  // Start the server first
+  await server.start()
 
-  // Store the username if not already stored
-  if (!users.has(client.id)) {
-    users.set(client.id, { username: data.user, status: 'online' })
-  }
+  // Create channels after server is started
+  chat = server.createMulticast<ChatMessage>('chat')
+  presence = server.createMulticast<PresenceMessage>('presence')
+  notifications = server.createBroadcast<NotificationMessage>()
 
-  // Note: Messages are automatically relayed to all subscribers by the server
-  // No need to manually call chat.send() here
-})
+  // ============================================================
+  // HANDLE INCOMING CHAT MESSAGES
+  // ============================================================
 
-// Handle presence updates
-presence.receive(async (data, client) => {
-  console.log(`[Presence] ${data.username}: ${data.status}`)
+  // V2: Use channel.onMessage() to handle incoming messages
+  // Messages are NOT auto-relayed in V2, so we explicitly publish
+  chat.onMessage(async (data, client) => {
+    console.log(`[Chat] ${data.user}: ${data.text}`)
 
-  // Update user status
-  if (data.status === 'online') {
-    users.set(client.id, { username: data.username, status: 'online' })
-  }
+    // Store the username if not already stored
+    if (!users.has(client.id)) {
+      users.set(client.id, { username: data.user, status: 'online' })
+    }
 
-  // Broadcast presence update to all subscribers
-  presence.publish(data)
-})
-
-// Handle connection events
-synnel.on('connection', (client) => {
-  console.log(`[Connection] Client connected: ${client.id}`)
-
-  // Broadcast updated user count to all clients
-  const userCount = synnel.getStats().clientCount
-  notifications.publish({
-    type: 'info',
-    message: `Users online: ${userCount}`,
-    timestamp: Date.now(),
+    // V2: Explicitly publish message to all subscribers
+    // The sender will also receive it back (client-side can filter if needed)
+    chat.publish(data)
   })
-})
 
-// Handle disconnection events
-synnel.on('disconnection', (client) => {
-  console.log(`[Disconnection] Client disconnected: ${client.id}`)
+  // ============================================================
+  // HANDLE PRESENCE UPDATES
+  // ============================================================
 
-  const user = users.get(client.id)
-  if (user) {
-    // Remove user from active users
-    users.delete(client.id)
+  presence.onMessage(async (data) => {
+    console.log(`[Presence] ${data.username}: ${data.status}`)
 
-    // Broadcast user offline notification via presence channel
-    presence.publish({
-      userId: client.id,
-      username: user.username,
-      status: 'offline',
-    })
+    // V2: Explicitly publish presence update to all subscribers
+    presence.publish(data)
+  })
 
-    // Send a system message to chat that user left
-    chat.publish({
-      id: `system-${Date.now()}`,
-      type: 'system',
-      text: `${user.username} left the chat`,
-      user: 'System',
+  // ============================================================
+  // HANDLE CONNECTION EVENTS
+  // ============================================================
+
+  server.on('connection', (client) => {
+    console.log(`[Connection] Client connected: ${client.id}`)
+
+    // Broadcast updated user count to all clients
+    const stats = server.getStats()
+    notifications.publish({
+      type: 'info',
+      message: `Users online: ${stats.clientCount}`,
       timestamp: Date.now(),
     })
-  }
-
-  // Broadcast updated user count to all clients
-  const userCount = synnel.getStats().clientCount
-  notifications.publish({
-    type: 'info',
-    message: `Users online: ${userCount}`,
-    timestamp: Date.now(),
   })
-})
 
-// Handle subscription events
-synnel.on('subscribe', (client, channel) => {
-  console.log(`[Subscribe] ${client.id} -> ${channel}`)
+  // ============================================================
+  // HANDLE DISCONNECTION EVENTS
+  // ============================================================
 
-  // When someone subscribes to chat, update the user count
-  if (channel === 'chat') {
+  server.on('disconnection', (client) => {
+    console.log(`[Disconnection] Client disconnected: ${client.id}`)
+
     const user = users.get(client.id)
     if (user) {
-      // Send system message to chat
+      // Remove user from active users
+      users.delete(client.id)
+
+      // Broadcast user offline notification via presence channel
+      presence.publish({
+        userId: client.id,
+        username: user.username,
+        status: 'offline',
+      })
+
+      // Send a system message to chat that user left
       chat.publish({
         id: `system-${Date.now()}`,
         type: 'system',
-        text: `${user.username} joined the chat`,
+        text: `${user.username} left the chat`,
         user: 'System',
         timestamp: Date.now(),
       })
     }
 
-    // Broadcast updated user count
-    const userCount = synnel.getStats().clientCount
+    // Broadcast updated user count to all clients
+    const stats = server.getStats()
     notifications.publish({
       type: 'info',
-      message: `Users online: ${userCount}`,
+      message: `Users online: ${stats.clientCount}`,
       timestamp: Date.now(),
     })
-  }
-})
+  })
 
-// Handle errors
-synnel.on('error', (error) => {
-  console.error('[Error]', error)
-})
+  // ============================================================
+  // HANDLE SUBSCRIPTION EVENTS
+  // ============================================================
 
-// Add authorization middleware (optional)
-synnel.authorize(async (clientId, channel, action) => {
-  // Log authorization checks
-  console.log(`[Auth] ${clientId} wants to ${action} on ${channel}`)
-  // Allow all actions for this example
-  // In production, you would check authentication tokens, database, etc.
-  return true
-})
+  server.on('subscribe', (client, channel) => {
+    console.log(`[Subscribe] ${client.id} -> ${channel}`)
 
-// Global message interceptor (optional)
-// Note: Parameter order is (client, message) for consistency with event handlers
-synnel.onMessage((client, message) => {
-  console.log(
-    `[Message] Client ${client.id} sent message type: ${message.type}`,
-  )
-})
+    // When someone subscribes to chat, update the user count
+    if (channel === 'chat') {
+      const user = users.get(client.id)
+      if (user) {
+        // Send system message to chat
+        chat.publish({
+          id: `system-${Date.now()}`,
+          type: 'system',
+          text: `${user.username} joined the chat`,
+          user: 'System',
+          timestamp: Date.now(),
+        })
+      }
 
-// Start the server
-const PORT = 3001
+      // Broadcast updated user count
+      const stats = server.getStats()
+      notifications.publish({
+        type: 'info',
+        message: `Users online: ${stats.clientCount}`,
+        timestamp: Date.now(),
+      })
+    }
+  })
 
-async function main() {
-  await synnel.start()
+  // ============================================================
+  // HANDLE ERRORS
+  // ============================================================
+
+  server.on('error', (error) => {
+    console.error('[Error]', error)
+  })
+
+  // ============================================================
+  // AUTHORIZATION MIDDLEWARE
+  // ============================================================
+
+  // Add authorization middleware (optional)
+  server.authorize(async (clientId, channel, action) => {
+    // Log authorization checks
+    console.log(`[Auth] ${clientId} wants to ${action} on ${channel}`)
+    // Allow all actions for this example
+    // In production, you would check authentication tokens, database, etc.
+    return true
+  })
+
+  // ============================================================
+  // GLOBAL MESSAGE INTERCEPTOR
+  // ============================================================
+
+  // Global message interceptor (optional)
+  server.onMessage((client, message) => {
+    console.log(
+      `[Message] Client ${client.id} sent message type: ${message.type}`,
+    )
+  })
+
+  // ============================================================
+  // START HTTP SERVER
+  // ============================================================
+
+  const PORT = 3001
 
   httpServer.listen(PORT, () => {
     console.log('')
     console.log('==================================')
-    console.log(' Synnel Chat Server')
+    console.log(' Synnel Chat Server V2')
     console.log('==================================')
     console.log(`HTTP: http://localhost:${PORT}`)
     console.log(`WebSocket: ws://localhost:${PORT}/synnel`)
@@ -197,14 +236,14 @@ async function main() {
     console.log('')
     console.log('Channels are explicitly created on the server.')
     console.log(
-      'Clients can ONLY join channels created via multicast() or broadcast().',
+      'Clients can ONLY join channels created via createMulticast() or createBroadcast().',
     )
     console.log('')
   })
 
   // Print server stats every 30 seconds
   setInterval(() => {
-    const stats = synnel.getStats()
+    const stats = server.getStats()
     console.log('[Stats]', {
       clients: stats.clientCount,
       channels: stats.channelCount,
@@ -218,15 +257,22 @@ async function main() {
   }, 30000)
 }
 
+// ============================================================
+// STARTUP
+// ============================================================
+
 main().catch((error) => {
   console.error('Failed to start server:', error)
   process.exit(1)
 })
 
-// Graceful shutdown
+// ============================================================
+// GRACEFUL SHUTDOWN
+// ============================================================
+
 process.on('SIGINT', async () => {
   console.log('\nShutting down server...')
-  await synnel.stop()
+  await server.stop()
   httpServer.close()
   console.log('Server stopped')
   process.exit(0)
