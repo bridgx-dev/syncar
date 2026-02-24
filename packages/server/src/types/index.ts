@@ -19,6 +19,7 @@
 // ============================================================
 // UTILITY TYPES
 // ============================================================
+// Re-exported from @synnel/types for convenience
 export type {
   MergeTypes,
   DeepPartial,
@@ -42,7 +43,7 @@ export type {
   UnionToIntersection,
   LastOfTuple,
   TupleToUnion,
-} from './utilities.js'
+} from '@synnel/types'
 
 // ============================================================
 // BASE TYPES (Single Source of Truth)
@@ -52,13 +53,14 @@ export type {
   IChannel,
   IMessageHandler,
   ILifecycleHandler,
-  IBaseTransport,
+  IPublishOptions,
 } from './base.js'
 
 // ============================================================
 // TRANSPORT TYPES
 // ============================================================
 export type {
+  IBaseTransport,
   IServerTransportEvent,
   IHttpServer,
   IWebSocketServerConstructor,

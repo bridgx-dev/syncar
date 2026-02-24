@@ -51,6 +51,43 @@ export interface IClientConnection {
 // ============================================================
 
 /**
+ * Publish options for channel messages
+ *
+ * @example
+ * ```ts
+ * // Send to all subscribers
+ * channel.publish('Hello everyone!')
+ *
+ * // Send to specific clients
+ * channel.publish('Private message', { to: ['client-1', 'client-2'] })
+ *
+ * // Send to all except specific clients
+ * channel.publish('Hello everyone except...', { exclude: ['client-3'] })
+ *
+ * // Send to specific clients, excluding some from that list
+ * channel.publish('Group message', {
+ *   to: ['client-1', 'client-2', 'client-3'],
+ *   exclude: ['client-2']
+ * }) // Only sends to client-1 and client-3
+ * ```
+ */
+export interface IPublishOptions {
+  /**
+   * Specific client IDs to receive the message
+   * If provided, only these clients will receive the message
+   * Use with `exclude` to filter from this list
+   */
+  to?: readonly ClientId[]
+
+  /**
+   * Client IDs to exclude from receiving the message
+   * When `to` is provided: excludes from the `to` list
+   * When `to` is not provided: excludes from all subscribers
+   */
+  exclude?: readonly ClientId[]
+}
+
+/**
  * Base channel interface
  * Single source of truth for all channel types.
  *
@@ -68,12 +105,10 @@ export interface IClientConnection {
  *
  * // Extending for broadcast
  * interface IBroadcastTransport<T> extends IChannel<T> {
- *   publish(data: T): void
- *   publishExcept(data: T, exclude: ClientId): void
+ *   // Inherits publish method from IChannel
  * }
  * ```
  */
-// TODO: this one better to be in channel.ts
 export interface IChannel<T> {
   /** Channel name */
   readonly name: ChannelName
@@ -82,21 +117,30 @@ export interface IChannel<T> {
   readonly subscriberCount: number
 
   /**
-   * Publish data to all subscribers
+   * Publish data to channel subscribers with fine-grained control
    *
    * @param data - The data to publish
-   * @param excludeClientId - Optional client ID to exclude from receiving the message
-   */
-  publish(data: T, excludeClientId?: ClientId): void
-
-  /**
-   * Publish data to a specific client in the channel
+   * @param options - Optional publish options
    *
-   * @param clientId - The client ID to publish to
-   * @param data - The data to publish
+   * @example
+   * ```ts
+   * // Send to all subscribers
+   * channel.publish('Hello everyone!')
+   *
+   * // Send to specific clients
+   * channel.publish('Private message', { to: ['client-1', 'client-2'] })
+   *
+   * // Send to all except specific clients
+   * channel.publish('Hello', { exclude: ['client-3'] })
+   *
+   * // Combine to and exclude
+   * channel.publish('Message', {
+   *   to: ['client-1', 'client-2', 'client-3'],
+   *   exclude: ['client-2']
+   * }) // Only sends to client-1 and client-3
+   * ```
    */
-  // TODO: This method may not be necessary if we can achieve the same with publish + excludeClientId
-  publishTo(clientId: ClientId, data: T): void
+  publish(data: T, options?: IPublishOptions): void
 }
 
 // ============================================================
@@ -151,49 +195,3 @@ export type IMessageHandler<T> = (
 export type ILifecycleHandler = (
   client: IClientConnection,
 ) => void | Promise<void>
-
-// ============================================================
-// BASE TRANSPORT
-// ============================================================
-
-/**
- * Base transport interface
- * Single source of truth for all transport implementations.
- *
- * Transports are responsible for low-level WebSocket communication.
- * They manage connections and handle message passing.
- *
- * All transport implementations must extend or implement this interface.
- */
-// TODO: this one better to be in transport.ts
-export interface IBaseTransport {
-  /** Map of all connected clients by ID */
-  readonly connections: Map<ClientId, IClientConnection>
-
-  /**
-   * Send a message to a specific client
-   *
-   * @param clientId - The target client ID
-   * @param message - The message to send
-   * @throws Error if client not found or not connected
-   */
-  sendToClient(
-    clientId: ClientId,
-    message: import('@synnel/types').Message,
-  ): Promise<void>
-
-  /**
-   * Get all connected clients
-   *
-   * @returns Array of all client connections
-   */
-  getClients(): IClientConnection[]
-
-  /**
-   * Get a specific client by ID
-   *
-   * @param clientId - The client ID to look up
-   * @returns The client connection or undefined if not found
-   */
-  getClient(clientId: ClientId): IClientConnection | undefined
-}

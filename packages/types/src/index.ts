@@ -11,6 +11,7 @@
  * @example
  * ```ts
  * import type { Message, ChannelName, ConnectionStatus } from '@synnel/types'
+ * import type { MergeTypes, DeepPartial } from '@synnel/types/utilities'
  * ```
  */
 
@@ -43,3 +44,29 @@ export type {
 } from './message.js'
 
 export { MessageType, SignalType, ErrorCode } from './message.js'
+
+// Utility types
+export type {
+  MergeTypes,
+  DeepPartial,
+  DeepReadonly,
+  Prettify,
+  KeysOfType,
+  PickByType,
+  OmitByType,
+  RequiredKeys,
+  OptionalKeys,
+  Branded,
+  Awaited,
+  FnParameters,
+  FnReturnType,
+  FunctionPropertyNames,
+  OnlyMethods,
+  OptionalKeysOf,
+  RequiredKeysOf,
+  ArrayElement,
+  ValueOf,
+  UnionToIntersection,
+  LastOfTuple,
+  TupleToUnion,
+} from './utilities.js'

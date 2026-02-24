@@ -20,6 +20,9 @@ import type {
  * Channel state information
  * Represents the public state of a channel.
  *
+ * This is the public API for channel state - IInternalChannelState extends this
+ * to add implementation details while ensuring all public properties are available.
+ *
  * @example
  * ```ts
  * const state: IChannelState = {
@@ -30,7 +33,6 @@ import type {
  * }
  * ```
  */
-// Todo: This one can be picked from IInternalChannelState
 export interface IChannelState {
   /** Channel name */
   name: ChannelName
@@ -97,10 +99,14 @@ export interface IChannelOptions {
  *
  * @example
  * ```ts
- * const history: IMessageHistory<string> = {
- *   getHistory: () => [...messages],
- *   clearHistory: () => { messages.length = 0 }
+ * // Type declaration for a channel with message history
+ * interface IChatChannel extends IChannelTransport<string>, IMessageHistory<string> {
+ *   // Inherits getHistory() and clearHistory() methods
  * }
+ *
+ * // Usage
+ * const messages = channel.getHistory()
+ * channel.clearHistory()
  * ```
  */
 export interface IMessageHistory<T> {
@@ -132,15 +138,25 @@ export interface IMessageHistory<T> {
  *
  * @example
  * ```ts
- * const chat: IChannelTransport<string> = server.createMulticast('chat')
+ * // Type declaration for a string-based chat channel
+ * const chatChannel: IChannelTransport<string> = ...
  *
- * // Subscribe to messages
- * chat.receive((data, client) => {
+ * // Subscribe to incoming messages
+ * chatChannel.receive((data, client) => {
  *   console.log(`Received from ${client.id}:`, data)
  * })
  *
+ * // Subscribe to connection events
+ * chatChannel.onSubscribe((client) => {
+ *   console.log(`${client.id} joined`)
+ * })
+ *
  * // Publish to all subscribers
- * chat.publish('Hello everyone!')
+ * chatChannel.publish('Hello everyone!')
+ *
+ * // Get channel state
+ * const state = chatChannel.getState()
+ * console.log(`Channel ${state.name} has ${state.subscriberCount} subscribers`)
  * ```
  */
 export interface IChannelTransport<T> extends IChannel<T>, IMessageHistory<T> {
@@ -263,6 +279,8 @@ export interface IChannelTransport<T> extends IChannel<T>, IMessageHistory<T> {
  * Unlike multicast channels, broadcast does not require subscription.
  * All connected clients receive broadcast messages.
  *
+ * Extends IChannel<T> for consistent publish API across all channel types.
+ *
  * @template T The type of data broadcast
  *
  * @example
@@ -272,31 +290,18 @@ export interface IChannelTransport<T> extends IChannel<T>, IMessageHistory<T> {
  * // Send to all connected clients
  * broadcast.publish('Server maintenance in 5 minutes')
  *
- * // Send to all except one client
- * broadcast.publishExcept('You have been logged out', excludedClientId)
+ * // Send to all except specific clients
+ * broadcast.publish('You have been logged out', { exclude: ['client-123'] })
+ *
+ * // Send to specific clients only
+ * broadcast.publish('Private announcement', { to: ['client-1', 'client-2'] })
  * ```
  */
-export interface IBroadcastTransport<T> {
+export interface IBroadcastTransport<T> extends IChannel<T> {
   /**
    * Channel name (always '__broadcast__')
    */
   readonly name: '__broadcast__'
-
-  /**
-   * Publish data to ALL connected clients
-   *
-   * @param data - The data to broadcast
-   */
-  publish(data: T): void
-
-  /**
-   * Publish data to all clients except the specified one
-   *
-   * @param data - The data to broadcast
-   * @param excludeClientId - Client ID to exclude from broadcast
-   */
-  // Todo: We can use published with excludeClientId as an optional parameter instead of a separate method
-  publishExcept(data: T, excludeClientId: ClientId): void
 }
 
 // ============================================================
@@ -332,14 +337,35 @@ export type IMulticastTransport<T> = IChannelTransport<T>
  * Internal channel state (used by implementations)
  * Contains all the state needed for channel management.
  *
+ * Extends IChannelState to include all public state properties,
+ * plus internal implementation details.
+ *
  * This is an internal type - external code should use IChannelState.
  *
  * @template T The type of data in the channel
+ *
+ * @example
+ * ```ts
+ * // Internal state includes public properties (name, subscriberCount, etc.)
+ * // plus implementation details
+ * const internalState: IInternalChannelState<string> = {
+ *   // Public properties from IChannelState
+ *   name: 'chat',
+ *   subscriberCount: 10,
+ *   createdAt: Date.now(),
+ *   lastMessageAt: Date.now(),
+ *
+ *   // Internal properties
+ *   subscribers: new Set(['client-1', 'client-2']),
+ *   messageHandlers: new Set(),
+ *   subscribeHandlers: new Set(),
+ *   unsubscribeHandlers: new Set(),
+ *   messageHistory: [],
+ *   options: { maxSubscribers: 100, reserved: false, historySize: 50 }
+ * }
+ * ```
  */
-export interface IInternalChannelState<T = unknown> {
-  /** Channel name */
-  name: ChannelName
-
+export interface IInternalChannelState<T = unknown> extends IChannelState {
   /** Subscribed client IDs */
   subscribers: Set<SubscriberId>
 
@@ -357,12 +383,6 @@ export interface IInternalChannelState<T = unknown> {
 
   /** Channel options */
   options: Required<IChannelOptions>
-
-  /** Creation timestamp */
-  createdAt: Timestamp
-
-  /** Last message timestamp */
-  lastMessageAt?: Timestamp
 }
 
 // ============================================================

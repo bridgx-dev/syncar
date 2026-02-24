@@ -5,9 +5,65 @@
  * All transport implementations must implement IServerTransport.
  */
 
-import type { IBaseTransport, IClientConnection } from './base.js'
+import type { IClientConnection } from './base.js'
 import type { Message, ClientId } from '@synnel/types'
 import type { EventEmitter } from 'node:events'
+
+// ============================================================
+// BASE TRANSPORT
+// ============================================================
+
+/**
+ * Base transport interface
+ * Single source of truth for all transport implementations.
+ *
+ * Transports are responsible for low-level WebSocket communication.
+ * They manage connections and handle message passing.
+ *
+ * All transport implementations must extend or implement this interface.
+ *
+ * @example
+ * ```ts
+ * class MyTransport implements IBaseTransport {
+ *   connections = new Map()
+ *
+ *   async sendToClient(clientId, message) { ... }
+ *   getClients() { ... }
+ *   getClient(clientId) { ... }
+ * }
+ * ```
+ */
+export interface IBaseTransport {
+  /** Map of all connected clients by ID */
+  readonly connections: Map<ClientId, IClientConnection>
+
+  /**
+   * Send a message to a specific client
+   *
+   * @param clientId - The target client ID
+   * @param message - The message to send
+   * @throws Error if client not found or not connected
+   */
+  sendToClient(
+    clientId: ClientId,
+    message: Message,
+  ): Promise<void>
+
+  /**
+   * Get all connected clients
+   *
+   * @returns Array of all client connections
+   */
+  getClients(): IClientConnection[]
+
+  /**
+   * Get a specific client by ID
+   *
+   * @param clientId - The client ID to look up
+   * @returns The client connection or undefined if not found
+   */
+  getClient(clientId: ClientId): IClientConnection | undefined
+}
 
 // ============================================================
 // TRANSPORT EVENTS
@@ -203,8 +259,7 @@ export interface IServerTransportConfig {
  * ```
  */
 
-// TODO: fix this error: Interface 'IServerTransport' incorrectly extends interface 'EventEmitter<DefaultEventMap>'
-export interface IServerTransport extends IBaseTransport, EventEmitter {
+export interface IServerTransport extends IBaseTransport, Omit<EventEmitter, 'on'> {
   /** Map of connected clients by ID */
   connections: Map<ClientId, IClientConnection>
 

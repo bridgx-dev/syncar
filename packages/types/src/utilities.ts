@@ -1,8 +1,6 @@
-// TODO: this utilites can me move to @synnel/types package.
-
 /**
  * Type Utilities
- * Reusable type manipulation utilities for the @synnel/server package.
+ * Reusable type manipulation utilities for the Synnel ecosystem.
  */
 
 // ============================================================

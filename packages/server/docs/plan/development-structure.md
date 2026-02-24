@@ -66,16 +66,16 @@ packages/server/
 │   ├── server.ts                  # Server (legacy)
 │   ├── index.ts                   # Main exports
 │   │
-│   └── __tests__/                 # Test files
-│       ├── setup.ts
-│       ├── unit/
-│       │   ├── transport.test.ts
-│       │   ├── registry.test.ts
-│       │   ├── handlers.test.ts
-│       │   ├── middleware.test.ts
-│       │   └── server.test.ts
-│       └── integration/
-│           └── server.test.ts
+├── __tests__/                     # Test files
+│   ├── setup.ts
+│   ├── unit/
+│   │   ├── transport.test.ts
+│   │   ├── registry.test.ts
+│   │   ├── handlers.test.ts
+│   │   ├── middleware.test.ts
+│   │   └── server.test.ts
+│   └── integration/
+│       └── server.test.ts
 │
 ├── docs/
 │   └── plan/

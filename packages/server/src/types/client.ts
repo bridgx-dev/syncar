@@ -5,8 +5,7 @@
 
 import type { IClientConnection } from './base.js'
 import type { IServerTransport } from './transport.js'
-import type { ChannelName, ClientId, Message } from '@synnel/types'
-import type { MergeTypes } from './utilities.js'
+import type { ChannelName, ClientId, Message, MergeTypes } from '@synnel/types'
 
 // ============================================================
 // CLIENT DATA (INTERNAL)
@@ -113,16 +112,20 @@ export interface IServerClient extends IClientConnection {
  *
  * @example
  * ```ts
- * class MyClientRegistry implements IClientRegistry {
- *   register(id, transport, connection): IServerClient { ... }
- *   unregister(id): boolean { ... }
- *   get(id): IServerClient | undefined { ... }
- *   // ... other methods
- * }
+ * // Type usage
+ * const registry: IClientRegistry = ...
  *
- * // Usage in server
- * const registry: IClientRegistry = new ClientRegistryImpl()
+ * // Register a new client
  * const client = registry.register(clientId, transport, connection)
+ *
+ * // Subscribe to channel
+ * registry.subscribe(clientId, 'chat')
+ *
+ * // Get client by ID
+ * const foundClient = registry.get(clientId)
+ *
+ * // Get channel subscribers
+ * const subscribers = registry.getSubscribers('chat')
  * ```
  */
 export interface IClientRegistry {
@@ -246,20 +249,11 @@ export interface IClientRegistry {
  *
  * @example
  * ```ts
- * class ExtendedClientFactory implements IServerClientFactory {
- *   createClient(
- *     data: IClientData,
- *     connection: IClientConnection
- *   ): IServerClient {
- *     return {
- *       ...connection,
- *       ...createBaseClientMethods(data, connection),
- *       // Add custom properties
- *       userId: data.metadata.userId,
- *       userEmail: data.metadata.email
- *     }
- *   }
- * }
+ * // Type usage
+ * const factory: IServerClientFactory = ...
+ *
+ * // Create client from internal data and connection
+ * const client = factory.createClient(clientData, connection)
  * ```
  */
 export interface IServerClientFactory {

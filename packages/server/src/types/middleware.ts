@@ -52,17 +52,17 @@ export type IMiddlewareAction =
  *
  * @example
  * ```ts
- * const authMiddleware: IMiddleware = async (context) => {
- *   if (context.action === 'connect') {
- *     const token = context.client?.metadata.token
- *     if (!isValidToken(token)) {
- *       context.reject('Invalid authentication token')
- *     }
- *   }
- * }
- *
  * const loggingMiddleware: IMiddleware = async ({ client, action }) => {
  *   console.log(`[${action}] Client: ${client?.id}`)
+ * }
+ *
+ * const authMiddleware: IMiddleware = async (context) => {
+ *   if (context.action === 'connect') {
+ *     // Validate connection and reject if needed
+ *     if (!isValidConnection(context.client)) {
+ *       context.reject('Connection not allowed')
+ *     }
+ *   }
  * }
  * ```
  */
@@ -121,28 +121,26 @@ export interface IMiddlewareContext {
  * @example
  * ```ts
  * // Simple logging middleware
- * const loggingMiddleware: IMiddleware = async ({ client, action }) => {
- *   console.log(`[${action}] Client: ${client?.id}`)
+ * const loggingMiddleware: IMiddleware = async (context) => {
+ *   console.log(`[${context.action}] Client: ${context.client?.id}`)
  * }
  *
  * // Authentication middleware with rejection
- * const authMiddleware: IMiddleware = async ({ client, action, reject }) => {
- *   if (action === 'connect') {
- *     const token = client?.metadata.token
- *     if (!isValidToken(token)) {
- *       reject('Authentication failed')
+ * const authMiddleware: IMiddleware = async (context) => {
+ *   if (context.action === 'connect') {
+ *     if (!isValidConnection(context.client)) {
+ *       context.reject('Connection not allowed')
  *     }
  *   }
  * }
  *
  * // Rate limiting middleware
- * const rateLimitMiddleware: IMiddleware = async ({ client, action, reject }) => {
- *   if (action === 'message') {
- *     const count = messageCounts.get(client.id) ?? 0
+ * const rateLimitMiddleware: IMiddleware = async (context) => {
+ *   if (context.action === 'message' && context.client) {
+ *     const count = messageCounts.get(context.client.id) ?? 0
  *     if (count > 100) {
- *       reject('Rate limit exceeded')
+ *       context.reject('Rate limit exceeded')
  *     }
- *     messageCounts.set(client.id, count + 1)
  *   }
  * }
  * ```
@@ -338,19 +336,25 @@ export type IMiddlewareChain = ReadonlyArray<IMiddleware>
  *
  * @example
  * ```ts
- * const composed: IComposedMiddleware = composeMiddleware([
- *   middleware1,
- *   middleware2,
- *   middleware3
- * ])
+ * // Type for a composed middleware
+ * const composed: IComposedMiddleware = Object.assign(
+ *   async (context: IMiddlewareContext) => {
+ *     // middleware logic
+ *   },
+ *   {
+ *     composed: true,
+ *     middlewares: [middleware1, middleware2, middleware3]
+ *   }
+ * )
  *
- * // Type is preserved
+ * // Access composed middlewares
  * composed.middlewares // IMiddlewareChain
  * composed.composed // true
  * ```
  */
-export interface IComposedMiddleware {
-  (context: IMiddlewareContext): Promise<void>
+export type IComposedMiddleware = (
+  context: IMiddlewareContext,
+) => Promise<void> & {
   readonly composed: true
   readonly middlewares: IMiddlewareChain
 }
@@ -363,16 +367,16 @@ export interface IComposedMiddleware {
  *
  * @example
  * ```ts
- * const connectOnly: IActionMiddleware<'connect'> = async ({ client, reject }) => {
- *   // Only runs for connect actions
- *   if (!isValidClient(client)) {
- *     reject('Invalid client')
+ * const connectOnly: IActionMiddleware<'connect'> = async (context) => {
+ *   // context.action is typed as 'connect'
+ *   if (!isValidClient(context.client)) {
+ *     context.reject('Invalid client')
  *   }
  * }
  *
- * const messageOnly: IActionMiddleware<'message' | 'subscribe'> = async ({ message, channel }) => {
- *   // Runs for message or subscribe actions
- *   console.log('Action on', channel, 'with message', message)
+ * const messageOnly: IActionMiddleware<'message' | 'subscribe'> = async (context) => {
+ *   // context.action is typed as 'message' | 'subscribe'
+ *   console.log('Action:', context.action, 'Channel:', context.channel)
  * }
  * ```
  */

@@ -4,7 +4,7 @@
  */
 
 import type { Server as HttpServer } from 'node:http'
-import type { Message } from '@synnel/types'
+import type { Message, DeepPartial } from '@synnel/types'
 import type { IServerTransport } from './transport.js'
 import type { IMiddleware } from './middleware.js'
 import type {
@@ -12,7 +12,6 @@ import type {
   IChannelOptions,
   IMulticastTransport,
 } from './channel.js'
-import type { DeepPartial } from './utilities.js'
 import type { IServerEventMap, IServerEventType } from './events.js'
 import type { IServerClient } from './client.js'
 
@@ -34,14 +33,13 @@ import type { IServerClient } from './client.js'
  *   middleware: [authMiddleware, loggingMiddleware]
  * }
  *
- * const server = new SynnelServerImpl(config)
- *
  * // Or with existing HTTP server
  * import express from 'express'
  * const app = express()
+ * const httpServer = app.listen(3000)
  *
- * const config: IServerConfig = {
- *   server: app.listen(3000),
+ * const configWithServer: IServerConfig = {
+ *   server: httpServer,
  *   path: '/ws'
  * }
  * ```
@@ -190,26 +188,27 @@ export interface IServerStats {
  *
  * @example
  * ```ts
- * // Create server
- * const server: ISynnelServer = new SynnelServerImpl({ port: 3000 })
+ * // Server type usage
+ * const server: ISynnelServer = ...
  *
- * // Start server
+ * // Start/stop server
  * await server.start()
+ * await server.stop()
  *
  * // Create channels
  * const broadcast = server.createBroadcast<string>()
- * const chat = server.createMulticast<string>('chat')
+ * const chat = server.createMulticast<string>('chat', {
+ *   maxSubscribers: 100,
+ *   historySize: 50
+ * })
  *
  * // Listen for events
- * server.on('connection', (client) => {
+ * const unsubscribe = server.on('connection', (client) => {
  *   console.log(`Client connected: ${client.id}`)
  * })
  *
  * // Get stats
  * const stats = server.getStats()
- *
- * // Stop server
- * await server.stop()
  * ```
  */
 export interface ISynnelServer {
