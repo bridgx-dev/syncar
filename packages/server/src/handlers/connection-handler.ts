@@ -116,8 +116,10 @@ export class ConnectionHandler {
     // Apply defaults
     this.options = {
       emitConnectionEvent: dependencies.options?.emitConnectionEvent ?? true,
-      emitDisconnectionEvent: dependencies.options?.emitDisconnectionEvent ?? true,
-      rejectionCloseCode: dependencies.options?.rejectionCloseCode ?? CLOSE_CODES.REJECTED,
+      emitDisconnectionEvent:
+        dependencies.options?.emitDisconnectionEvent ?? true,
+      rejectionCloseCode:
+        dependencies.options?.rejectionCloseCode ?? CLOSE_CODES.REJECTED,
     }
   }
 
@@ -144,9 +146,15 @@ export class ConnectionHandler {
    * }
    * ```
    */
-  async handleConnection(connection: IClientConnection): Promise<IServerClient> {
+  async handleConnection(
+    connection: IClientConnection,
+  ): Promise<IServerClient> {
     // Register client in registry first (creates IServerClient wrapper)
-    const client = this.registry.register(connection.id, this.transport, connection)
+    const client = this.registry.register(
+      connection.id,
+      this.transport,
+      connection,
+    )
 
     // Execute connection middleware
     try {
@@ -154,7 +162,10 @@ export class ConnectionHandler {
     } catch {
       // Middleware rejected - unregister and disconnect
       this.registry.unregister(connection.id)
-      connection.socket.close(this.options.rejectionCloseCode, 'Connection rejected')
+      connection.socket.close(
+        this.options.rejectionCloseCode,
+        'Connection rejected',
+      )
       throw new Error('Connection rejected by middleware')
     }
 
@@ -182,10 +193,7 @@ export class ConnectionHandler {
    * await connectionHandler.handleDisconnection('client-123', 'Client disconnected')
    * ```
    */
-  async handleDisconnection(
-    clientId: string,
-    reason?: string,
-  ): Promise<void> {
+  async handleDisconnection(clientId: string, reason?: string): Promise<void> {
     const client = this.registry.get(clientId)
 
     if (!client) {
@@ -229,10 +237,7 @@ export class ConnectionHandler {
 // RE-EXPORT TYPES
 // ============================================================
 
-export type {
-  IClientRegistry,
-  IServerClient,
-} from '../types/client.js'
+export type { IClientRegistry, IServerClient } from '../types/client.js'
 
 export type { IClientConnection } from '../types/base.js'
 export type { IMiddlewareManager } from '../types/middleware.js'

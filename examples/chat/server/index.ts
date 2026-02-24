@@ -20,7 +20,6 @@
 import express from 'express'
 import { createServer } from 'http'
 import { createSynnelServer } from '@synnel/server'
-import type { IServerClient } from '@synnel/server'
 
 // Message types
 interface ChatMessage {
@@ -56,7 +55,9 @@ const server = createSynnelServer({ server: httpServer })
 // Global variables for channels (will be initialized after start())
 let chat: ReturnType<typeof server.createMulticast<ChatMessage>>
 let presence: ReturnType<typeof server.createMulticast<PresenceMessage>>
-let notifications: ReturnType<typeof server.createBroadcast<NotificationMessage>>
+let notifications: ReturnType<
+  typeof server.createBroadcast<NotificationMessage>
+>
 
 async function main() {
   // Start the server first
@@ -102,8 +103,6 @@ async function main() {
   // ============================================================
 
   server.on('connection', (client) => {
-    console.log(`[Connection] Client connected: ${client.id}`)
-
     // Broadcast updated user count to all clients
     const stats = server.getStats()
     notifications.publish({
@@ -118,8 +117,6 @@ async function main() {
   // ============================================================
 
   server.on('disconnection', (client) => {
-    console.log(`[Disconnection] Client disconnected: ${client.id}`)
-
     const user = users.get(client.id)
     if (user) {
       // Remove user from active users

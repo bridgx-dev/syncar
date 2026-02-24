@@ -5,16 +5,23 @@
  * @module server/synnel-server
  */
 
-import type { IServerConfig, ISynnelServer, IServerStats } from '../types/server.js'
+import type {
+  IServerConfig,
+  ISynnelServer,
+  IServerStats,
+} from '../types/server.js'
 import type { IServerTransport } from '../types/transport.js'
 import type { IClientRegistry, IServerClient } from '../types/client.js'
 import type { IMiddlewareManager } from '../types/middleware.js'
 import type { IEventEmitter } from '../types/events.js'
 import type { IServerEventMap, IServerEventType } from '../types/events.js'
-import type { IBroadcastTransport, IMulticastTransport, IChannelOptions } from '../types/channel.js'
+import type {
+  IBroadcastTransport,
+  IMulticastTransport,
+  IChannelOptions,
+} from '../types/channel.js'
 import type { ChannelName, Message } from '@synnel/types'
-import { WebSocketServerTransport } from '../transport/websocket-transport.js'
-import { ClientRegistry, defaultClientFactory } from '../registry/index.js'
+import { ClientRegistry } from '../registry/index.js'
 import { MiddlewareManager } from '../middleware/index.js'
 import { EventEmitter } from '../emitter/index.js'
 import { BroadcastTransport } from '../channel/broadcast-transport.js'
@@ -22,14 +29,6 @@ import { MulticastTransport } from '../channel/index.js'
 import { ConnectionHandler } from '../handlers/connection-handler.js'
 import { MessageHandler } from '../handlers/message-handler.js'
 import { SignalHandler } from '../handlers/signal-handler.js'
-import {
-  DEFAULT_PORT,
-  DEFAULT_HOST,
-  DEFAULT_PATH,
-  DEFAULT_PING_INTERVAL,
-  DEFAULT_PING_TIMEOUT,
-  DEFAULT_MAX_PAYLOAD,
-} from '../config/defaults.js'
 import {
   DEFAULT_MAX_SUBSCRIBERS,
   DEFAULT_HISTORY_SIZE,
@@ -45,7 +44,10 @@ import { StateError, ConfigError } from '../errors/index.js'
  * Internal channel map type
  * Maps channel names to channel instances (both broadcast and multicast)
  */
-type ChannelMap = Map<ChannelName, IBroadcastTransport<unknown> | IMulticastTransport<unknown>>
+type ChannelMap = Map<
+  ChannelName,
+  IBroadcastTransport<unknown> | IMulticastTransport<unknown>
+>
 
 // ============================================================
 // SERVER INTERNAL STATE
@@ -153,12 +155,20 @@ export class SynnelServer implements ISynnelServer {
   /**
    * Global message handlers
    */
-  private readonly globalMessageHandlers: Set<(client: IServerClient, message: Message) => void>
+  private readonly globalMessageHandlers: Set<
+    (client: IServerClient, message: Message) => void
+  >
 
   /**
    * Authorization handler
    */
-  private authorizationHandler: ((clientId: string, channel: string, action: string) => boolean | Promise<boolean>) | undefined
+  private authorizationHandler:
+    | ((
+        clientId: string,
+        channel: string,
+        action: string,
+      ) => boolean | Promise<boolean>)
+    | undefined
 
   /**
    * Internal server state
@@ -246,7 +256,9 @@ export class SynnelServer implements ISynnelServer {
     if (this.config.transport) {
       this.transport = this.config.transport
     } else {
-      throw new ConfigError('Transport must be provided in config or use createSynnelServer factory')
+      throw new ConfigError(
+        'Transport must be provided in config or use createSynnelServer factory',
+      )
     }
 
     // Create handlers
@@ -376,11 +388,15 @@ export class SynnelServer implements ISynnelServer {
     }
 
     // Create new multicast channel
-    const channel = new MulticastTransport<T>(name, this.transport.connections, {
-      maxSubscribers: options?.maxSubscribers ?? DEFAULT_MAX_SUBSCRIBERS,
-      reserved: options?.reserved ?? false,
-      historySize: options?.historySize ?? DEFAULT_HISTORY_SIZE,
-    })
+    const channel = new MulticastTransport<T>(
+      name,
+      this.transport.connections,
+      {
+        maxSubscribers: options?.maxSubscribers ?? DEFAULT_MAX_SUBSCRIBERS,
+        reserved: options?.reserved ?? false,
+        historySize: options?.historySize ?? DEFAULT_HISTORY_SIZE,
+      },
+    )
 
     // Store channel
     this.channels.set(name, channel)
@@ -558,7 +574,12 @@ export class SynnelServer implements ISynnelServer {
    * Routes transport events to appropriate handlers
    */
   private setupTransportHandlers(): void {
-    if (!this.transport || !this.connectionHandler || !this.messageHandler || !this.signalHandler) {
+    if (
+      !this.transport ||
+      !this.connectionHandler ||
+      !this.messageHandler ||
+      !this.signalHandler
+    ) {
       return
     }
 
@@ -618,9 +639,9 @@ export class SynnelServer implements ISynnelServer {
         }
 
         // Route to appropriate handler based on message type
-        if (message.type === 'data' as const) {
+        if (message.type === ('data' as const)) {
           await this.messageHandler!.handleMessage(client, message)
-        } else if (message.type === 'signal' as const) {
+        } else if (message.type === ('signal' as const)) {
           await this.signalHandler!.handleSignal(client, message)
         }
       } catch (error) {
@@ -650,5 +671,9 @@ export type { IServerTransport } from '../types/transport.js'
 export type { IClientRegistry } from '../types/client.js'
 export type { IMiddlewareManager } from '../types/middleware.js'
 export type { IEventEmitter } from '../types/events.js'
-export type { IBroadcastTransport, IMulticastTransport, IChannelOptions } from '../types/channel.js'
+export type {
+  IBroadcastTransport,
+  IMulticastTransport,
+  IChannelOptions,
+} from '../types/channel.js'
 export type { ChannelName, Message } from '@synnel/types'
