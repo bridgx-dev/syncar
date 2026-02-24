@@ -61,11 +61,7 @@ export type {
 // ============================================================
 export type {
   IBaseTransport,
-  IServerTransportEvent,
   IHttpServer,
-  IWebSocketServerConstructor,
-  IWebSocketServerConfig,
-  IWebSocketServer,
   IServerTransportConfig,
   IServerTransport,
 } from './transport.js'

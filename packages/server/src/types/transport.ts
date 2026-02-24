@@ -3,14 +3,15 @@
  * Types for the WebSocket transport layer that handles low-level communication.
  *
  * All transport implementations must implement IServerTransport.
+ * Transports extend EventEmitter for event handling capabilities.
  */
 
+import type { EventEmitter } from 'node:events'
 import type { IClientConnection } from './base.js'
 import type { Message, ClientId } from '@synnel/types'
-import type { EventEmitter } from 'node:events'
 
 // ============================================================
-// BASE TRANSPORT
+// BASE TRANSPORT INTERFACE
 // ============================================================
 
 /**
@@ -20,20 +21,22 @@ import type { EventEmitter } from 'node:events'
  * Transports are responsible for low-level WebSocket communication.
  * They manage connections and handle message passing.
  *
- * All transport implementations must extend or implement this interface.
+ * All transport implementations extend BaseTransport, which inherits
+ * from EventEmitter, providing full event handling capabilities.
  *
  * @example
  * ```ts
- * class MyTransport implements IBaseTransport {
+ * import { BaseTransport } from '@synnel/server/transport'
+ *
+ * class MyTransport extends BaseTransport {
  *   connections = new Map()
  *
  *   async sendToClient(clientId, message) { ... }
- *   getClients() { ... }
- *   getClient(clientId) { ... }
+ *   // EventEmitter methods inherited: on, emit, off, once, etc.
  * }
  * ```
  */
-export interface IBaseTransport {
+export interface IBaseTransport extends EventEmitter {
   /** Map of all connected clients by ID */
   readonly connections: Map<ClientId, IClientConnection>
 
@@ -44,132 +47,54 @@ export interface IBaseTransport {
    * @param message - The message to send
    * @throws Error if client not found or not connected
    */
-  sendToClient(
-    clientId: ClientId,
-    message: Message,
-  ): Promise<void>
+  sendToClient(clientId: ClientId, message: Message): Promise<void>
 
   /**
-   * Get all connected clients
-   *
-   * @returns Array of all client connections
+   * Stop the transport and clean up resources
+   * Closes all connections, removes event listeners, and stops the server.
    */
-  getClients(): IClientConnection[]
-
-  /**
-   * Get a specific client by ID
-   *
-   * @param clientId - The client ID to look up
-   * @returns The client connection or undefined if not found
-   */
-  getClient(clientId: ClientId): IClientConnection | undefined
+  stop?(): void
 }
 
 // ============================================================
-// TRANSPORT EVENTS
+// SERVER TRANSPORT INTERFACE
 // ============================================================
 
 /**
- * Transport event types
- * Events that can be emitted by the transport layer.
+ * Server transport interface
+ * Abstracts the underlying WebSocket implementation.
+ *
+ * All transport implementations must implement this interface.
+ * The transport handles low-level WebSocket communication including:
+ * - Connection management
+ * - Message sending/receiving
+ * - Event emission for connection lifecycle (via EventEmitter)
  *
  * @example
  * ```ts
- * transport.on('connection', (conn) => { ... })
- * transport.on('disconnection', (clientId) => { ... })
- * transport.on('message', (clientId, message) => { ... })
- * transport.on('error', (error) => { ... })
+ * class MyTransport extends BaseTransport implements IServerTransport {
+ *   connections = new Map()
+ *
+ *   async sendToClient(clientId, message) { ... }
+ * }
  * ```
  */
-export type IServerTransportEvent =
-  | 'connection'     // New client connected
-  | 'disconnection'  // Client disconnected
-  | 'message'        // Message received from client
-  | 'error'          // Transport error occurred
+export interface IServerTransport extends IBaseTransport {
+  /** Map of connected clients by ID (mutable for server transports) */
+  connections: Map<ClientId, IClientConnection>
+}
 
 // ============================================================
-// TRANSPORT CONFIGURATION
+// SERVER TRANSPORT CONFIGURATION
 // ============================================================
 
 /**
- * HTTP Server interface
+ * HTTP Server type
  * Abstraction for HTTP servers that WebSocket can attach to.
  * We use `unknown` here to avoid coupling to specific HTTP server implementations
  * (Express, Fastify, plain Node.js http.Server, etc.)
- *
- * @example
- * ```ts
- * import { createServer } from 'http'
- * import express from 'express'
- *
- * // Plain Node.js
- * const httpServer: IHttpServer = createServer()
- *
- * // Express
- * const app = express()
- * const httpServer: IHttpServer = app.listen(3000)
- * ```
  */
 export type IHttpServer = unknown
-
-/**
- * WebSocket Server constructor interface
- * Abstracts the WebSocket server implementation for testing and flexibility.
- *
- * @example
- * ```ts
- * import { WebSocketServer } from 'ws'
- *
- * const constructor: IWebSocketServerConstructor = WebSocketServer
- * const mockConstructor: IWebSocketServerConstructor = class MockWebSocketServer {
- *   // Mock implementation
- * }
- * ```
- */
-export interface IWebSocketServerConstructor {
-  new (config: IWebSocketServerConfig): IWebSocketServer
-}
-
-/**
- * WebSocket Server configuration
- *
- * @example
- * ```ts
- * const config: IWebSocketServerConfig = {
- *   server: httpServer,
- *   path: '/ws',
- *   maxPayload: 1024 * 1024  // 1MB
- * }
- * ```
- */
-export interface IWebSocketServerConfig {
-  /** HTTP server to attach to */
-  server: IHttpServer
-
-  /** WebSocket path */
-  path?: string
-
-  /** Maximum message payload size in bytes */
-  maxPayload?: number
-}
-
-/**
- * WebSocket Server interface
- * Abstraction for WebSocket server implementations.
- */
-export interface IWebSocketServer {
-  /** Handle the 'connection' event */
-  on(event: 'connection', listener: (ws: unknown) => void): this
-
-  /** Handle the 'error' event */
-  on(event: 'error', listener: (error: Error) => void): this
-
-  /** Handle the 'close' event */
-  on(event: 'close', listener: () => void): this
-
-  /** Handle any event */
-  on(event: string, listener: (...args: unknown[]) => void): this
-}
 
 /**
  * Server transport configuration options
@@ -187,102 +112,28 @@ export interface IWebSocketServer {
  * ```
  */
 export interface IServerTransportConfig {
-  /**
-   * HTTP server to attach WebSocket to.
-   * Works with Express, Fastify, plain Node.js http.Server, etc.
-   */
+  /** HTTP server to attach WebSocket to */
   server: IHttpServer
 
-  /**
-   * Path for WebSocket connections
-   * @default '/'
-   */
+  /** Path for WebSocket connections */
   path?: string
 
-  /**
-   * Maximum message size in bytes
-   * @default 1048576 (1MB)
-   */
+  /** Maximum message size in bytes */
   maxPayload?: number
 
-  /**
-   * Enable client ping/pong for connection health monitoring
-   * @default true
-   */
+  /** Enable client ping/pong for connection health monitoring */
   enablePing?: boolean
 
-  /**
-   * Ping interval in milliseconds
-   * @default 30000
-   */
+  /** Ping interval in milliseconds */
   pingInterval?: number
 
-  /**
-   * Ping timeout in milliseconds
-   * @default 5000
-   */
+  /** Ping timeout in milliseconds */
   pingTimeout?: number
 
-  /**
-   * Custom WebSocket Server constructor
-   * Useful for testing or custom implementations.
-   * @default ws.Server
-   */
-  ServerConstructor?: IWebSocketServerConstructor
-}
-
-// ============================================================
-// SERVER TRANSPORT INTERFACE
-// ============================================================
-
-/**
- * Server transport interface
- * Abstracts the underlying WebSocket implementation.
- *
- * All transport implementations must implement this interface.
- * The transport handles low-level WebSocket communication including:
- * - Connection management
- * - Message sending/receiving
- * - Event emission for connection lifecycle
- *
- * @example
- * ```ts
- * class MyTransport implements IServerTransport {
- *   connections = new Map()
- *
- *   async sendToClient(clientId, message) { ... }
- *   getClients() { ... }
- *   getClient(clientId) { ... }
- *
- *   on(event, handler) { ... }
- * }
- * ```
- */
-
-export interface IServerTransport extends IBaseTransport, Omit<EventEmitter, 'on'> {
-  /** Map of connected clients by ID */
-  connections: Map<ClientId, IClientConnection>
-
-  /**
-   * Register an event handler for transport events
-   *
-   * @param event - The event type to listen for
-   * @param handler - The handler function
-   *
-   * @example
-   * ```ts
-   * transport.on('connection', (conn) => {
-   *   console.log('Client connected:', conn.id)
-   * })
-   *
-   * transport.on('message', (clientId, message) => {
-   *   console.log('Message from:', clientId)
-   * })
-   * ```
-   */
-  on(event: 'connection', handler: (connection: IClientConnection) => void): void
-  on(event: 'disconnection', handler: (clientId: ClientId) => void): void
-  on(event: 'message', handler: (clientId: ClientId, message: Message) => void): void
-  on(event: 'error', handler: (error: Error) => void): void
-  on(event: string, handler: (...args: unknown[]) => void): void
+  /** Custom WebSocket Server constructor (for testing) */
+  ServerConstructor?: new (config: {
+    server: unknown
+    path?: string
+    maxPayload?: number
+  }) => any
 }
