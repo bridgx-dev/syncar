@@ -102,7 +102,7 @@ packages/server/
 ### `/channel` - Channel Implementations
 - **Purpose**: Channel-based messaging (broadcast, multicast)
 - **Extends**: `IChannel<T>`, `IChannelTransport<T>`, `IBroadcastTransport<T>`
-- **Classes**: `BaseChannel<T>`, `BroadcastTransportImpl<T>`, `MulticastTransportImpl<T>`
+- **Classes**: `BaseChannel<T>`, `BroadcastTransport<T>`, `MulticastTransport<T>`
 
 ### `/handlers` - Event/Message Handlers
 - **Purpose**: Process connections, messages, and signals
@@ -112,17 +112,17 @@ packages/server/
 ### `/registry` - Client Registry
 - **Purpose**: Manage connected clients and subscriptions
 - **Extends**: `IClientRegistry` interface
-- **Classes**: `ClientRegistryImpl`
+- **Classes**: `ClientRegistry`
 
 ### `/middleware` - Middleware System
 - **Purpose**: Middleware execution and factory functions
 - **Extends**: `IMiddlewareManager`, middleware interfaces
-- **Classes**: `MiddlewareManagerImpl`, factory functions
+- **Classes**: `MiddlewareManager`, factory functions
 
 ### `/server` - Main Server
 - **Purpose**: Orchestrate all components
 - **Extends**: `ISynnelServer` interface
-- **Classes**: `SynnelServerImpl`
+- **Classes**: `SynnelServer`
 
 ### `/config` - Configuration & Constants
 - **Purpose**: All constants and default values
@@ -135,4 +135,4 @@ packages/server/
 ### `/emitter` - Event Emitter
 - **Purpose**: Type-safe event emission
 - **Extends**: `IEventEmitter<T>` interface
-- **Classes**: `EventEmitterImpl`
+- **Classes**: `EventEmitter`
