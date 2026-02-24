@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { ClientRegistry } from '../client-registry.js'
-import type { ServerTransport, ClientConnection } from '../types.js'
+import { ClientRegistry } from '../src/registry/index.js'
+import type { ServerTransport, ClientConnection } from '../src/types/index.js'
 import { MessageType } from '@synnel/types'
 
 // Mock transport

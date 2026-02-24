@@ -5,13 +5,17 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   MiddlewareManager,
+} from '../src/middleware/index.js'
+import {
   MiddlewareRejectionError,
+} from '../src/errors/index.js'
+import {
   createAuthMiddleware,
   createLoggingMiddleware,
   createRateLimitMiddleware,
   createChannelWhitelistMiddleware,
-} from '../middleware.js'
-import type { ServerClient } from '../types.js'
+} from '../src/middleware/index.js'
+import type { ServerClient } from '../src/types/index.js'
 import type { Message, DataMessage } from '@synnel/types'
 import { MessageType } from '@synnel/types'
 

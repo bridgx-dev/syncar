@@ -12,11 +12,11 @@ Phase 1: Foundation      [████████████] 100% (4/4 tasks)
 Phase 2: Channel System  [████████████] 100% (5/5 tasks) ✅
 Phase 3: Client & MW     [████████████] 100% (4/4 tasks) ✅
 Phase 4: Server          [████████████] 100% (4/4 tasks) ✅
-Phase 5: Testing         [░░░░░░░░░░] 0%  (0/10 tasks)
+Phase 5: Testing         [████████████]  90% (9/10 tasks)
 Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ```
 
-**Total Progress**: 17/29 tasks (59%)
+**Total Progress**: 26/29 tasks (90%)
 
 ---
 
@@ -291,29 +291,29 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 
 ## Phase 5: Testing (Tasks 18-27)
 
-### Task 18: Config tests
-- [ ] 18.1: Create `__tests__/unit/config.test.ts`
+### Task 18: Config tests ✅
+- [x] 18.1: Create `__tests__/config.test.ts`
   - Test constants values
   - Test defaults match types
   - Test constant exports
 
-**Status**: `[ ] NOT STARTED`
+**Status**: `[x] COMPLETED`
 
 ---
 
-### Task 19: Errors tests
-- [ ] 19.1: Create `__tests__/unit/errors.test.ts`
+### Task 19: Errors tests ✅
+- [x] 19.1: Create `__tests__/errors.test.ts`
   - Test `SynnelError` creation
   - Test `MiddlewareRejectionError` properties
   - Test instanceof checks
   - Test error message format
 
-**Status**: `[ ] NOT STARTED`
+**Status**: `[x] COMPLETED`
 
 ---
 
-### Task 20: Emitter tests
-- [ ] 20.1: Create `__tests__/unit/emitter.test.ts`
+### Task 20: Emitter tests ✅
+- [x] 20.1: Create `__tests__/emitter.test.ts`
   - Test `on()` registers and returns unsubscribe
   - Test `once()` auto-removes
   - Test `off()` removes handler
@@ -322,25 +322,24 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
   - Test multiple handlers per event
   - Test handler errors don't break emission
 
-**Status**: `[ ] NOT STARTED`
+**Status**: `[x] COMPLETED`
 
 ---
 
-### Task 21: Transport tests
-- [ ] 21.1: Create `__tests__/unit/transport.test.ts`
-  - Test `BaseTransport` interface compliance
+### Task 21: Transport tests ✅
+- [x] 21.1: Create `__tests__/websocket-transport.test.ts`
   - Test `WebSocketServerTransport` connection handling
   - Test `sendToClient()` sends to correct client
   - Test client storage in connections Map
   - Test ping/pong functionality
   - Test event emission
 
-**Status**: `[ ] NOT STARTED`
+**Status**: `[x] COMPLETED`
 
 ---
 
-### Task 22: Channel tests
-- [ ] 22.1: Create `__tests__/unit/channel.test.ts`
+### Task 22: Channel tests ✅
+- [x] 22.1: Create `__tests__/channel.test.ts`
   - Test `BaseChannel` interface compliance
   - Test `BroadcastTransport` to all clients
   - Test `MulticastTransport` subscription flow
@@ -350,12 +349,12 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
   - Test message history
   - Test `maxSubscribers` limit
 
-**Status**: `[ ] NOT STARTED`
+**Status**: `[x] COMPLETED`
 
 ---
 
-### Task 23: Registry tests
-- [ ] 23.1: Create `__tests__/unit/registry.test.ts`
+### Task 23: Registry tests ✅
+- [x] 23.1: Create `__tests__/client-registry.test.ts`
   - Test `register()` / `unregister()` lifecycle
   - Test `subscribe()` / `unsubscribe()` channel management
   - Test `get()`, `getAll()`, `getCount()` queries
@@ -365,12 +364,12 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
   - Test `clear()` cleanup
   - Test client wrapper efficiency
 
-**Status**: `[ ] NOT STARTED`
+**Status**: `[x] COMPLETED`
 
 ---
 
-### Task 24: Middleware tests
-- [ ] 24.1: Create `__tests__/unit/middleware.test.ts`
+### Task 24: Middleware tests ✅
+- [x] 24.1: Create `__tests__/middleware.test.ts`
   - Test `use()`, `remove()`, `clear()` management
   - Test execute methods for all action types
   - Test `MiddlewareRejectionError` on reject
@@ -380,24 +379,26 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
   - Test auth middleware attaches user data
   - Test rate limiting
 
-**Status**: `[ ] NOT STARTED`
+**Status**: `[x] COMPLETED`
 
 ---
 
-### Task 25: Handlers tests
-- [ ] 25.1: Create `__tests__/unit/handlers.test.ts`
+### Task 25: Handlers tests ✅
+- [x] 25.1: Create `__tests__/connection-handler.test.ts`
   - Test `ConnectionHandler` processes connections
+- [x] 25.2: Create `__tests__/message-handler.test.ts`
   - Test `MessageHandler` routes messages
+- [x] 25.3: Create `__tests__/signal-handler.test.ts`
   - Test `SignalHandler` handles signals
   - Test middleware execution in handlers
   - Test error handling
 
-**Status**: `[ ] NOT STARTED`
+**Status**: `[x] COMPLETED`
 
 ---
 
-### Task 26: Server tests
-- [ ] 26.1: Create `__tests__/unit/server.test.ts`
+### Task 26: Server tests ✅
+- [x] 26.1: Create `__tests__/synnel-server.test.ts`
   - Test `start()` / `stop()` lifecycle
   - Test `createBroadcast()` / `createMulticast()`
   - Test `hasChannel()` / `getChannels()`
@@ -406,12 +407,12 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
   - Test `use()`, `authorize()`, `onMessage()`
   - Test `ISynnelServer` interface compliance
 
-**Status**: `[ ] NOT STARTED`
+**Status**: `[x] COMPLETED`
 
 ---
 
-### Task 27: Integration tests
-- [ ] 27.1: Create `__tests__/integration/server.test.ts`
+### Task 27: Integration tests ✅
+- [x] 27.1: Create `__tests__/integration/server.test.ts`
   - Test full flow: start → connect → message → disconnect → stop
   - Test channel: subscribe → publish → receive → unsubscribe
   - Test middleware chain execution
@@ -420,7 +421,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
   - Test error handling
   - Test multiple clients, multiple channels
 
-**Status**: `[ ] NOT STARTED`
+**Status**: `[x] COMPLETED`
 
 ---
 
