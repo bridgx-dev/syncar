@@ -202,6 +202,8 @@ export interface IServerTransportConfig {
  * }
  * ```
  */
+
+// TODO: fix this error: Interface 'IServerTransport' incorrectly extends interface 'EventEmitter<DefaultEventMap>'
 export interface IServerTransport extends IBaseTransport, EventEmitter {
   /** Map of connected clients by ID */
   connections: Map<ClientId, IClientConnection>

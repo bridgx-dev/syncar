@@ -3,11 +3,18 @@
  * Types for server configuration and state management.
  */
 
-import type { HttpServer } from 'node:http'
+import type { Server as HttpServer } from 'node:http'
+import type { Message } from '@synnel/types'
 import type { IServerTransport } from './transport.js'
 import type { IMiddleware } from './middleware.js'
-import type { IBroadcastTransport, IMulticastTransport } from './channel.js'
+import type {
+  IBroadcastTransport,
+  IChannelOptions,
+  IMulticastTransport,
+} from './channel.js'
 import type { DeepPartial } from './utilities.js'
+import type { IServerEventMap, IServerEventType } from './events.js'
+import type { IServerClient } from './client.js'
 
 // ============================================================
 // SERVER CONFIGURATION
@@ -365,10 +372,7 @@ export interface ISynnelServer {
    * ```
    */
   onMessage(
-    handler: (
-      client: IServerClient,
-      message: import('@synnel/types').Message,
-    ) => void,
+    handler: (client: IServerClient, message: Message) => void,
   ): () => void
 }
 

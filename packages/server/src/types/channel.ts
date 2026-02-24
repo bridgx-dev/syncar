@@ -4,8 +4,13 @@
  */
 
 import type { IChannel, IMessageHandler, ILifecycleHandler } from './base.js'
-import type { IServerClient } from './client.js'
-import type { ChannelName, ClientId, SubscriberId, DataMessage, Timestamp } from '@synnel/types'
+import type {
+  ChannelName,
+  ClientId,
+  SubscriberId,
+  DataMessage,
+  Timestamp,
+} from '@synnel/types'
 
 // ============================================================
 // CHANNEL STATE
@@ -25,6 +30,7 @@ import type { ChannelName, ClientId, SubscriberId, DataMessage, Timestamp } from
  * }
  * ```
  */
+// Todo: This one can be picked from IInternalChannelState
 export interface IChannelState {
   /** Channel name */
   name: ChannelName
@@ -289,6 +295,7 @@ export interface IBroadcastTransport<T> {
    * @param data - The data to broadcast
    * @param excludeClientId - Client ID to exclude from broadcast
    */
+  // Todo: We can use published with excludeClientId as an optional parameter instead of a separate method
   publishExcept(data: T, excludeClientId: ClientId): void
 }
 

@@ -73,6 +73,7 @@ export interface IClientConnection {
  * }
  * ```
  */
+// TODO: this one better to be in channel.ts
 export interface IChannel<T> {
   /** Channel name */
   readonly name: ChannelName
@@ -94,6 +95,7 @@ export interface IChannel<T> {
    * @param clientId - The client ID to publish to
    * @param data - The data to publish
    */
+  // TODO: This method may not be necessary if we can achieve the same with publish + excludeClientId
   publishTo(clientId: ClientId, data: T): void
 }
 
@@ -163,6 +165,7 @@ export type ILifecycleHandler = (
  *
  * All transport implementations must extend or implement this interface.
  */
+// TODO: this one better to be in transport.ts
 export interface IBaseTransport {
   /** Map of all connected clients by ID */
   readonly connections: Map<ClientId, IClientConnection>

@@ -5,7 +5,7 @@
 
 import type { IClientConnection } from './base.js'
 import type { IServerTransport } from './transport.js'
-import type { ChannelName, Message } from '@synnel/types'
+import type { ChannelName, ClientId, Message } from '@synnel/types'
 import type { MergeTypes } from './utilities.js'
 
 // ============================================================
@@ -135,7 +135,7 @@ export interface IClientRegistry {
    * @returns Server client wrapper
    */
   register(
-    clientId: string,
+    clientId: ClientId,
     transport: IServerTransport,
     connection: IClientConnection,
   ): IServerClient
@@ -146,7 +146,7 @@ export interface IClientRegistry {
    * @param clientId - Client to unregister
    * @returns true if client was found and removed, false otherwise
    */
-  unregister(clientId: string): boolean
+  unregister(clientId: ClientId): boolean
 
   /**
    * Get a client by ID
@@ -154,7 +154,7 @@ export interface IClientRegistry {
    * @param clientId - Client ID to look up
    * @returns Server client or undefined if not found
    */
-  get(clientId: string): IServerClient | undefined
+  get(clientId: ClientId): IServerClient | undefined
 
   /**
    * Get all registered clients
@@ -177,7 +177,7 @@ export interface IClientRegistry {
    * @param channel - Channel to subscribe to
    * @returns true if subscription succeeded, false otherwise
    */
-  subscribe(clientId: string, channel: ChannelName): boolean
+  subscribe(clientId: ClientId, channel: ChannelName): boolean
 
   /**
    * Unsubscribe a client from a channel
@@ -186,7 +186,7 @@ export interface IClientRegistry {
    * @param channel - Channel to unsubscribe from
    * @returns true if unsubscription succeeded, false otherwise
    */
-  unsubscribe(clientId: string, channel: ChannelName): boolean
+  unsubscribe(clientId: ClientId, channel: ChannelName): boolean
 
   /**
    * Get all subscribers for a channel
@@ -225,7 +225,7 @@ export interface IClientRegistry {
    * @param channel - Channel to check
    * @returns true if subscribed, false otherwise
    */
-  isSubscribed(clientId: string, channel: ChannelName): boolean
+  isSubscribed(clientId: ClientId, channel: ChannelName): boolean
 
   /**
    * Clear all clients and subscriptions
@@ -325,7 +325,7 @@ export type IClientWithMetadata<T extends object> = MergeTypes<IServerClient, T>
  */
 export interface IDisconnectionEvent {
   /** Client ID that disconnected */
-  clientId: string
+  clientId: ClientId
 
   /** WebSocket close code (if available) */
   code?: number

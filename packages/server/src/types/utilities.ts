@@ -1,3 +1,5 @@
+// TODO: this utilites can me move to @synnel/types package.
+
 /**
  * Type Utilities
  * Reusable type manipulation utilities for the @synnel/server package.
@@ -168,7 +170,7 @@ export type OmitByType<T, U> = Omit<T, KeysOfType<T, U>>
  * // Result: { id: number; name?: string; age?: number }
  * ```
  */
-export type RequiredKeys<T, K extends keyof T> = keyof T> = T & Required<Pick<T, K>>
+export type RequiredKeys<T, K extends keyof T> = T & Required<Pick<T, K>>
 
 // ============================================================
 // OPTIONAL KEYS
@@ -188,7 +190,7 @@ export type RequiredKeys<T, K extends keyof T> = keyof T> = T & Required<Pick<T,
  * // Result: { id: number; name: string; age?: number }
  * ```
  */
-export type OptionalKeys<T, K extends keyof T> = keyof T> = Omit<T, K> & Partial<Pick<T, K>>
+export type OptionalKeys<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 
 // ============================================================
 // BRANDED TYPE
