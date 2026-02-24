@@ -4,9 +4,13 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "composite": true,
+    "incremental": true,
+    "isolatedModules": true,
+    "isolatedDeclarations": true,
     "declaration": true,
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "allowJs": false
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]

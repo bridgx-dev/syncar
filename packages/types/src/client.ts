@@ -249,7 +249,7 @@ export interface ClientStats {
   /**
    * Client ID
    */
-  id: string
+  id: SubscriberId
 
   /**
    * Number of active channel subscriptions

@@ -21,7 +21,6 @@
     "paths": {
       "@synnel/core": ["../../packages/core/src/index.ts"],
       "@synnel/client": ["../../packages/client/src/index.ts"],
-      "@synnel/adapter": ["../../packages/adapter/src/index.ts"],
       "@synnel/react": ["../../packages/react/src/index.ts"],
       "@synnel/server": ["../../packages/server/src/index.ts"]
     }

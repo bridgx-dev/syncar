@@ -7,7 +7,7 @@ import type { ChannelName, SubscriberId, Timestamp } from './common.js'
 /**
  * Channel state information
  */
-export interface ChannelState<T = unknown> {
+export interface ChannelState {
   name: ChannelName
   subscriberCount: number
   createdAt: Timestamp
