@@ -13,7 +13,12 @@ import type {
   IServerTransport,
   IServerTransportConfig,
 } from '../types/index.js'
-import { DEFAULT_MAX_PAYLOAD, DEFAULT_PING_INTERVAL, DEFAULT_PING_TIMEOUT, DEFAULT_WS_PATH } from '../config/index.js'
+import {
+  DEFAULT_MAX_PAYLOAD,
+  DEFAULT_PING_INTERVAL,
+  DEFAULT_PING_TIMEOUT,
+  DEFAULT_WS_PATH,
+} from '../config/index.js'
 
 // Import ws library
 import wsModule from 'ws'
@@ -63,9 +68,14 @@ interface ClientPingData {
  * Implements IServerTransport using the `ws` library.
  * Extends BaseTransport which inherits from EventEmitter.
  */
-export class WebSocketServerTransport extends BaseTransport implements IServerTransport {
+export class WebSocketServerTransport
+  extends BaseTransport
+  implements IServerTransport
+{
   private readonly wsServer: ServerInstance
-  private readonly config: Required<Omit<WebSocketServerTransportConfig, 'ServerConstructor'>>
+  private readonly config: Required<
+    Omit<WebSocketServerTransportConfig, 'ServerConstructor'>
+  >
   private readonly clientPingData: Map<ClientId, ClientPingData> = new Map()
   private nextId = 0
 
@@ -162,7 +172,11 @@ export class WebSocketServerTransport extends BaseTransport implements IServerTr
     try {
       const message = JSON.parse(data.toString()) as Message
       const pingData = this.clientPingData.get(clientId)
-      if (pingData && message.type === 'signal' && (message as any).signal === 'PONG') {
+      if (
+        pingData &&
+        message.type === 'signal' &&
+        (message as any).signal === 'PONG'
+      ) {
         pingData.lastPingAt = Date.now()
       }
       // Emit message event via inherited EventEmitter
@@ -173,12 +187,9 @@ export class WebSocketServerTransport extends BaseTransport implements IServerTr
   }
 
   private handleDisconnection(clientId: ClientId): void {
+    this.emit('disconnection', clientId)
     this.cleanupPingData(clientId)
-    const removed = this.connections.delete(clientId)
-    if (removed) {
-      // Emit disconnection event via inherited EventEmitter
-      this.emit('disconnection', clientId)
-    }
+    this.connections.delete(clientId)
   }
 
   private setupPingPong(clientId: ClientId, socket: WebSocketInstance): void {
@@ -230,7 +241,10 @@ export class WebSocketServerTransport extends BaseTransport implements IServerTr
 
     for (const client of Array.from(this.connections.values())) {
       try {
-        (client.socket as WebSocketInstance).close(1000, 'Server shutting down')
+        ;(client.socket as WebSocketInstance).close(
+          1000,
+          'Server shutting down',
+        )
       } catch {
         // Ignore
       }
