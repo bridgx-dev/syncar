@@ -1,8 +1,12 @@
 /**
  * @synnel/types
  *
- * Internal shared types for Synnel real-time synchronization
- * This package is private and should NOT be published to npm.
+ * Shared types for Synnel real-time synchronization
+ * This package contains only shared/common types used across all packages.
+ *
+ * Package-specific types are in their respective packages:
+ * - Client types: @synnel/client
+ * - Server types: @synnel/server
  *
  * @example
  * ```ts
@@ -27,14 +31,6 @@ export type {
   MessageQueueOptions,
 } from './connection.js'
 
-// Channel types
-export type {
-  ChannelState,
-  SubscriptionState as ChannelSubscriptionState,
-  ChannelOptions,
-  MessageBusOptions,
-} from './channel.js'
-
 // Message types
 export type {
   Message,
@@ -47,19 +43,3 @@ export type {
 } from './message.js'
 
 export { MessageType, SignalType, ErrorCode } from './message.js'
-
-// Client types
-export type {
-  ClientStatus,
-  Transport,
-  ClientConfig,
-  SubscriptionState,
-  SubscribeOptions,
-  SubscriptionCallbacks,
-  ChannelSubscription,
-  ClientEventType,
-  ClientEventMap,
-  ClientStats,
-  MessageFilter,
-  ClientMessageHandler,
-} from './client.js'

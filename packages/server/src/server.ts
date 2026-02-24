@@ -11,6 +11,7 @@ import type {
   ServerEventMap,
   MiddlewareContext,
   ServerTransport,
+  ChannelOptions,
 } from './types.js'
 import type {
   Message,
@@ -18,7 +19,6 @@ import type {
   ChannelName,
   SignalType,
   Timestamp,
-  ChannelOptions,
 } from '@synnel/types'
 import { MessageType, SignalType as CoreSignalType } from '@synnel/types'
 import { WebSocketServerTransport } from './base.js'

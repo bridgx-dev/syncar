@@ -35,4 +35,7 @@ export type {
   MiddlewareContext,
   DisconnectionEvent,
   ChannelState,
+  InternalChannelState,
+  ChannelOptions,
+  MessageBusOptions,
 } from './types.js'

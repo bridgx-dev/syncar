@@ -578,9 +578,11 @@ export interface MiddlewareContext {
 // ============================================================
 
 /**
- * Channel state (internal)
+ * Internal channel state
+ * Used internally by MulticastTransport for managing channel state
+ * Note: This is different from the public ChannelState type below
  */
-export interface ChannelState<T = unknown> {
+export interface InternalChannelState<T = unknown> {
   /**
    * Channel name
    */
@@ -611,4 +613,67 @@ export interface ChannelState<T = unknown> {
    * Unsubscribe handlers
    */
   unsubscribeHandlers: Set<(client: ServerClient) => void | Promise<void>>
+}
+
+/**
+ * Public channel state information
+ * Returned by getState() for external consumption
+ */
+export interface ChannelState {
+  name: ChannelName
+  subscriberCount: number
+  createdAt: Timestamp
+  lastMessageAt?: Timestamp
+}
+
+/**
+ * Channel options
+ */
+export interface ChannelOptions {
+  /**
+   * Maximum number of subscribers (0 = unlimited)
+   * @default 0
+   */
+  maxSubscribers?: number
+
+  /**
+   * Whether this channel is reserved (system use only)
+   * @default false
+   */
+  reserved?: boolean
+
+  /**
+   * Message history size (0 = no history)
+   * @default 0
+   */
+  historySize?: number
+}
+
+/**
+ * Message bus options
+ */
+export interface MessageBusOptions {
+  /**
+   * Default options for created channels
+   */
+  defaultChannelOptions?: ChannelOptions
+
+  /**
+   * Whether to auto-create channels on subscribe
+   * @default false
+   */
+  autoCreateChannels?: boolean
+
+  /**
+   * Whether to auto-delete empty channels
+   * @default false
+   */
+  autoDeleteEmptyChannels?: boolean
+
+  /**
+   * Grace period before deleting empty channel (ms)
+   * Only used if autoDeleteEmptyChannels is true
+   * @default 5000
+   */
+  emptyChannelGracePeriod?: number
 }

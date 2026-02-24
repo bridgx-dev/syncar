@@ -10,14 +10,9 @@ import type {
 } from '@synnel/types'
 import type { DataMessage } from '@synnel/types'
 import { createDataMessage } from '@synnel/lib'
-import type { ChannelState, ChannelOptions } from '@synnel/types'
+import type { ChannelState, ChannelOptions } from './types.js'
 import { isValidChannelName, isReservedChannelName } from '@synnel/lib'
 import type { ClientConnection, ServerClient } from './types.js'
-
-/**
- * Re-export ChannelState from types for convenience
- */
-export type { ChannelState, ChannelOptions } from '@synnel/types'
 
 // ============================================================
 // BROADCAST TRANSPORT
@@ -124,7 +119,7 @@ export class MulticastTransport<T = unknown> {
   /**
    * Get channel information
    */
-  getState(): ChannelState<T> {
+  getState(): ChannelState {
     return {
       name: this.name,
       subscriberCount: this.subscribers.size,
