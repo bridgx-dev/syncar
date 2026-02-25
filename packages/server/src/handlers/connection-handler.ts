@@ -207,14 +207,14 @@ export class ConnectionHandler {
       // Ignore middleware errors during disconnection
     }
 
-    // Emit disconnection event BEFORE unregistering
-    // This allows event handlers to access the client in registry
+    // Unregister client from registry FIRST
+    // This ensures that getStats() returns the correct count in event handlers
+    this.registry.unregister(clientId)
+
+    // Emit disconnection event AFTER unregistering
     if (this.options.emitDisconnectionEvent) {
       this.emitter.emit('disconnection', client)
     }
-
-    // Unregister client from registry AFTER emitting event
-    this.registry.unregister(clientId)
   }
 
   /**
