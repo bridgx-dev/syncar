@@ -73,7 +73,6 @@ export type {
   IClientData,
   IServerClient,
   IClientRegistry,
-  IServerClientFactory,
   IClientWithMetadata,
   IDisconnectionEvent,
 } from './client.js'

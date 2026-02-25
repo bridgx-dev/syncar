@@ -150,11 +150,7 @@ export class ConnectionHandler {
     connection: IClientConnection,
   ): Promise<IServerClient> {
     // Register client in registry first (creates IServerClient wrapper)
-    const client = this.registry.register(
-      connection.id,
-      this.transport,
-      connection,
-    )
+    const client = this.registry.register(connection, this.transport)
 
     // Execute connection middleware
     try {

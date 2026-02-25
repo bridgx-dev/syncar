@@ -80,7 +80,7 @@ export class WebSocketServerTransport
   private nextId = 0
 
   constructor(config: WebSocketServerTransportConfig) {
-    super()
+    super(config.connections)
 
     this.config = {
       server: config.server,
@@ -89,6 +89,7 @@ export class WebSocketServerTransport
       enablePing: config.enablePing ?? true,
       pingInterval: config.pingInterval ?? DEFAULT_PING_INTERVAL,
       pingTimeout: config.pingTimeout ?? DEFAULT_PING_TIMEOUT,
+      connections: config.connections ?? this.connections,
     }
 
     const ServerConstructor = config.ServerConstructor ?? WsServer

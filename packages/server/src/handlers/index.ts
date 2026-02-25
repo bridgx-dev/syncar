@@ -27,7 +27,6 @@ export {
 
 export type {
   MessageHandlerOptions,
-  ChannelMap,
 } from './message-handler.js'
 
 // ============================================================

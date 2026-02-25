@@ -42,14 +42,15 @@ export abstract class BaseTransport extends EventEmitter implements IBaseTranspo
    * Public readonly as required by IBaseTransport interface
    * Subclasses can access this directly to manage connections
    */
-  public readonly connections: Map<ClientId, IClientConnection> = new Map()
+  public readonly connections: Map<ClientId, IClientConnection>
 
   /**
    * Set max listeners to a higher default for transport use cases
    * Transports may have many event listeners registered
    */
-  constructor() {
+  constructor(connections: Map<ClientId, IClientConnection> = new Map()) {
     super()
+    this.connections = connections
     this.setMaxListeners(100)
   }
 

@@ -109,8 +109,6 @@ export {
 
 export {
   ClientRegistry,
-  ServerClientFactory,
-  defaultClientFactory,
 } from './registry/index.js'
 
 // ============================================================
@@ -166,7 +164,6 @@ export type {
   IClientData,
   IServerClient,
   IClientRegistry,
-  IServerClientFactory,
   IClientWithMetadata,
   IDisconnectionEvent,
   // Channel types

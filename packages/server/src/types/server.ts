@@ -4,7 +4,7 @@
  */
 
 import type { Server as HttpServer } from 'node:http'
-import type { Message, DeepPartial } from '@synnel/types'
+import type { Message, DeepPartial, ClientId } from '@synnel/types'
 import type { IServerTransport } from './transport.js'
 import type { IMiddleware } from './middleware.js'
 import type {
@@ -13,7 +13,8 @@ import type {
   IMulticastTransport,
 } from './channel.js'
 import type { IServerEventMap, IServerEventType } from './events.js'
-import type { IServerClient } from './client.js'
+import type { IServerClient, IClientRegistry } from './client.js'
+import type { IClientConnection } from './base.js'
 
 // ============================================================
 // SERVER CONFIGURATION
@@ -102,6 +103,16 @@ export interface IServerConfig {
    * @default 5000
    */
   pingTimeout?: number
+
+  /**
+   * Custom client registry (optional)
+   */
+  registry?: IClientRegistry
+
+  /**
+   * Shared connection map (optional, shared with transport)
+   */
+  connections?: Map<ClientId, IClientConnection>
 
   /**
    * Middleware functions for processing messages and connections

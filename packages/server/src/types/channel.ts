@@ -178,6 +178,22 @@ export interface IChannelTransport<T> extends IChannel<T>, IMessageHistory<T> {
   onMessage(handler: IMessageHandler<T>): () => void
 
   /**
+   * Subscribe a client to this channel
+   *
+   * @param subscriber - Subscriber ID to subscribe
+   * @returns true if subscribed, false otherwise
+   */
+  subscribe(subscriber: SubscriberId): boolean
+
+  /**
+   * Unsubscribe a client from this channel
+   *
+   * @param subscriber - Subscriber ID to unsubscribe
+   * @returns true if unsubscribed, false otherwise
+   */
+  unsubscribe(subscriber: SubscriberId): boolean
+
+  /**
    * Register a handler for incoming messages (alias for onMessage)
    * Provides a more intuitive API for receiving messages.
    *
@@ -297,7 +313,7 @@ export interface IChannelTransport<T> extends IChannel<T>, IMessageHistory<T> {
  * broadcast.publish('Private announcement', { to: ['client-1', 'client-2'] })
  * ```
  */
-export interface IBroadcastTransport<T> extends IChannel<T> {
+export interface IBroadcastTransport<T> extends IChannelTransport<T> {
   /**
    * Channel name (always '__broadcast__')
    */

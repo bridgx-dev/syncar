@@ -12,15 +12,6 @@
 export { ClientRegistry } from './client-registry.js'
 
 // ============================================================
-// CLIENT FACTORY
-// ============================================================
-
-export {
-  ServerClientFactory,
-  defaultClientFactory,
-} from './client-factory.js'
-
-// ============================================================
 // RE-EXPORT TYPES
 // ============================================================
 
@@ -28,7 +19,6 @@ export type {
   IClientData,
   IServerClient,
   IClientRegistry,
-  IServerClientFactory,
   IClientWithMetadata,
   IDisconnectionEvent,
 } from '../types/client.js'
