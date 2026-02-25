@@ -2,11 +2,10 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     // Environment setup & latest features
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022"],
     "target": "ES2020",
     "module": "ESNext",
     "moduleDetection": "force",
-    "jsx": "react-jsx",
     "allowJs": true,
 
     // Bundler mode
@@ -37,17 +36,6 @@
     "isolatedModules": true,
     "composite": true,
     "noEmit": false,
-
-    // Workspace path mappings (for development)
-    "baseUrl": ".",
-    "paths": {
-      "@synnel/types": ["./packages/types/src"],
-      "@synnel/lib": ["./packages/lib/src"],
-      "@synnel/core": ["./packages/core/src"],
-      "@synnel/client": ["./packages/client/src"],
-      "@synnel/server": ["./packages/server/src"],
-      "@synnel/react": ["./packages/react/src"]
-    }
   },
   "include": ["*.config.*"],
   "exclude": ["node_modules", "dist", "dist-ts"]

@@ -102,7 +102,7 @@ async function main() {
   // HANDLE CONNECTION EVENTS
   // ============================================================
 
-  server.on('connection', (client) => {
+  server.on('connection', (_client) => {
     // Broadcast updated user count to all clients
     const stats = server.getStats()
     notifications.publish({

@@ -1,26 +1,12 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "composite": true,
     "jsx": "react-jsx",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["react", "react-dom"],
-    "baseUrl": ".",
-    "paths": {
-      "@synnel/types": ["../types/src"],
-      "@synnel/lib": ["../lib/src"],
-      "@synnel/core": ["../core/src"],
-      "@synnel/client": ["../client/src"]
-    }
+    "incremental": false
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"],
-  "references": [
-    { "path": "../types" },
-    { "path": "../lib" },
-    { "path": "../core" },
-    { "path": "../client" }
-  ]
+  "include": ["src", "*.config.*"]
 }
