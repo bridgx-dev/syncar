@@ -5,20 +5,20 @@
  * @module transport/websocket-transport
  */
 
-import { BaseTransport } from './base-transport.js'
+import { BaseTransport } from './base-transport'
 import type {
   IClientConnection,
   ClientId,
   Message,
   IServerTransport,
   IServerTransportConfig,
-} from '../types/index.js'
+} from '../types'
 import {
   DEFAULT_MAX_PAYLOAD,
   DEFAULT_PING_INTERVAL,
   DEFAULT_PING_TIMEOUT,
   DEFAULT_WS_PATH,
-} from '../config/index.js'
+} from '../config'
 
 // Import ws library
 import wsModule from 'ws'
@@ -264,4 +264,4 @@ export type {
   ClientId,
   Message,
   IServerTransportConfig,
-} from '../types/index.js'
+} from '../types'

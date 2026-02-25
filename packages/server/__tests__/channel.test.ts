@@ -67,9 +67,13 @@ describe('Channels', () => {
       })
 
       it('should respect maxSubscribers limit', () => {
-        const limitedChannel = new MulticastTransport<string>('limited', clients, {
-          maxSubscribers: 2,
-        })
+        const limitedChannel = new MulticastTransport<string>(
+          'limited',
+          clients,
+          {
+            maxSubscribers: 2,
+          },
+        )
 
         limitedChannel.subscribe('client-1')
         limitedChannel.subscribe('client-2')
@@ -105,10 +109,10 @@ describe('Channels', () => {
         channel.publish('Hello everyone')
 
         expect(client1.socket.send).toHaveBeenCalledWith(
-          expect.stringContaining('Hello everyone')
+          expect.stringContaining('Hello everyone'),
         )
         expect(client2.socket.send).toHaveBeenCalledWith(
-          expect.stringContaining('Hello everyone')
+          expect.stringContaining('Hello everyone'),
         )
       })
 
@@ -129,12 +133,16 @@ describe('Channels', () => {
 
         // client1 should NOT receive the message
         const calls1 = (client1.socket.send as any).mock.calls
-        const relevant1 = calls1.filter((call: any[]) => call[0].includes('Message for client-2'))
+        const relevant1 = calls1.filter((call: any[]) =>
+          call[0].includes('Message for client-2'),
+        )
         expect(relevant1).toHaveLength(0)
 
         // client2 should receive
         const calls2 = (client2.socket.send as any).mock.calls
-        const relevant2 = calls2.filter((call: any[]) => call[0].includes('Message for client-2'))
+        const relevant2 = calls2.filter((call: any[]) =>
+          call[0].includes('Message for client-2'),
+        )
         expect(relevant2.length).toBeGreaterThan(0)
       })
 
@@ -142,16 +150,23 @@ describe('Channels', () => {
         const client1 = clients.get('client-1')!
         const client2 = clients.get('client-2')!
 
-        channel.publish('Message', { to: ['client-1', 'client-2'], exclude: ['client-1'] })
+        channel.publish('Message', {
+          to: ['client-1', 'client-2'],
+          exclude: ['client-1'],
+        })
 
         // client1 should NOT receive
         const calls1 = (client1.socket.send as any).mock.calls
-        const relevant1 = calls1.filter((call: any[]) => call[0].includes('Message'))
+        const relevant1 = calls1.filter((call: any[]) =>
+          call[0].includes('Message'),
+        )
         expect(relevant1).toHaveLength(0)
 
         // client2 should receive
         const calls2 = (client2.socket.send as any).mock.calls
-        const relevant2 = calls2.filter((call: any[]) => call[0].includes('Message'))
+        const relevant2 = calls2.filter((call: any[]) =>
+          call[0].includes('Message'),
+        )
         expect(relevant2.length).toBeGreaterThan(0)
       })
     })
@@ -169,12 +184,16 @@ describe('Channels', () => {
         expect(typeof unsubscribe).toBe('function')
 
         // Trigger handler manually via protected method
-        ;(channel as any).handleMessage('test data', createMockClient('client-1'), {
-          type: 'data',
-          channel: 'test',
-          data: 'test data',
-          timestamp: Date.now(),
-        })
+        ;(channel as any).handleMessage(
+          'test data',
+          createMockClient('client-1'),
+          {
+            type: 'data',
+            channel: 'test',
+            data: 'test data',
+            timestamp: Date.now(),
+          },
+        )
 
         expect(receivedData).toBe('test data')
         expect(receivedClient).toBeDefined()
@@ -353,7 +372,7 @@ describe('Channels', () => {
         channel.publishTo('client-1', 'Direct message')
 
         expect(client.socket.send).toHaveBeenCalledWith(
-          expect.stringContaining('Direct message')
+          expect.stringContaining('Direct message'),
         )
       })
 
@@ -410,10 +429,10 @@ describe('Channels', () => {
         broadcast.publish('Broadcast to everyone')
 
         expect(client1.socket.send).toHaveBeenCalledWith(
-          expect.stringContaining('Broadcast to everyone')
+          expect.stringContaining('Broadcast to everyone'),
         )
         expect(client2.socket.send).toHaveBeenCalledWith(
-          expect.stringContaining('Broadcast to everyone')
+          expect.stringContaining('Broadcast to everyone'),
         )
       })
 
@@ -426,7 +445,9 @@ describe('Channels', () => {
         expect(client1.socket.send).toHaveBeenCalled()
         // client2 should NOT receive the message
         const calls = (client2.socket.send as any).mock.calls
-        const relevantCalls = calls.filter((call: any[]) => call[0].includes('Targeted message'))
+        const relevantCalls = calls.filter((call: any[]) =>
+          call[0].includes('Targeted message'),
+        )
         expect(relevantCalls).toHaveLength(0)
       })
 
@@ -438,12 +459,16 @@ describe('Channels', () => {
 
         // client1 should not receive
         const calls1 = (client1.socket.send as any).mock.calls
-        const relevant1 = calls1.filter((call) => call[0].includes('Message for client-2'))
+        const relevant1 = calls1.filter((call) =>
+          call[0].includes('Message for client-2'),
+        )
         expect(relevant1).toHaveLength(0)
 
         // client2 should receive
         const calls2 = (client2.socket.send as any).mock.calls
-        const relevant2 = calls2.filter((call) => call[0].includes('Message for client-2'))
+        const relevant2 = calls2.filter((call) =>
+          call[0].includes('Message for client-2'),
+        )
         expect(relevant2.length).toBeGreaterThan(0)
       })
 
@@ -455,22 +480,31 @@ describe('Channels', () => {
         clients.set('client-2', client2)
         clients.set('client-3', client3)
 
-        broadcast.publish('Message', { to: ['client-1', 'client-2', 'client-3'], exclude: ['client-1'] })
+        broadcast.publish('Message', {
+          to: ['client-1', 'client-2', 'client-3'],
+          exclude: ['client-1'],
+        })
 
         // Only client-2 and client-3 should receive
         // client1 should NOT receive
         const calls1 = (client1.socket.send as any).mock.calls
-        const relevant1 = calls1.filter((call: any[]) => call[0].includes('Message'))
+        const relevant1 = calls1.filter((call: any[]) =>
+          call[0].includes('Message'),
+        )
         expect(relevant1).toHaveLength(0)
 
         // client2 should receive
         const calls2 = (client2.socket.send as any).mock.calls
-        const relevant2 = calls2.filter((call: any[]) => call[0].includes('Message'))
+        const relevant2 = calls2.filter((call: any[]) =>
+          call[0].includes('Message'),
+        )
         expect(relevant2.length).toBeGreaterThan(0)
 
         // client3 should receive
         const calls3 = (client3.socket.send as any).mock.calls
-        const relevant3 = calls3.filter((call: any[]) => call[0].includes('Message'))
+        const relevant3 = calls3.filter((call: any[]) =>
+          call[0].includes('Message'),
+        )
         expect(relevant3.length).toBeGreaterThan(0)
       })
     })

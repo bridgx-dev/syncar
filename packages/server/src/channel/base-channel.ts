@@ -8,25 +8,19 @@ import type {
   IMessageHandler,
   ILifecycleHandler,
   IClientConnection,
-} from '../types/base.js'
-import type {
   IChannelState,
   IChannelOptions,
   IChannelTransport,
-} from '../types/channel.js'
-import type {
   ChannelName,
   SubscriberId,
   DataMessage,
   Timestamp,
-} from '@synnel/types'
+} from '../types'
 
 /**
  * Abstract base channel class
  */
-export abstract class BaseChannel<T = unknown>
-  implements IChannelTransport<T>
-{
+export abstract class BaseChannel<T = unknown> implements IChannelTransport<T> {
   /**
    * Channel name (readonly)
    */
@@ -204,7 +198,11 @@ export abstract class BaseChannel<T = unknown>
   /**
    * Process an incoming message on this channel
    */
-  async receive(data: T, client: IClientConnection, message: DataMessage<T>): Promise<void> {
+  async receive(
+    data: T,
+    client: IClientConnection,
+    message: DataMessage<T>,
+  ): Promise<void> {
     await this.handleMessage(data, client, message)
   }
 
@@ -271,7 +269,10 @@ export abstract class BaseChannel<T = unknown>
       try {
         await handler(data, client, message)
       } catch (error) {
-        console.error(`Error in message handler for channel ${this.name}:`, error)
+        console.error(
+          `Error in message handler for channel ${this.name}:`,
+          error,
+        )
       }
     }
   }
@@ -284,7 +285,10 @@ export abstract class BaseChannel<T = unknown>
       try {
         await handler(client)
       } catch (error) {
-        console.error(`Error in subscribe handler for channel ${this.name}:`, error)
+        console.error(
+          `Error in subscribe handler for channel ${this.name}:`,
+          error,
+        )
       }
     }
   }
@@ -297,7 +301,10 @@ export abstract class BaseChannel<T = unknown>
       try {
         await handler(client)
       } catch (error) {
-        console.error(`Error in unsubscribe handler for channel ${this.name}:`, error)
+        console.error(
+          `Error in unsubscribe handler for channel ${this.name}:`,
+          error,
+        )
       }
     }
   }

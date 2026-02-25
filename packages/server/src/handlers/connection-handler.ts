@@ -5,13 +5,16 @@
  * @module handlers/connection-handler
  */
 
-import type { IClientRegistry, IServerClient } from '../types/client.js'
-import type { IClientConnection } from '../types/base.js'
-import type { IMiddlewareManager } from '../types/middleware.js'
-import type { IEventEmitter } from '../types/events.js'
-import type { IServerEventMap } from '../types/events.js'
-import type { IServerTransport } from '../types/transport.js'
-import { CLOSE_CODES } from '../config/constants.js'
+import type {
+  IClientRegistry,
+  IServerClient,
+  IClientConnection,
+  IMiddlewareManager,
+  IEventEmitter,
+  IServerEventMap,
+  IServerTransport,
+} from '../types'
+import { CLOSE_CODES } from '../config'
 
 // ============================================================
 // CONNECTION HANDLER OPTIONS
@@ -228,15 +231,3 @@ export class ConnectionHandler {
     return this.options
   }
 }
-
-// ============================================================
-// RE-EXPORT TYPES
-// ============================================================
-
-export type { IClientRegistry, IServerClient } from '../types/client.js'
-
-export type { IClientConnection } from '../types/base.js'
-export type { IMiddlewareManager } from '../types/middleware.js'
-export type { IEventEmitter } from '../types/events.js'
-export type { IServerEventMap } from '../types/events.js'
-export type { IServerTransport } from '../types/transport.js'

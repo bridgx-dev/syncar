@@ -61,19 +61,25 @@ describe('MessageHandler', () => {
     it('should validate message is a DataMessage', async () => {
       const invalidMessage = { type: 'signal' } as any
 
-      await expect(handler.handleMessage(mockClient, invalidMessage)).rejects.toThrow(MessageError)
+      await expect(
+        handler.handleMessage(mockClient, invalidMessage),
+      ).rejects.toThrow(MessageError)
     })
 
     it('should throw ChannelError when requireChannel is true and channel not found', async () => {
       const message = createDataMessage('nonexistent', 'test data')
 
-      await expect(handler.handleMessage(mockClient, message)).rejects.toThrow(ChannelError)
+      await expect(handler.handleMessage(mockClient, message)).rejects.toThrow(
+        ChannelError,
+      )
     })
 
     it('should not throw when channel exists', async () => {
       const message = createDataMessage('test', 'test data')
 
-      await expect(handler.handleMessage(mockClient, message)).resolves.not.toThrow()
+      await expect(
+        handler.handleMessage(mockClient, message),
+      ).resolves.not.toThrow()
     })
 
     it('should execute message middleware when executeMiddleware is true', async () => {
@@ -118,15 +124,23 @@ describe('MessageHandler', () => {
 
       await handler.handleMessage(mockClient, message)
 
-      expect(emitSpy).not.toHaveBeenCalledWith('message', expect.anything(), expect.anything())
+      expect(emitSpy).not.toHaveBeenCalledWith(
+        'message',
+        expect.anything(),
+        expect.anything(),
+      )
     })
 
     it('should handle channel.handleError gracefully', async () => {
       const message = createDataMessage('test', 'test data')
       const channel = channels.get('test')
-      vi.spyOn(channel as any, 'handleMessage').mockRejectedValue(new Error('Handler error'))
+      vi.spyOn(channel as any, 'handleMessage').mockRejectedValue(
+        new Error('Handler error'),
+      )
 
-      await expect(handler.handleMessage(mockClient, message)).resolves.not.toThrow()
+      await expect(
+        handler.handleMessage(mockClient, message),
+      ).resolves.not.toThrow()
     })
 
     it('should allow messages when requireChannel is false', async () => {
@@ -140,7 +154,9 @@ describe('MessageHandler', () => {
 
       const message = createDataMessage('nonexistent', 'test data')
 
-      await expect(handler.handleMessage(mockClient, message)).resolves.not.toThrow()
+      await expect(
+        handler.handleMessage(mockClient, message),
+      ).resolves.not.toThrow()
     })
   })
 

@@ -20,10 +20,6 @@
  * ```
  */
 
-// ============================================================
-// BASE ERROR CLASS
-// ============================================================
-
 export {
   SynnelError,
   ConfigError,
@@ -33,16 +29,9 @@ export {
   MessageError,
   ValidationError,
   StateError,
-} from './base.js'
-
-// ============================================================
-// MIDDLEWARE ERRORS
-// ============================================================
+} from './base'
 
 export {
   MiddlewareRejectionError,
   MiddlewareExecutionError,
-} from './middleware.js'
-
-// Re-export types for convenience
-export type { IMiddlewareRejectionError } from '../types/index.js'
+} from './middleware'

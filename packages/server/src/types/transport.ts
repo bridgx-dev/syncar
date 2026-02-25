@@ -7,7 +7,7 @@
  */
 
 import type { EventEmitter } from 'node:events'
-import type { IClientConnection } from './base.js'
+import type { IClientConnection } from './base'
 import type { Message, ClientId } from '@synnel/types'
 
 // ============================================================

@@ -3,23 +3,19 @@
  * Processes signal messages (SUBSCRIBE, UNSUBSCRIBE, PING, PONG).
  */
 
-import type { IClientRegistry } from '../types/client.js'
-import type { IMiddlewareManager } from '../types/middleware.js'
-import type { IEventEmitter } from '../types/events.js'
-import type { IServerEventMap } from '../types/events.js'
-import type { IServerClient } from '../types/client.js'
-import type { IServerTransport } from '../types/transport.js'
 import type {
+  IClientRegistry,
+  IServerClient,
+  IMiddlewareManager,
+  IEventEmitter,
+  IServerEventMap,
+  IServerTransport,
   SignalMessage,
-  SignalType,
-} from '@synnel/types'
-import {
-  createSignalMessage,
-} from '@synnel/lib'
-import { ChannelError, MessageError } from '../errors/index.js'
-import {
-  BROADCAST_CHANNEL,
-} from '../config/constants.js'
+} from '../types'
+import { SignalType } from '@synnel/types'
+import { createSignalMessage } from '@synnel/lib'
+import { ChannelError, MessageError } from '../errors'
+import { BROADCAST_CHANNEL } from '../config'
 import { isReservedChannelName } from '@synnel/lib'
 
 /**
@@ -92,7 +88,8 @@ export class SignalHandler {
     this.options = {
       emitSubscribeEvent: dependencies.options?.emitSubscribeEvent ?? true,
       emitUnsubscribeEvent: dependencies.options?.emitUnsubscribeEvent ?? true,
-      allowReservedChannels: dependencies.options?.allowReservedChannels ?? false,
+      allowReservedChannels:
+        dependencies.options?.allowReservedChannels ?? false,
       sendAcknowledgments: dependencies.options?.sendAcknowledgments ?? true,
       autoRespondToPing: dependencies.options?.autoRespondToPing ?? true,
     }
@@ -168,7 +165,9 @@ export class SignalHandler {
     // Subscribe to channel via registry
     const success = this.registry.subscribe(client.id, channel)
     if (!success) {
-      throw new ChannelError(`Failed to subscribe client ${client.id} to channel ${channel}`)
+      throw new ChannelError(
+        `Failed to subscribe client ${client.id} to channel ${channel}`,
+      )
     }
 
     // Trigger channel subscribe handlers

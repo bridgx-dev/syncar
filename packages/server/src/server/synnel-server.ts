@@ -7,30 +7,29 @@ import type {
   IServerConfig,
   ISynnelServer,
   IServerStats,
-} from '../types/server.js'
-import type { IServerTransport } from '../types/transport.js'
-import type { IClientRegistry, IServerClient } from '../types/client.js'
-import type { IMiddlewareManager } from '../types/middleware.js'
-import type { IEventEmitter, IServerEventMap, IServerEventType } from '../types/events.js'
-import type {
+  IServerTransport,
+  IClientRegistry,
+  IServerClient,
+  IMiddlewareManager,
+  IEventEmitter,
+  IServerEventMap,
+  IServerEventType,
   IBroadcastTransport,
   IMulticastTransport,
   IChannelOptions,
-} from '../types/channel.js'
-import type { ChannelName, Message } from '@synnel/types'
-import { ClientRegistry } from '../registry/index.js'
-import { MiddlewareManager } from '../middleware/index.js'
-import { EventEmitter } from '../emitter/index.js'
-import { BroadcastTransport } from '../channel/broadcast-transport.js'
-import { MulticastTransport } from '../channel/index.js'
-import { ConnectionHandler } from '../handlers/connection-handler.js'
-import { MessageHandler } from '../handlers/message-handler.js'
-import { SignalHandler } from '../handlers/signal-handler.js'
-import {
-  DEFAULT_MAX_SUBSCRIBERS,
-  DEFAULT_HISTORY_SIZE,
-} from '../config/constants.js'
-import { StateError, ConfigError } from '../errors/index.js'
+  ChannelName,
+  Message,
+} from '../types'
+import { ClientRegistry } from '../registry'
+import { MiddlewareManager } from '../middleware'
+import { EventEmitter } from '../emitter'
+import { BroadcastTransport } from '../channel'
+import { MulticastTransport } from '../channel'
+import { ConnectionHandler } from '../handlers'
+import { MessageHandler } from '../handlers'
+import { SignalHandler } from '../handlers'
+import { DEFAULT_MAX_SUBSCRIBERS, DEFAULT_HISTORY_SIZE } from '../config'
+import { StateError, ConfigError } from '../errors'
 
 /**
  * Internal server state
@@ -253,13 +252,10 @@ export class SynnelServer implements ISynnelServer {
     event: E,
     ...args: IServerEventMap[E] extends (...args: infer P) => any ? P : never
   ): void {
-    this.emitter.emit(event, ...args as any)
+    this.emitter.emit(event, ...(args as any))
   }
 
-  off<E extends IServerEventType>(
-    event: E,
-    handler: IServerEventMap[E],
-  ): void {
+  off<E extends IServerEventType>(event: E, handler: IServerEventMap[E]): void {
     this.emitter.off(event, handler as any)
   }
 

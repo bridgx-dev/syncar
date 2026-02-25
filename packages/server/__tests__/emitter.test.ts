@@ -274,7 +274,9 @@ describe('EventEmitter', () => {
       emitter.on('connection', () => {})
       emitter.on('connection', () => {})
 
-      expect(emitter.eventNames().filter(n => n === 'connection')).toHaveLength(1)
+      expect(
+        emitter.eventNames().filter((n) => n === 'connection'),
+      ).toHaveLength(1)
     })
   })
 

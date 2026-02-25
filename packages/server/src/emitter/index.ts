@@ -19,16 +19,4 @@
  * ```
  */
 
-export { EventEmitter } from './event-emitter.js'
-
-// Re-export types for convenience
-export type {
-  IEventEmitter,
-  IEventUnsubscriber,
-  IServerEventType,
-  IServerEventMap,
-  IEventHandler,
-  IEventDataType,
-  IAsyncEventHandler,
-  IAsyncServerEventMap,
-} from '../types/index.js'
+export { EventEmitter } from './event-emitter'

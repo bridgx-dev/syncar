@@ -3,14 +3,16 @@
  * Processes data messages from clients and routes to channels.
  */
 
-import type { IClientRegistry } from '../types/client.js'
-import type { IMiddlewareManager } from '../types/middleware.js'
-import type { IEventEmitter } from '../types/events.js'
-import type { IServerEventMap } from '../types/events.js'
-import type { IServerClient } from '../types/client.js'
-import type { IChannelTransport } from '../types/channel.js'
-import type { DataMessage } from '@synnel/types'
-import { MessageError, ChannelError } from '../errors/index.js'
+import type {
+  IClientRegistry,
+  IMiddlewareManager,
+  IEventEmitter,
+  IServerEventMap,
+  IServerClient,
+  IChannelTransport,
+  DataMessage,
+} from '../types'
+import { MessageError, ChannelError } from '../errors'
 import { isDataMessage } from '@synnel/lib'
 
 /**
@@ -120,7 +122,9 @@ export class MessageHandler {
   /**
    * Get the channel for a message
    */
-  getChannelForMessage<T = unknown>(message: DataMessage<T>): IChannelTransport<T> | undefined {
+  getChannelForMessage<T = unknown>(
+    message: DataMessage<T>,
+  ): IChannelTransport<T> | undefined {
     return this.registry.getChannel<T>(message.channel)
   }
 

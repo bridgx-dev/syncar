@@ -19,11 +19,5 @@
  * ```
  */
 
-export { BaseTransport } from './base-transport.js'
-export { WebSocketServerTransport } from './websocket-transport.js'
-
-export type {
-  IBaseTransport,
-  IServerTransport,
-  IServerTransportConfig,
-} from '../types/index.js'
+export { BaseTransport } from './base-transport'
+export { WebSocketServerTransport } from './websocket-transport'

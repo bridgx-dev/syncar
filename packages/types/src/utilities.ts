@@ -188,7 +188,8 @@ export type RequiredKeys<T, K extends keyof T> = T & Required<Pick<T, K>>
  * // Result: { id: number; name: string; age?: number }
  * ```
  */
-export type OptionalKeys<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
+export type OptionalKeys<T, K extends keyof T> = Omit<T, K> &
+  Partial<Pick<T, K>>
 
 // ============================================================
 // BRANDED TYPE
@@ -420,9 +421,9 @@ export type ValueOf<T> = T[keyof T]
  * // Result: { a: string } & { b: number }
  * ```
  */
-export type UnionToIntersection<U> = (U extends any
-  ? (k: U) => void
-  : never) extends (k: infer I) => void
+export type UnionToIntersection<U> = (
+  U extends any ? (k: U) => void : never
+) extends (k: infer I) => void
   ? I
   : never
 
@@ -440,7 +441,10 @@ export type UnionToIntersection<U> = (U extends any
  * // Result: boolean
  * ```
  */
-export type LastOfTuple<T extends readonly unknown[]> = T extends readonly [...any[], infer L]
+export type LastOfTuple<T extends readonly unknown[]> = T extends readonly [
+  ...any[],
+  infer L,
+]
   ? L
   : never
 

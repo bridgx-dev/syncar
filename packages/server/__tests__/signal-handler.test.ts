@@ -55,7 +55,10 @@ describe('SignalHandler', () => {
 
     // Create test channels
     const testChannel = new MulticastTransport<string>('test', new Map())
-    const presenceChannel = new MulticastTransport<string>('presence', new Map())
+    const presenceChannel = new MulticastTransport<string>(
+      'presence',
+      new Map(),
+    )
     channels.set('test', testChannel)
     channels.set('presence', presenceChannel)
 
@@ -72,31 +75,41 @@ describe('SignalHandler', () => {
     it('should route subscribe signal to handleSubscribe', async () => {
       const message = createSignalMessage('test', 'subscribe')
 
-      await expect(handler.handleSignal(mockClient, message)).resolves.not.toThrow()
+      await expect(
+        handler.handleSignal(mockClient, message),
+      ).resolves.not.toThrow()
     })
 
     it('should route unsubscribe signal to handleUnsubscribe', async () => {
       const message = createSignalMessage('test', 'unsubscribe')
 
-      await expect(handler.handleSignal(mockClient, message)).resolves.not.toThrow()
+      await expect(
+        handler.handleSignal(mockClient, message),
+      ).resolves.not.toThrow()
     })
 
     it('should route ping signal to handlePing', async () => {
       const message = createSignalMessage(BROADCAST_CHANNEL, 'ping')
 
-      await expect(handler.handleSignal(mockClient, message)).resolves.not.toThrow()
+      await expect(
+        handler.handleSignal(mockClient, message),
+      ).resolves.not.toThrow()
     })
 
     it('should route pong signal to handlePong', async () => {
       const message = createSignalMessage(BROADCAST_CHANNEL, 'pong')
 
-      await expect(handler.handleSignal(mockClient, message)).resolves.not.toThrow()
+      await expect(
+        handler.handleSignal(mockClient, message),
+      ).resolves.not.toThrow()
     })
 
     it('should throw MessageError for unknown signal type', async () => {
       const message = createSignalMessage('test', 'unknown' as any)
 
-      await expect(handler.handleSignal(mockClient, message)).rejects.toThrow(MessageError)
+      await expect(handler.handleSignal(mockClient, message)).rejects.toThrow(
+        MessageError,
+      )
     })
   })
 
@@ -104,13 +117,17 @@ describe('SignalHandler', () => {
     it('should throw error for reserved channel when not allowed', async () => {
       const message = createSignalMessage('__private__', 'subscribe')
 
-      await expect(handler.handleSubscribe(mockClient, message)).rejects.toThrow(ChannelError)
+      await expect(
+        handler.handleSubscribe(mockClient, message),
+      ).rejects.toThrow(ChannelError)
     })
 
     it('should throw error for broadcast channel', async () => {
       const message = createSignalMessage(BROADCAST_CHANNEL, 'subscribe')
 
-      await expect(handler.handleSubscribe(mockClient, message)).rejects.toThrow(ChannelError)
+      await expect(
+        handler.handleSubscribe(mockClient, message),
+      ).rejects.toThrow(ChannelError)
     })
 
     it('should execute subscribe middleware', async () => {
@@ -125,7 +142,9 @@ describe('SignalHandler', () => {
     it('should throw error when channel does not exist', async () => {
       const message = createSignalMessage('nonexistent', 'subscribe')
 
-      await expect(handler.handleSubscribe(mockClient, message)).rejects.toThrow(ChannelError)
+      await expect(
+        handler.handleSubscribe(mockClient, message),
+      ).rejects.toThrow(ChannelError)
     })
 
     it('should subscribe client to channel', async () => {
@@ -147,7 +166,12 @@ describe('SignalHandler', () => {
     })
 
     it('should send subscribed acknowledgment when sendAcknowledgments is true', async () => {
-      const message = createSignalMessage('test', 'subscribe', undefined, 'msg-1')
+      const message = createSignalMessage(
+        'test',
+        'subscribe',
+        undefined,
+        'msg-1',
+      )
 
       await handler.handleSubscribe(mockClient, message)
 
@@ -198,7 +222,9 @@ describe('SignalHandler', () => {
       vi.spyOn(registry, 'isSubscribed').mockReturnValue(false)
       const message = createSignalMessage('test', 'unsubscribe')
 
-      await expect(handler.handleUnsubscribe(mockClient, message)).rejects.toThrow(ChannelError)
+      await expect(
+        handler.handleUnsubscribe(mockClient, message),
+      ).rejects.toThrow(ChannelError)
     })
 
     it('should unsubscribe client from channel', async () => {
@@ -220,7 +246,12 @@ describe('SignalHandler', () => {
     })
 
     it('should send unsubscribed acknowledgment', async () => {
-      const message = createSignalMessage('test', 'unsubscribe', undefined, 'msg-1')
+      const message = createSignalMessage(
+        'test',
+        'unsubscribe',
+        undefined,
+        'msg-1',
+      )
 
       await handler.handleUnsubscribe(mockClient, message)
 
@@ -238,7 +269,12 @@ describe('SignalHandler', () => {
 
   describe('handlePing', () => {
     it('should send pong when autoRespondToPing is true', async () => {
-      const message = createSignalMessage(BROADCAST_CHANNEL, 'ping', undefined, 'ping-1')
+      const message = createSignalMessage(
+        BROADCAST_CHANNEL,
+        'ping',
+        undefined,
+        'ping-1',
+      )
 
       await handler.handlePing(mockClient, message)
 
@@ -273,7 +309,9 @@ describe('SignalHandler', () => {
     it('should handle pong without error', async () => {
       const message = createSignalMessage(BROADCAST_CHANNEL, 'pong')
 
-      await expect(handler.handlePong(mockClient, message)).resolves.not.toThrow()
+      await expect(
+        handler.handlePong(mockClient, message),
+      ).resolves.not.toThrow()
     })
 
     it('should be a no-op (client is still alive)', async () => {

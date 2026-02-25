@@ -193,7 +193,11 @@ describe('Errors', () => {
   describe('MiddlewareExecutionError', () => {
     it('should create MiddlewareExecutionError with action, middleware, and cause', () => {
       const originalError = new Error('Original error')
-      const error = new MiddlewareExecutionError('connect', 'auth', originalError)
+      const error = new MiddlewareExecutionError(
+        'connect',
+        'auth',
+        originalError,
+      )
 
       expect(error.action).toBe('connect')
       expect(error.middleware).toBe('auth')
@@ -203,7 +207,11 @@ describe('Errors', () => {
 
     it('should have informative error message', () => {
       const originalError = new Error('Invalid token')
-      const error = new MiddlewareExecutionError('connect', 'auth', originalError)
+      const error = new MiddlewareExecutionError(
+        'connect',
+        'auth',
+        originalError,
+      )
 
       expect(error.message).toContain('auth')
       expect(error.message).toContain('connect')
@@ -212,13 +220,21 @@ describe('Errors', () => {
 
     it('should be instanceof Error', () => {
       const originalError = new Error('Test')
-      const error = new MiddlewareExecutionError('connect', 'test', originalError)
+      const error = new MiddlewareExecutionError(
+        'connect',
+        'test',
+        originalError,
+      )
       expect(error).toBeInstanceOf(Error)
     })
 
     it('should provide getCause() method', () => {
       const originalError = new Error('Original')
-      const error = new MiddlewareExecutionError('message', 'test', originalError)
+      const error = new MiddlewareExecutionError(
+        'message',
+        'test',
+        originalError,
+      )
 
       expect(error.getCause()).toBe(originalError)
     })
@@ -275,7 +291,11 @@ describe('Errors', () => {
 
     it('should identify MiddlewareExecutionError correctly', () => {
       const originalError = new Error('Test')
-      const error = new MiddlewareExecutionError('connect', 'auth', originalError)
+      const error = new MiddlewareExecutionError(
+        'connect',
+        'auth',
+        originalError,
+      )
       expect(error).toBeInstanceOf(Error)
       expect(error.name).toBe('MiddlewareExecutionError')
     })

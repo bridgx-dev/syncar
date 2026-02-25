@@ -101,13 +101,13 @@ The server has been updated to use the new V2 API:
 
 ### Server API Changes (V1 → V2)
 
-| V1 | V2 |
-|----|-----|
-| `new Synnel({ server })` | `createSynnelServer({ server })` |
+| V1                             | V2                                                      |
+| ------------------------------ | ------------------------------------------------------- |
+| `new Synnel({ server })`       | `createSynnelServer({ server })`                        |
 | `await synnel.multicast(name)` | `server.createMulticast(name)` (after `server.start()`) |
-| `synnel.broadcast()` | `server.createBroadcast()` (after `server.start()`) |
-| `channel.receive()` | `channel.onMessage()` or `channel.receive()` |
-| Messages auto-relayed | **Must explicitly call** `channel.publish()` |
+| `synnel.broadcast()`           | `server.createBroadcast()` (after `server.start()`)     |
+| `channel.receive()`            | `channel.onMessage()` or `channel.receive()`            |
+| Messages auto-relayed          | **Must explicitly call** `channel.publish()`            |
 
 ### Key V2 Server API
 

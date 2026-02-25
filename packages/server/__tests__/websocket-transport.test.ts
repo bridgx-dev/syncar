@@ -4,7 +4,10 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { WebSocketServerTransport } from '../src/transport/index.js'
-import { createServer as createHttpServer, type Server as HttpServer } from 'http'
+import {
+  createServer as createHttpServer,
+  type Server as HttpServer,
+} from 'http'
 import { WebSocket } from 'ws'
 import type { IClientConnection } from '../src/types/index.js'
 import { generateClientId } from '@synnel/lib'
@@ -19,7 +22,10 @@ describe('WebSocketServerTransport', () => {
     port = 3000 + Math.floor(Math.random() * 1000)
 
     httpServer = createHttpServer()
-    transport = new WebSocketServerTransport({ server: httpServer, path: '/ws' })
+    transport = new WebSocketServerTransport({
+      server: httpServer,
+      path: '/ws',
+    })
 
     await new Promise<void>((resolve) => {
       httpServer.listen(port, () => resolve())
@@ -126,11 +132,13 @@ describe('WebSocketServerTransport', () => {
 
       await new Promise<void>((resolve) => client.on('open', resolve))
 
-      client.send(JSON.stringify({
-        type: 'data',
-        channel: 'test',
-        data: { text: 'hello' },
-      }))
+      client.send(
+        JSON.stringify({
+          type: 'data',
+          channel: 'test',
+          data: { text: 'hello' },
+        }),
+      )
 
       await new Promise<void>((resolve) => {
         const check = () => {
@@ -270,7 +278,9 @@ describe('WebSocketServerTransport', () => {
     it('should handle sending to non-existent client gracefully', async () => {
       const message = { type: 'data', channel: 'test', data: {} }
 
-      await expect(transport.sendToClient('non-existent', message as any)).resolves.not.toThrow()
+      await expect(
+        transport.sendToClient('non-existent', message as any),
+      ).resolves.not.toThrow()
     })
   })
 

@@ -17,17 +17,10 @@
  * ```
  */
 
-// ============================================================
-// CONSTANTS
-// ============================================================
-
 export {
   BROADCAST_CHANNEL,
-  type BroadcastChannel,
   CLOSE_CODES,
-  type CloseCode,
   ERROR_CODES,
-  type ErrorCode,
   DEFAULT_WS_PATH,
   DEFAULT_MAX_PAYLOAD,
   DEFAULT_PING_INTERVAL,
@@ -35,23 +28,20 @@ export {
   DEFAULT_MAX_SUBSCRIBERS,
   DEFAULT_HISTORY_SIZE,
   DEFAULT_EMPTY_CHANNEL_GRACE_PERIOD,
-} from './constants.js'
-
-// ============================================================
-// DEFAULTS
-// ============================================================
+  type BroadcastChannel,
+  type CloseCode,
+  type ErrorCode,
+} from './constants'
 
 export {
   DEFAULT_PORT,
   DEFAULT_HOST,
   DEFAULT_PATH,
   DEFAULT_ENABLE_PING,
-  // Note: DEFAULT_PING_INTERVAL, DEFAULT_PING_TIMEOUT, DEFAULT_MAX_PAYLOAD
-  // are exported from constants.ts above (not duplicated here)
   DEFAULT_SERVER_CONFIG,
   DEFAULT_CHANNEL_OPTIONS,
   DEFAULT_AUTO_CREATE_CHANNELS,
   DEFAULT_AUTO_DELETE_EMPTY_CHANNELS,
   DEFAULT_RATE_LIMIT,
   DEFAULTS,
-} from './defaults.js'
+} from './defaults'

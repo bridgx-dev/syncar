@@ -52,7 +52,7 @@ class MockTransport implements IServerTransport {
     if (client) {
       // Mock sending - just call the send method
       if (typeof (client.socket as any).send === 'function') {
-        (client.socket as any).send(JSON.stringify(message))
+        ;(client.socket as any).send(JSON.stringify(message))
       }
     }
   }
@@ -162,7 +162,7 @@ describe('Integration Tests', () => {
       transport.addMockClient('client-1' as ClientId)
 
       // Wait for async event handling
-      await new Promise(resolve => setTimeout(resolve, 20))
+      await new Promise((resolve) => setTimeout(resolve, 20))
 
       expect(connectionReceived).toBe(true)
     })
@@ -183,7 +183,7 @@ describe('Integration Tests', () => {
       transport.addMockClient('client-1' as ClientId)
 
       // Wait for connection to be processed
-      await new Promise(resolve => setTimeout(resolve, 150))
+      await new Promise((resolve) => setTimeout(resolve, 150))
 
       // Verify client was connected
       expect(connectionClient).toBeDefined()
@@ -192,7 +192,7 @@ describe('Integration Tests', () => {
       transport.removeMockClient('client-1' as ClientId)
 
       // Wait for disconnection to be processed
-      await new Promise(resolve => setTimeout(resolve, 150))
+      await new Promise((resolve) => setTimeout(resolve, 150))
     }, 10000)
   })
 
@@ -250,7 +250,7 @@ describe('Integration Tests', () => {
       transport.simulateMessage(client.id, 'test message')
 
       // Wait for async processing
-      await new Promise(resolve => setTimeout(resolve, 10))
+      await new Promise((resolve) => setTimeout(resolve, 10))
 
       expect(receivedData).toBe('test message')
     })
@@ -288,7 +288,7 @@ describe('Integration Tests', () => {
       transport.addMockClient('client-2' as ClientId)
 
       // Wait for async event handling
-      await new Promise(resolve => setTimeout(resolve, 20))
+      await new Promise((resolve) => setTimeout(resolve, 20))
 
       expect(connections).toBe(2)
     })
@@ -311,13 +311,17 @@ describe('Integration Tests', () => {
       let count1 = 0
       let count2 = 0
 
-      server.on('connection', () => { count1++ })
-      server.on('connection', () => { count2++ })
+      server.on('connection', () => {
+        count1++
+      })
+      server.on('connection', () => {
+        count2++
+      })
 
       transport.addMockClient('client-1' as ClientId)
 
       // Wait for async event handling
-      await new Promise(resolve => setTimeout(resolve, 20))
+      await new Promise((resolve) => setTimeout(resolve, 20))
 
       expect(count1).toBe(1)
       expect(count2).toBe(1)
@@ -400,7 +404,7 @@ describe('Integration Tests', () => {
       transport.emit('error', testError)
 
       // Wait for async event handling
-      await new Promise(resolve => setTimeout(resolve, 20))
+      await new Promise((resolve) => setTimeout(resolve, 20))
 
       expect(errorReceived).toBe(testError)
     })

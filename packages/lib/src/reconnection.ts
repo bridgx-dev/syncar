@@ -51,7 +51,10 @@ export function calculateBackoff(
   } = options
 
   // Calculate base delay with exponential backoff
-  const baseDelay = Math.min(initialDelay * Math.pow(multiplier, attempt), maxDelay)
+  const baseDelay = Math.min(
+    initialDelay * Math.pow(multiplier, attempt),
+    maxDelay,
+  )
 
   // Add jitter if configured
   if (jitterFactor > 0) {
@@ -78,7 +81,10 @@ export function calculateBackoffWithJitter(
     jitterFactor = DEFAULT_JITTER_FACTOR,
   } = options
 
-  const baseDelay = Math.min(initialDelay * Math.pow(multiplier, attempt), maxDelay)
+  const baseDelay = Math.min(
+    initialDelay * Math.pow(multiplier, attempt),
+    maxDelay,
+  )
 
   if (jitterFactor > 0) {
     // Pseudo-random jitter based on seed
@@ -93,10 +99,7 @@ export function calculateBackoffWithJitter(
 /**
  * Check if reconnection should be attempted
  */
-export function shouldReconnect(
-  attempt: number,
-  maxAttempts: number,
-): boolean {
+export function shouldReconnect(attempt: number, maxAttempts: number): boolean {
   return maxAttempts === Infinity || attempt < maxAttempts
 }
 

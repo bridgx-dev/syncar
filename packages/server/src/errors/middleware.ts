@@ -5,8 +5,7 @@
  * @module errors/middleware
  */
 
-import type { IMiddlewareRejectionError } from '../types/index.js'
-import type { IMiddlewareAction } from '../types/index.js'
+import type { IMiddlewareRejectionError, IMiddlewareAction } from '../types'
 
 // ============================================================
 // MIDDLEWARE REJECTION ERROR
@@ -188,12 +187,10 @@ export class MiddlewareExecutionError extends Error {
    */
   public override readonly cause: Error
 
-  constructor(
-    action: string,
-    middleware: string,
-    cause: Error,
-  ) {
-    super(`Middleware execution error in ${middleware} during ${action}: ${cause.message}`)
+  constructor(action: string, middleware: string, cause: Error) {
+    super(
+      `Middleware execution error in ${middleware} during ${action}: ${cause.message}`,
+    )
     this.name = 'MiddlewareExecutionError'
     this.action = action
     this.middleware = middleware

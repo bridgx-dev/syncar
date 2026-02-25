@@ -35,18 +35,19 @@ Our current TypeScript configuration has several issues that impact developer ex
 
 ### Goals
 
-| Goal | Benefit | Priority |
-|------|---------|----------|
-| Single source of truth for TS config | Easier maintenance | HIGH |
-| 10-100x faster builds with tsup | Better DX | CRITICAL |
-| Remove `.js` extensions from source | Cleaner imports | HIGH |
-| Bundle private packages into published ones | Self-contained npm packages | HIGH |
-| Enable incremental compilation | Faster rebuilds | CRITICAL |
-| Adopt industry-standard patterns | Better onboarding | MEDIUM |
+| Goal                                        | Benefit                     | Priority |
+| ------------------------------------------- | --------------------------- | -------- |
+| Single source of truth for TS config        | Easier maintenance          | HIGH     |
+| 10-100x faster builds with tsup             | Better DX                   | CRITICAL |
+| Remove `.js` extensions from source         | Cleaner imports             | HIGH     |
+| Bundle private packages into published ones | Self-contained npm packages | HIGH     |
+| Enable incremental compilation              | Faster rebuilds             | CRITICAL |
+| Adopt industry-standard patterns            | Better onboarding           | MEDIUM   |
 
 ### Reference Implementation
 
 We're adopting the **TanStack Query** configuration pattern because:
+
 - Industry-leading TypeScript library with excellent DX
 - Proven at scale (thousands of dependents)
 - Active maintenance by TypeScript experts
@@ -58,17 +59,18 @@ We're adopting the **TanStack Query** configuration pattern because:
 
 ### Private vs Published Packages
 
-| Package | Status | Purpose | Bundled Into |
-|---------|--------|---------|--------------|
-| `@synnel/types` | **Private** | Shared TypeScript types | `@synnel/server`, `@synnel/react` |
-| `@synnel/lib` | **Private** | Internal utility functions | `@synnel/server`, `@synnel/react` |
-| `@synnel/client` | **Private** | Framework-agnostic client | `@synnel/react` |
-| `@synnel/server` | **Published** | Node.js server implementation | Self-contained |
-| `@synnel/react` | **Published** | React hooks and components | Self-contained |
+| Package          | Status        | Purpose                       | Bundled Into                      |
+| ---------------- | ------------- | ----------------------------- | --------------------------------- |
+| `@synnel/types`  | **Private**   | Shared TypeScript types       | `@synnel/server`, `@synnel/react` |
+| `@synnel/lib`    | **Private**   | Internal utility functions    | `@synnel/server`, `@synnel/react` |
+| `@synnel/client` | **Private**   | Framework-agnostic client     | `@synnel/react`                   |
+| `@synnel/server` | **Published** | Node.js server implementation | Self-contained                    |
+| `@synnel/react`  | **Published** | React hooks and components    | Self-contained                    |
 
 ### Key Changes from Current Strategy
 
 **Before (Current):**
+
 ```
 @synnel/server (published)
   ├─ depends on: @synnel/types (published)
@@ -81,6 +83,7 @@ We're adopting the **TanStack Query** configuration pattern because:
 ```
 
 **After (New):**
+
 ```
 @synnel/server (published, self-contained)
   ├─ bundles: @synnel/types source
@@ -94,14 +97,14 @@ We're adopting the **TanStack Query** configuration pattern because:
 
 ### Benefits of Bundling Private Packages
 
-| Benefit | Description |
-|---------|-------------|
-| **Simplified Consumer Experience** | Users only install what they need |
-| **No Version Conflicts** | No need to worry about `@synnel/types` version mismatches |
-| **Smaller Bundle Size** | Tree-shaking works across all internal code |
-| **Faster Installs** | Fewer packages to download |
-| **Better TypeScript Support** | Single source of types for consumers |
-| **Easier Maintenance** | Internal changes don't require coordinated releases |
+| Benefit                            | Description                                               |
+| ---------------------------------- | --------------------------------------------------------- |
+| **Simplified Consumer Experience** | Users only install what they need                         |
+| **No Version Conflicts**           | No need to worry about `@synnel/types` version mismatches |
+| **Smaller Bundle Size**            | Tree-shaking works across all internal code               |
+| **Faster Installs**                | Fewer packages to download                                |
+| **Better TypeScript Support**      | Single source of types for consumers                      |
+| **Easier Maintenance**             | Internal changes don't require coordinated releases       |
 
 ### Import Paths During Development
 
@@ -109,8 +112,8 @@ Internal packages use workspace path mappings:
 
 ```ts
 // During development (in packages/server/src/index.ts)
-import { foo } from '@synnel/lib/utils'      // Resolves via workspace
-import type { Bar } from '@synnel/types'     // Resolves via workspace
+import { foo } from '@synnel/lib/utils' // Resolves via workspace
+import type { Bar } from '@synnel/types' // Resolves via workspace
 ```
 
 ### What Gets Published
@@ -158,23 +161,23 @@ E:/practice/Synnel/
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "verbatimModuleSyntax": true,  // ← Requires .js extensions
-    "incremental": false,           // ← Not enabled
-    "isolatedModules": false,       // ← Not enabled
-    "emitDeclarationOnly": false    // ← tsc generates JS
+    "verbatimModuleSyntax": true, // ← Requires .js extensions
+    "incremental": false, // ← Not enabled
+    "isolatedModules": false, // ← Not enabled
+    "emitDeclarationOnly": false // ← tsc generates JS
   }
 }
 ```
 
 ### Build Process
 
-| Package | Build Tool | Output | Published |
-|---------|------------|--------|-----------|
-| types | tsc | `dist/` (JS + .d.ts) | ❌ No (private: true) |
-| lib | tsc | `dist/` (JS + .d.ts) | ❌ No (private: true) |
-| client | tsc | `dist/` (JS + .d.ts) | ❌ No (private: true) |
-| server | tsc | `dist/` (JS + .d.ts) | ✅ Yes |
-| react | tsup | `dist/` (JS only), .d.ts separate | ✅ Yes |
+| Package | Build Tool | Output                            | Published             |
+| ------- | ---------- | --------------------------------- | --------------------- |
+| types   | tsc        | `dist/` (JS + .d.ts)              | ❌ No (private: true) |
+| lib     | tsc        | `dist/` (JS + .d.ts)              | ❌ No (private: true) |
+| client  | tsc        | `dist/` (JS + .d.ts)              | ❌ No (private: true) |
+| server  | tsc        | `dist/` (JS + .d.ts)              | ✅ Yes                |
+| react   | tsup       | `dist/` (JS only), .d.ts separate | ✅ Yes                |
 
 ### Issues Identified
 
@@ -243,9 +246,9 @@ E:/practice/Synnel/
     // Declaration-only build (key change)
     "declaration": true,
     "declarationMap": true,
-    "emitDeclarationOnly": true,  // ← tsc only generates .d.ts
-    "incremental": true,           // ← Faster rebuilds
-    "isolatedModules": true,       // ← Better tooling support
+    "emitDeclarationOnly": true, // ← tsc only generates .d.ts
+    "incremental": true, // ← Faster rebuilds
+    "isolatedModules": true, // ← Better tooling support
     "composite": true,
     "noEmit": false,
 
@@ -279,13 +282,13 @@ E:/practice/Synnel/
 
 ### Build Process (New)
 
-| Package | Step 1 (tsup) | Step 2 (tsc) | Published |
-|---------|---------------|--------------|-----------|
-| types | Skip | Generate `.d.ts` to `dist-ts/` | ❌ No |
-| lib | Skip | Generate `.d.ts` to `dist-ts/` | ❌ No |
-| client | Skip | Generate `.d.ts` to `dist-ts/` | ❌ No |
-| server | Bundle to `dist/` (includes types+lib) | Generate `.d.ts` to `dist-ts/` | ✅ Yes |
-| react | Bundle to `dist/` (includes client+types+lib) | Generate `.d.ts` to `dist-ts/` | ✅ Yes |
+| Package | Step 1 (tsup)                                 | Step 2 (tsc)                   | Published |
+| ------- | --------------------------------------------- | ------------------------------ | --------- |
+| types   | Skip                                          | Generate `.d.ts` to `dist-ts/` | ❌ No     |
+| lib     | Skip                                          | Generate `.d.ts` to `dist-ts/` | ❌ No     |
+| client  | Skip                                          | Generate `.d.ts` to `dist-ts/` | ❌ No     |
+| server  | Bundle to `dist/` (includes types+lib)        | Generate `.d.ts` to `dist-ts/` | ✅ Yes    |
+| react   | Bundle to `dist/` (includes client+types+lib) | Generate `.d.ts` to `dist-ts/` | ✅ Yes    |
 
 ### tsup Configuration Examples
 
@@ -298,11 +301,11 @@ export default defineConfig({
   entry: ['src/index.ts'],
   format: ['esm'],
   outDir: 'dist',
-  dts: false,              // tsc handles declarations
+  dts: false, // tsc handles declarations
   clean: true,
   sourcemap: true,
   target: 'es2020',
-  external: ['ws'],         // Only externalize peer deps
+  external: ['ws'], // Only externalize peer deps
   // Note: @synnel/types and @synnel/lib are BUNDLED, not external
 })
 ```
@@ -316,11 +319,11 @@ export default defineConfig({
   entry: ['src/index.ts'],
   format: ['esm'],
   outDir: 'dist',
-  dts: false,              // tsc handles declarations
+  dts: false, // tsc handles declarations
   clean: true,
   sourcemap: true,
   target: 'es2020',
-  external: ['react', 'react-dom'],  // Only externalize peer deps
+  external: ['react', 'react-dom'], // Only externalize peer deps
   // Note: @synnel/client, @synnel/types, @synnel/lib are BUNDLED
 })
 ```
@@ -336,14 +339,14 @@ export default defineConfig({
   "private": true,
   "version": "1.0.0-alpha.1",
   "type": "module",
-  "main": "./src/index.ts",     // Source, not dist
+  "main": "./src/index.ts", // Source, not dist
   "exports": {
     ".": {
       "bun": "./src/index.ts",
       "development": "./src/index.ts"
     }
   },
-  "files": []  // Don't publish anything
+  "files": [] // Don't publish anything
 }
 ```
 
@@ -364,12 +367,8 @@ export default defineConfig({
       "import": "./dist/index.js"
     }
   },
-  "files": [
-    "dist",
-    "dist-ts",
-    "README.md"
-  ],
-  "dependencies": {},  // NO internal dependencies!
+  "files": ["dist", "dist-ts", "README.md"],
+  "dependencies": {}, // NO internal dependencies!
   "peerDependencies": {
     "ws": "^8.0.0"
   },
@@ -386,11 +385,13 @@ export default defineConfig({
 ### Phase 1: Preparation (No Breaking Changes)
 
 - [ ] **Step 1.1**: Install tsup as dev dependency
+
   ```bash
   bun add -D tsup
   ```
 
 - [ ] **Step 1.2**: Create backup of current configs
+
   ```bash
   cp tsconfig.base.json tsconfig.base.json.backup
   cp tsconfig.json tsconfig.json.backup
@@ -409,6 +410,7 @@ export default defineConfig({
   - Remove `verbatimModuleSyntax: true` (no more .js extensions)
 
 - [ ] **Step 2.2**: Update all package tsconfig files to extend root
+
   ```json
   {
     "extends": "../../tsconfig.json",
@@ -443,6 +445,7 @@ export default defineConfig({
 ### Phase 4: Add tsup Configuration
 
 - [ ] **Step 4.1**: Create `packages/server/tsup.config.ts`
+
   ```ts
   import { defineConfig } from 'tsup'
 
@@ -454,11 +457,12 @@ export default defineConfig({
     clean: true,
     sourcemap: true,
     target: 'es2020',
-    external: ['ws'],  // Only peer deps, NOT @synnel/types or @synnel/lib
+    external: ['ws'], // Only peer deps, NOT @synnel/types or @synnel/lib
   })
   ```
 
 - [ ] **Step 4.2**: Create `packages/react/tsup.config.ts`
+
   ```ts
   import { defineConfig } from 'tsup'
 
@@ -470,7 +474,7 @@ export default defineConfig({
     clean: true,
     sourcemap: true,
     target: 'es2020',
-    external: ['react', 'react-dom'],  // Only peer deps, NOT @synnel/client
+    external: ['react', 'react-dom'], // Only peer deps, NOT @synnel/client
   })
   ```
 
@@ -485,7 +489,7 @@ export default defineConfig({
   ```json
   {
     "name": "@synnel/server",
-    "dependencies": {},  // Empty - no internal deps
+    "dependencies": {}, // Empty - no internal deps
     "peerDependencies": {
       "ws": "^8.0.0"
     },
@@ -511,6 +515,7 @@ export default defineConfig({
 ### Phase 6: Update Build Scripts
 
 - [ ] **Step 6.1**: Update root `package.json`
+
   ```json
   {
     "scripts": {
@@ -518,14 +523,15 @@ export default defineConfig({
       "build:packages": "bun run build:server && bun run build:react",
       "build:server": "cd packages/server && bun run build",
       "build:react": "cd packages/react && bun run build",
-      "build:types": "cd packages/types && tsc",  // Types only for dev
-      "build:lib": "cd packages/lib && tsc",      // Types only for dev
+      "build:types": "cd packages/types && tsc", // Types only for dev
+      "build:lib": "cd packages/lib && tsc", // Types only for dev
       "build:client": "cd packages/client && tsc" // Types only for dev
     }
   }
   ```
 
 - [ ] **Step 6.2**: Update `packages/server/package.json` scripts
+
   ```json
   {
     "scripts": {
@@ -542,7 +548,7 @@ export default defineConfig({
   ```json
   {
     "scripts": {
-      "build": "tsc",  // Only types, no bundling
+      "build": "tsc", // Only types, no bundling
       "dev": "tsc --watch"
     }
   }
@@ -551,6 +557,7 @@ export default defineConfig({
 ### Phase 7: Remove .js Extensions
 
 - [ ] **Step 7.1**: Update imports throughout codebase
+
   ```bash
   # Find all imports with .js extension
   rg "from ['\"](\./|\.\.\/).*\.js['\"]" packages/
@@ -559,12 +566,14 @@ export default defineConfig({
   ```
 
   **Before:**
+
   ```ts
   import { foo } from './bar.js'
   import type { Baz } from '../types/qux.js'
   ```
 
   **After:**
+
   ```ts
   import { foo } from './bar'
   import type { Baz } from '../types/qux'
@@ -578,12 +587,14 @@ export default defineConfig({
 ### Phase 8: Verification
 
 - [ ] **Step 8.1**: Clean build
+
   ```bash
   rm -rf packages/*/dist packages/*/dist-ts
   bun run build
   ```
 
 - [ ] **Step 8.2**: Verify bundle contents
+
   ```bash
   # Check that server dist includes bundled types and lib
   grep -r "export.*from.*@synnel/types" packages/server/dist/  # Should NOT exist (bundled)
@@ -591,12 +602,14 @@ export default defineConfig({
   ```
 
 - [ ] **Step 8.3**: Verify output structure
+
   ```bash
   ls -la packages/server/dist/      # Should have .js files
   ls -la packages/server/dist-ts/   # Should have .d.ts files
   ```
 
 - [ ] **Step 8.4**: Run full test suite
+
   ```bash
   bun run test
   ```

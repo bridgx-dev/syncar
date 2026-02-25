@@ -25,5 +25,5 @@
       "@synnel/server": ["../../packages/server/src"]
     }
   },
-  "include": ["client", "server", "vite.config.ts"],
+  "include": ["client", "server", "vite.config.ts"]
 }

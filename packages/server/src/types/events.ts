@@ -3,7 +3,7 @@
  * Types for the server event system including event types, handlers, and emission.
  */
 
-import type { IServerClient } from './client.js'
+import type { IServerClient } from './client'
 import type { ChannelName, Message } from '@synnel/types'
 
 // ============================================================
@@ -30,12 +30,12 @@ import type { ChannelName, Message } from '@synnel/types'
  * ```
  */
 export type IServerEventType =
-  | 'connection'     // New client connected
-  | 'disconnection'  // Client disconnected
-  | 'message'        // Message received from client
-  | 'subscribe'      // Client subscribed to channel
-  | 'unsubscribe'    // Client unsubscribed from channel
-  | 'error'          // Server error occurred
+  | 'connection' // New client connected
+  | 'disconnection' // Client disconnected
+  | 'message' // Message received from client
+  | 'subscribe' // Client subscribed to channel
+  | 'unsubscribe' // Client unsubscribed from channel
+  | 'error' // Server error occurred
 
 // ============================================================
 // SERVER EVENT MAP
@@ -147,11 +147,8 @@ export type IEventHandler<E extends IServerEventType> = IServerEventMap[E]
  * // [IServerClient, Message]
  * ```
  */
-export type IEventDataType<E extends IServerEventType> = IServerEventMap[E] extends (
-  ...args: infer P
-) => any
-  ? P
-  : never
+export type IEventDataType<E extends IServerEventType> =
+  IServerEventMap[E] extends (...args: infer P) => any ? P : never
 
 // ============================================================
 // EVENT UNSUBSCRIBER TYPE
@@ -212,10 +209,7 @@ export interface IEventEmitter<E extends Record<string, any>> {
    * @param handler - The event handler
    * @returns Unsubscribe function
    */
-  on<K extends keyof E>(
-    event: K,
-    handler: E[K],
-  ): IEventUnsubscriber
+  on<K extends keyof E>(event: K, handler: E[K]): IEventUnsubscriber
 
   /**
    * Register a one-time event handler
@@ -226,10 +220,7 @@ export interface IEventEmitter<E extends Record<string, any>> {
    * @param handler - The event handler
    * @returns Unsubscribe function
    */
-  once<K extends keyof E>(
-    event: K,
-    handler: E[K],
-  ): IEventUnsubscriber
+  once<K extends keyof E>(event: K, handler: E[K]): IEventUnsubscriber
 
   /**
    * Remove an event handler
@@ -238,10 +229,7 @@ export interface IEventEmitter<E extends Record<string, any>> {
    * @param event - The event
    * @param handler - The handler to remove
    */
-  off<K extends keyof E>(
-    event: K,
-    handler: E[K],
-  ): void
+  off<K extends keyof E>(event: K, handler: E[K]): void
 
   /**
    * Emit an event to all registered handlers

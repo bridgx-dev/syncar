@@ -11,7 +11,7 @@ import type {
   IClientConnection,
   ClientId,
   Message,
-} from '../types/index.js'
+} from '../types'
 
 // ============================================================
 // BASE TRANSPORT CLASS
@@ -35,8 +35,10 @@ import type {
  * }
  * ```
  */
-export abstract class BaseTransport extends EventEmitter implements IBaseTransport {
-
+export abstract class BaseTransport
+  extends EventEmitter
+  implements IBaseTransport
+{
   /**
    * Map of connected clients by ID
    * Public readonly as required by IBaseTransport interface
@@ -69,10 +71,7 @@ export abstract class BaseTransport extends EventEmitter implements IBaseTranspo
    * })
    * ```
    */
-  abstract sendToClient(
-    clientId: ClientId,
-    message: Message,
-  ): Promise<void>
+  abstract sendToClient(clientId: ClientId, message: Message): Promise<void>
 
   /**
    * Get all connected clients
@@ -142,14 +141,3 @@ export abstract class BaseTransport extends EventEmitter implements IBaseTranspo
     }
   }
 }
-
-// ============================================================
-// RE-EXPORT TYPES
-// ============================================================
-
-export type {
-  IBaseTransport,
-  IClientConnection,
-  ClientId,
-  Message,
-} from '../types/index.js'

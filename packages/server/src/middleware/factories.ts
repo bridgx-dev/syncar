@@ -8,9 +8,9 @@
 import type {
   IMiddleware,
   IMiddlewareAction,
-} from '../types/middleware.js'
-import type { IServerClient } from '../types/client.js'
-import type { ChannelName } from '@synnel/types'
+  IServerClient,
+  ChannelName,
+} from '../types'
 
 // ============================================================
 // AUTH MIDDLEWARE FACTORY
@@ -91,7 +91,9 @@ export interface AuthMiddlewareOptions {
  * server.use(authMiddleware)
  * ```
  */
-export function createAuthMiddleware(options: AuthMiddlewareOptions): IMiddleware {
+export function createAuthMiddleware(
+  options: AuthMiddlewareOptions,
+): IMiddleware {
   const {
     verifyToken,
     getToken = (ctx) => {
@@ -122,7 +124,9 @@ export function createAuthMiddleware(options: AuthMiddlewareOptions): IMiddlewar
 
       // Attach user data to client
       if (context.client) {
-        ;(context.client as unknown as Record<string, unknown>)[attachProperty] = userData
+        ;(context.client as unknown as Record<string, unknown>)[
+          attachProperty
+        ] = userData
       }
     } catch (error) {
       context.reject('Authentication failed: Invalid token')
@@ -206,7 +210,9 @@ export interface LoggingMiddlewareOptions {
  * server.use(loggingMiddleware)
  * ```
  */
-export function createLoggingMiddleware(options: LoggingMiddlewareOptions = {}): IMiddleware {
+export function createLoggingMiddleware(
+  options: LoggingMiddlewareOptions = {},
+): IMiddleware {
   const {
     logger = console,
     logLevel = 'info',
@@ -315,7 +321,9 @@ const rateLimitStore = new Map<string, RateLimitState>()
  * server.use(rateLimitMiddleware)
  * ```
  */
-export function createRateLimitMiddleware(options: RateLimitMiddlewareOptions = {}): IMiddleware {
+export function createRateLimitMiddleware(
+  options: RateLimitMiddlewareOptions = {},
+): IMiddleware {
   const {
     maxRequests = 100,
     windowMs = 60000,
@@ -365,7 +373,9 @@ export function createRateLimitMiddleware(options: RateLimitMiddlewareOptions = 
 
     // Check limit
     if (currentState.count >= maxRequests) {
-      context.reject(`Rate limit exceeded. Max ${maxRequests} requests per ${windowMs}ms`)
+      context.reject(
+        `Rate limit exceeded. Max ${maxRequests} requests per ${windowMs}ms`,
+      )
       return
     }
 
@@ -484,7 +494,11 @@ export interface ChannelWhitelistMiddlewareOptions {
 export function createChannelWhitelistMiddleware(
   options: ChannelWhitelistMiddlewareOptions = {},
 ): IMiddleware {
-  const { allowedChannels = [], isDynamic, restrictUnsubscribe = false } = options
+  const {
+    allowedChannels = [],
+    isDynamic,
+    restrictUnsubscribe = false,
+  } = options
 
   return async (context) => {
     // Only check subscribe/unsubscribe actions
@@ -515,11 +529,3 @@ export function createChannelWhitelistMiddleware(
     }
   }
 }
-
-// ============================================================
-// RE-EXPORT TYPES
-// ============================================================
-
-export type { IMiddleware, IMiddlewareAction } from '../types/middleware.js'
-export type { IServerClient } from '../types/client.js'
-export type { ChannelName } from '@synnel/types'

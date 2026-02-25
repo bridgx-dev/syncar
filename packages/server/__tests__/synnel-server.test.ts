@@ -5,7 +5,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { SynnelServer } from '../src/server/index.js'
 import { WebSocketServerTransport } from '../src/transport/index.js'
-import { createServer as createHttpServer, type Server as HttpServer } from 'http'
+import {
+  createServer as createHttpServer,
+  type Server as HttpServer,
+} from 'http'
 import type { IServerConfig } from '../src/types/index.js'
 import { WebSocket } from 'ws'
 import type { IServerClient } from '../src/types/index.js'
@@ -94,7 +97,10 @@ describe('SynnelServer', () => {
 
     it('should throw error when creating channels before server start', () => {
       const uninitializedServer = new SynnelServer({
-        transport: new WebSocketServerTransport({ server: httpServer, path: '/ws' }),
+        transport: new WebSocketServerTransport({
+          server: httpServer,
+          path: '/ws',
+        }),
       })
 
       expect(() => uninitializedServer.createMulticast('test')).toThrow()
@@ -203,11 +209,13 @@ describe('SynnelServer', () => {
 
       await new Promise<void>((resolve) => client.on('open', resolve))
 
-      client.send(JSON.stringify({
-        type: 'signal',
-        signal: 'subscribe',
-        channel: 'chat',
-      }))
+      client.send(
+        JSON.stringify({
+          type: 'signal',
+          signal: 'subscribe',
+          channel: 'chat',
+        }),
+      )
 
       await new Promise<void>((resolve) => {
         const check = () => {
@@ -272,11 +280,13 @@ describe('SynnelServer', () => {
 
       server.createMulticast<string>('chat')
 
-      client.send(JSON.stringify({
-        type: 'data',
-        channel: 'chat',
-        data: { text: 'test' },
-      }))
+      client.send(
+        JSON.stringify({
+          type: 'data',
+          channel: 'chat',
+          data: { text: 'test' },
+        }),
+      )
 
       await new Promise<void>((resolve) => {
         const check = () => {
@@ -305,11 +315,13 @@ describe('SynnelServer', () => {
         messageReceived = true
       })
 
-      client.send(JSON.stringify({
-        type: 'data',
-        channel: 'chat',
-        data: { text: 'test' },
-      }))
+      client.send(
+        JSON.stringify({
+          type: 'data',
+          channel: 'chat',
+          data: { text: 'test' },
+        }),
+      )
 
       await new Promise<void>((resolve) => setTimeout(resolve, 100))
 
@@ -351,11 +363,13 @@ describe('SynnelServer', () => {
 
       await new Promise<void>((resolve) => client.on('open', resolve))
 
-      client.send(JSON.stringify({
-        type: 'data',
-        channel: 'test',
-        data: { text: 'hello' },
-      }))
+      client.send(
+        JSON.stringify({
+          type: 'data',
+          channel: 'test',
+          data: { text: 'hello' },
+        }),
+      )
 
       await new Promise<void>((resolve) => {
         const check = () => {
@@ -384,7 +398,10 @@ describe('SynnelServer', () => {
       const middleware = vi.fn()
 
       const config: IServerConfig = {
-        transport: new WebSocketServerTransport({ server: httpServer, path: '/ws' }),
+        transport: new WebSocketServerTransport({
+          server: httpServer,
+          path: '/ws',
+        }),
         middleware: [middleware],
       }
 

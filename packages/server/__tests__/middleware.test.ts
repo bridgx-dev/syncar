@@ -3,12 +3,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import {
-  MiddlewareManager,
-} from '../src/middleware/index.js'
-import {
-  MiddlewareRejectionError,
-} from '../src/errors/index.js'
+import { MiddlewareManager } from '../src/middleware/index.js'
+import { MiddlewareRejectionError } from '../src/errors/index.js'
 import {
   createAuthMiddleware,
   createLoggingMiddleware,

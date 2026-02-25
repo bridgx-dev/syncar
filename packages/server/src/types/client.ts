@@ -3,9 +3,9 @@
  * Types for client management and server-side client representation.
  */
 
-import type { IClientConnection } from './base.js'
-import type { IServerTransport } from './transport.js'
-import type { IChannelTransport } from './channel.js'
+import type { IClientConnection } from './base'
+import type { IServerTransport } from './transport'
+import type { IChannelTransport } from './channel'
 import type { ChannelName, ClientId, Message, MergeTypes } from '@synnel/types'
 
 // ============================================================

@@ -5,12 +5,12 @@
  * @module config/defaults
  */
 
-import type { IDefaultServerConfig, IChannelOptions } from '../types/index.js'
+import type { IDefaultServerConfig, IChannelOptions } from '../types'
 import {
   DEFAULT_PING_INTERVAL,
   DEFAULT_PING_TIMEOUT,
   DEFAULT_MAX_PAYLOAD,
-} from './constants.js'
+} from './constants'
 
 // ============================================================
 // SERVER CONFIGURATION DEFAULTS

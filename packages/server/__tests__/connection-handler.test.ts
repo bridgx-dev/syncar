@@ -7,7 +7,11 @@ import { ConnectionHandler } from '../src/handlers/index.js'
 import { ClientRegistry } from '../src/registry/index.js'
 import { MiddlewareManager } from '../src/middleware/index.js'
 import { EventEmitter } from '../src/emitter/index.js'
-import type { IServerTransport, IClientConnection, IServerClient } from '../src/types/index.js'
+import type {
+  IServerTransport,
+  IClientConnection,
+  IServerClient,
+} from '../src/types/index.js'
 import { CLOSE_CODES } from '../src/config/index.js'
 
 // Mock transport
@@ -90,16 +94,22 @@ describe('ConnectionHandler', () => {
 
     it('should reject connection when middleware throws', async () => {
       const connection = transport.createConnection('client-1')
-      vi.spyOn(middleware, 'executeConnection').mockRejectedValue(new Error('Rejected'))
+      vi.spyOn(middleware, 'executeConnection').mockRejectedValue(
+        new Error('Rejected'),
+      )
 
-      await expect(handler.handleConnection(connection)).rejects.toThrow('Connection rejected by middleware')
+      await expect(handler.handleConnection(connection)).rejects.toThrow(
+        'Connection rejected by middleware',
+      )
       expect(registry.getCount()).toBe(0)
     })
 
     it('should close connection with rejection code when middleware rejects', async () => {
       const connection = transport.createConnection('client-1')
       const closeSpy = vi.spyOn(connection.socket, 'close')
-      vi.spyOn(middleware, 'executeConnection').mockRejectedValue(new Error('Rejected'))
+      vi.spyOn(middleware, 'executeConnection').mockRejectedValue(
+        new Error('Rejected'),
+      )
 
       try {
         await handler.handleConnection(connection)
@@ -107,7 +117,10 @@ describe('ConnectionHandler', () => {
         // Expected
       }
 
-      expect(closeSpy).toHaveBeenCalledWith(CLOSE_CODES.REJECTED, 'Connection rejected')
+      expect(closeSpy).toHaveBeenCalledWith(
+        CLOSE_CODES.REJECTED,
+        'Connection rejected',
+      )
     })
 
     it('should not emit connection event when emitConnectionEvent is false', async () => {
@@ -170,9 +183,13 @@ describe('ConnectionHandler', () => {
 
     it('should ignore middleware errors during disconnection', async () => {
       const emitSpy = vi.spyOn(emitter, 'emit')
-      vi.spyOn(middleware, 'executeConnection').mockRejectedValue(new Error('Middleware error'))
+      vi.spyOn(middleware, 'executeConnection').mockRejectedValue(
+        new Error('Middleware error'),
+      )
 
-      await expect(handler.handleDisconnection('client-1')).resolves.not.toThrow()
+      await expect(
+        handler.handleDisconnection('client-1'),
+      ).resolves.not.toThrow()
       expect(emitSpy).toHaveBeenCalledWith('disconnection', expect.anything())
     })
 
@@ -197,7 +214,10 @@ describe('ConnectionHandler', () => {
 
       await handler.handleDisconnection('client-1')
 
-      expect(emitSpy).not.toHaveBeenCalledWith('disconnection', expect.anything())
+      expect(emitSpy).not.toHaveBeenCalledWith(
+        'disconnection',
+        expect.anything(),
+      )
     })
   })
 

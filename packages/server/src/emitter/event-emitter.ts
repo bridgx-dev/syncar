@@ -5,10 +5,7 @@
  * @module emitter/event-emitter
  */
 
-import type {
-  IEventEmitter,
-  IEventUnsubscriber,
-} from '../types/index.js'
+import type { IEventEmitter, IEventUnsubscriber } from '../types'
 
 // ============================================================
 // EVENT EMITTER CLASS
@@ -56,7 +53,9 @@ import type {
  * emitter.removeAllListeners('connection')
  * ```
  */
-export class EventEmitter<E extends Record<string, any>> implements IEventEmitter<E> {
+export class EventEmitter<
+  E extends Record<string, any>,
+> implements IEventEmitter<E> {
   /**
    * Storage for event listeners
    * Maps event names to Sets of handler functions
@@ -96,10 +95,7 @@ export class EventEmitter<E extends Record<string, any>> implements IEventEmitte
    * // Later: unsubscribe()
    * ```
    */
-  on<K extends keyof E>(
-    event: K,
-    handler: E[K],
-  ): IEventUnsubscriber {
+  on<K extends keyof E>(event: K, handler: E[K]): IEventUnsubscriber {
     // Get or create handler set for this event
     let handlers = this.listeners.get(event)
     if (!handlers) {

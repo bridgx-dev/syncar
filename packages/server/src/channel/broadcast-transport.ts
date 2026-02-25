@@ -3,12 +3,17 @@
  * Server-to-all communication channel that reaches every connected client.
  */
 
-import type { IPublishOptions, IClientConnection } from '../types/base.js'
-import type { IBroadcastTransport } from '../types/channel.js'
-import type { ClientId, DataMessage, SubscriberId } from '@synnel/types'
+import type {
+  IPublishOptions,
+  IClientConnection,
+  IBroadcastTransport,
+  ClientId,
+  DataMessage,
+  SubscriberId,
+} from '../types'
 import { createDataMessage } from '@synnel/lib'
-import { BROADCAST_CHANNEL } from '../config/constants.js'
-import { BaseChannel } from './base-channel.js'
+import { BROADCAST_CHANNEL } from '../config'
+import { BaseChannel } from './base-channel'
 
 /**
  * Broadcast Transport - sends messages to ALL connected clients
@@ -153,9 +158,3 @@ export class BroadcastTransport<T = unknown>
     }
   }
 }
-
-// ============================================================
-// RE-EXPORT BROADCAST CHANNEL CONSTANT
-// ============================================================
-
-export { BROADCAST_CHANNEL } from '../config/constants.js'

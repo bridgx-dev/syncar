@@ -5,12 +5,11 @@
  * @module server/factory
  */
 
-import type { IServerConfig, ISynnelServer } from '../types/server.js'
-import type { IServerTransport } from '../types/transport.js'
+import type { IServerConfig, ISynnelServer, IServerTransport } from '../types'
 import type { Server as HttpServer } from 'http'
-import { SynnelServer } from './synnel-server.js'
-import { ClientRegistry } from '../registry/index.js'
-import { WebSocketServerTransport } from '../transport/websocket-transport.js'
+import { SynnelServer } from './synnel-server'
+import { ClientRegistry } from '../registry'
+import { WebSocketServerTransport } from '../transport'
 import {
   DEFAULT_PORT,
   DEFAULT_HOST,
@@ -18,7 +17,7 @@ import {
   DEFAULT_PING_INTERVAL,
   DEFAULT_PING_TIMEOUT,
   DEFAULT_MAX_PAYLOAD,
-} from '../config/defaults.js'
+} from '../config'
 
 // ============================================================
 // SYNEL SERVER FACTORY
@@ -94,7 +93,8 @@ export function createSynnelServer(config: IServerConfig = {}): ISynnelServer {
     transport = new WebSocketServerTransport({
       server: config.server as unknown,
       path: config.path ?? DEFAULT_PATH,
-      maxPayload: (config as { maxPayload?: number }).maxPayload ?? DEFAULT_MAX_PAYLOAD,
+      maxPayload:
+        (config as { maxPayload?: number }).maxPayload ?? DEFAULT_MAX_PAYLOAD,
       enablePing: config.enablePing,
       pingInterval: config.pingInterval ?? DEFAULT_PING_INTERVAL,
       pingTimeout: config.pingTimeout ?? DEFAULT_PING_TIMEOUT,
@@ -112,15 +112,3 @@ export function createSynnelServer(config: IServerConfig = {}): ISynnelServer {
 
   return server
 }
-
-// ============================================================
-// RE-EXPORT TYPES
-// ============================================================
-
-export type {
-  IServerConfig,
-  ISynnelServer,
-  IServerStats,
-} from '../types/server.js'
-
-export type { IServerTransport } from '../types/transport.js'

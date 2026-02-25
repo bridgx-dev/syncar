@@ -5,16 +5,16 @@
 
 import type { Server as HttpServer } from 'node:http'
 import type { Message, DeepPartial, ClientId } from '@synnel/types'
-import type { IServerTransport } from './transport.js'
-import type { IMiddleware } from './middleware.js'
+import type { IServerTransport } from './transport'
+import type { IMiddleware } from './middleware'
 import type {
   IBroadcastTransport,
   IChannelOptions,
   IMulticastTransport,
-} from './channel.js'
-import type { IServerEventMap, IServerEventType } from './events.js'
-import type { IServerClient, IClientRegistry } from './client.js'
-import type { IClientConnection } from './base.js'
+} from './channel'
+import type { IServerEventMap, IServerEventType } from './events'
+import type { IServerClient, IClientRegistry } from './client'
+import type { IClientConnection } from './base'
 
 // ============================================================
 // SERVER CONFIGURATION
@@ -391,4 +391,4 @@ export interface ISynnelServer {
 // ============================================================
 
 // Re-export IChannelOptions for convenience (defined in channel.ts)
-export type { IChannelOptions } from './channel.js'
+export type { IChannelOptions } from './channel'

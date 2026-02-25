@@ -3,18 +3,16 @@
  * Topic-based messaging where only subscribed clients receive messages.
  */
 
-import type { IClientConnection } from '../types/base.js'
 import type {
+  IClientConnection,
   IChannelTransport,
   IChannelOptions,
-} from '../types/channel.js'
-import type {
   ChannelName,
   ClientId,
   DataMessage,
-} from '@synnel/types'
-import { BaseChannel } from './base-channel.js'
-import type { IPublishOptions } from '../types/base.js'
+} from '../types'
+import { BaseChannel } from './base-channel'
+import type { IPublishOptions } from '../types'
 import { createDataMessage } from '@synnel/lib'
 
 /**
@@ -166,7 +164,10 @@ export class MulticastTransport<T = unknown>
     try {
       client.socket.send(JSON.stringify(message))
     } catch (error) {
-      console.error(`Failed to publish to ${clientId} in channel ${this.name}:`, error)
+      console.error(
+        `Failed to publish to ${clientId} in channel ${this.name}:`,
+        error,
+      )
     }
   }
 }

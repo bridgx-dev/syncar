@@ -6,15 +6,13 @@
 import type {
   IClientRegistry,
   IServerClient,
-} from '../types/client.js'
-import type { IClientConnection } from '../types/base.js'
-import type { IServerTransport } from '../types/transport.js'
-import type { IChannelTransport } from '../types/channel.js'
-import type {
+  IClientConnection,
+  IServerTransport,
+  IChannelTransport,
   ClientId,
   ChannelName,
   Message,
-} from '@synnel/types'
+} from '../types'
 
 /**
  * Client Registry - manages connected clients and their subscriptions
@@ -34,7 +32,10 @@ export class ClientRegistry implements IClientRegistry {
   /**
    * Map of channel instances by name
    */
-  protected readonly channelInstances: Map<ChannelName, IChannelTransport<unknown>> = new Map()
+  protected readonly channelInstances: Map<
+    ChannelName,
+    IChannelTransport<unknown>
+  > = new Map()
 
   // ============================================================
   // CLIENT REGISTRATION
@@ -280,7 +281,9 @@ export class ClientRegistry implements IClientRegistry {
       },
 
       disconnect: async (code?: number, reason?: string): Promise<void> => {
-        const socket = connection.socket as unknown as { close: (code: number, reason?: string) => void }
+        const socket = connection.socket as unknown as {
+          close: (code: number, reason?: string) => void
+        }
         socket.close(code ?? 1000, reason ?? 'Disconnected')
       },
 

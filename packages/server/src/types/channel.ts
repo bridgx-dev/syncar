@@ -3,7 +3,12 @@
  * Types for channel-based messaging including broadcast and multicast transports.
  */
 
-import type { IChannel, IMessageHandler, ILifecycleHandler, IClientConnection } from './base.js'
+import type {
+  IChannel,
+  IMessageHandler,
+  ILifecycleHandler,
+  IClientConnection,
+} from './base'
 import type {
   ChannelName,
   SubscriberId,
@@ -199,7 +204,11 @@ export interface IChannelTransport<T> extends IChannel<T>, IMessageHistory<T> {
    * @param client - The client that sent the message
    * @param message - The original data message
    */
-  receive(data: T, client: IClientConnection, message: DataMessage<T>): Promise<void>
+  receive(
+    data: T,
+    client: IClientConnection,
+    message: DataMessage<T>,
+  ): Promise<void>
 
   /**
    * Register a handler for new subscriptions

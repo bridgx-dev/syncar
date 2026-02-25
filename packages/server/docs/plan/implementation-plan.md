@@ -25,6 +25,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 > No dependencies - can be done in parallel
 
 ### Task 1: Create config module ✅
+
 - [x] 1.1: Create `src/config/index.ts` - Barrel exports
 - [x] 1.2: Create `src/config/constants.ts`
   - `BROADCAST_CHANNEL = '__broadcast__'`
@@ -43,6 +44,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 2: Create errors module ✅
+
 - [x] 2.1: Create `src/errors/index.ts` - Barrel exports
 - [x] 2.2: Create `src/errors/errors.ts` - Base `SynnelError` class
   - Base class with `code`, `context`, `toJSON()`, `toString()`
@@ -57,6 +59,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 3: Create emitter module ✅
+
 - [x] 3.1: Create `src/emitter/index.ts` - Barrel exports
 - [x] 3.2: Create `src/emitter/event-emitter.ts`
   - Implements `IEventEmitter<E>` with full type safety
@@ -71,6 +74,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 4: Create transport base class ✅
+
 - [x] 4.1: Create `src/transport/index.ts` - Barrel exports
 - [x] 4.2: Create `src/transport/base-transport.ts`
   - Abstract `BaseTransport` extends `EventEmitter`
@@ -87,6 +91,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ## Phase 2: Channel System (Tasks 5-9)
 
 ### Task 5: Create WebSocket transport implementation ✅
+
 - [x] 5.1: Create `src/transport/websocket-transport.ts`
   - `WebSocketServerTransport` extends `BaseTransport` implements `IServerTransport`
   - Constructor takes `IServerTransportConfig`
@@ -102,6 +107,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 6: Create channel base class ✅
+
 - [x] 6.1: Create `src/channel/index.ts` - Barrel exports
 - [x] 6.2: Create `src/channel/base-channel.ts`
   - Abstract `BaseChannel<T>` implements `IChannel<T>` and `IMessageHistory<T>`
@@ -120,6 +126,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 7: Create broadcast transport ✅
+
 - [x] 7.1: Create `src/channel/broadcast-transport.ts`
   - `BroadcastTransport<T>` implements `IBroadcastTransport<T>`
   - `name: '__broadcast__'` (readonly) via `BROADCAST_CHANNEL` constant
@@ -137,6 +144,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 8: Create multicast transport ✅
+
 - [x] 8.1: Create `src/channel/multicast-transport.ts`
   - `MulticastTransport<T>` extends `BaseChannel<T>` implements `IChannelTransport<T>` (alias for `IMulticastTransport<T>`)
   - `subscribe()` / `unsubscribe()` methods with duplicate check and full channel check
@@ -154,6 +162,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 9: Create channel barrel ✅
+
 - [x] 9.1: Updated `src/channel/index.ts` (barrel file)
   - Re-exports: `BaseChannel`, `BroadcastTransport`, `MulticastTransport`
   - Re-exports: `BROADCAST_CHANNEL` constant from config
@@ -167,6 +176,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ## Phase 3: Client & Middleware (Tasks 10-13)
 
 ### Task 10: Create client registry ✅
+
 - [x] 10.1: Create `src/registry/index.ts` - Barrel exports
 - [x] 10.2: Create `src/registry/client-registry.ts`
   - `ClientRegistry` implements `IClientRegistry`
@@ -183,6 +193,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 11: Create client factory ✅
+
 - [x] 11.1: Create `src/registry/client-factory.ts`
   - `ServerClientFactory` implements `IServerClientFactory`
   - Creates `IServerClient` wrappers from `IClientData` and `IClientConnection`
@@ -199,6 +210,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 12: Create middleware manager ✅
+
 - [x] 12.1: Create `src/middleware/index.ts` - Barrel exports
 - [x] 12.2: Create `src/middleware/middleware-manager.ts`
   - `MiddlewareManager` implements `IMiddlewareManager` and `IMiddlewareContextFactory`
@@ -215,6 +227,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 13: Create middleware factories ✅
+
 - [x] 13.1: Create `src/middleware/factories.ts`
   - `createAuthMiddleware()` - with token verification, attaches user data to client
   - `createLoggingMiddleware()` - configurable logging with custom format function
@@ -232,6 +245,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ## Phase 4: Server (Tasks 14-17)
 
 ### Task 14: Create handlers module ✅
+
 - [x] 14.1: Create `src/handlers/index.ts` - Barrel exports
 - [x] 14.2: Create `src/handlers/connection-handler.ts`
   - `ConnectionHandler` - processes new connections
@@ -255,6 +269,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 15: Create server class ✅
+
 - [x] 15.1: Create `src/server/index.ts` - Barrel exports
 - [x] 15.2: Create `src/server/synnel-server.ts`
   - `SynnelServer` implements `ISynnelServer`
@@ -272,6 +287,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 16: Create server factory ✅
+
 - [x] 16.1: Create `src/server/factory.ts`
   - `createSynnelServer(config?: IServerConfig): ISynnelServer`
   - Factory function for convenient server creation with automatic HTTP/WebSocket server setup
@@ -281,6 +297,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 17: Update main exports ✅
+
 - [x] 17.1: Update `src/index.ts`
   - Export all from new modules (server, middleware, transport, channels, config, registry, handlers, errors, types)
   - Clean exports with proper categorization and documentation
@@ -292,6 +309,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ## Phase 5: Testing (Tasks 18-27)
 
 ### Task 18: Config tests ✅
+
 - [x] 18.1: Create `__tests__/config.test.ts`
   - Test constants values
   - Test defaults match types
@@ -302,6 +320,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 19: Errors tests ✅
+
 - [x] 19.1: Create `__tests__/errors.test.ts`
   - Test `SynnelError` creation
   - Test `MiddlewareRejectionError` properties
@@ -313,6 +332,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 20: Emitter tests ✅
+
 - [x] 20.1: Create `__tests__/emitter.test.ts`
   - Test `on()` registers and returns unsubscribe
   - Test `once()` auto-removes
@@ -327,6 +347,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 21: Transport tests ✅
+
 - [x] 21.1: Create `__tests__/websocket-transport.test.ts`
   - Test `WebSocketServerTransport` connection handling
   - Test `sendToClient()` sends to correct client
@@ -339,6 +360,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 22: Channel tests ✅
+
 - [x] 22.1: Create `__tests__/channel.test.ts`
   - Test `BaseChannel` interface compliance
   - Test `BroadcastTransport` to all clients
@@ -354,6 +376,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 23: Registry tests ✅
+
 - [x] 23.1: Create `__tests__/client-registry.test.ts`
   - Test `register()` / `unregister()` lifecycle
   - Test `subscribe()` / `unsubscribe()` channel management
@@ -369,6 +392,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 24: Middleware tests ✅
+
 - [x] 24.1: Create `__tests__/middleware.test.ts`
   - Test `use()`, `remove()`, `clear()` management
   - Test execute methods for all action types
@@ -384,6 +408,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 25: Handlers tests ✅
+
 - [x] 25.1: Create `__tests__/connection-handler.test.ts`
   - Test `ConnectionHandler` processes connections
 - [x] 25.2: Create `__tests__/message-handler.test.ts`
@@ -398,6 +423,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 26: Server tests ✅
+
 - [x] 26.1: Create `__tests__/synnel-server.test.ts`
   - Test `start()` / `stop()` lifecycle
   - Test `createBroadcast()` / `createMulticast()`
@@ -412,6 +438,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 27: Integration tests ✅
+
 - [x] 27.1: Create `__tests__/integration/server.test.ts`
   - Test full flow: start → connect → message → disconnect → stop
   - Test channel: subscribe → publish → receive → unsubscribe
@@ -428,7 +455,9 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ## Phase 6: Finalize (Tasks 28-29)
 
 ### Task 28: Update TypeScript config
+
 - [ ] 28.1: Update `tsconfig.json` path mappings:
+
 ```json
 {
   "paths": {
@@ -450,6 +479,7 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 ---
 
 ### Task 29: Documentation and cleanup
+
 - [ ] 29.1: Update README.md with new API structure
 - [ ] 29.2: Add JSDoc comments to all public APIs
 - [ ] 29.3: Update examples in docs
@@ -464,26 +494,26 @@ Phase 6: Finalize        [░░░░░░░░░░] 0%  (0/2 tasks)
 
 ## Change Log
 
-| Date | Task | Status | Notes |
-|------|------|--------|-------|
-| 2026-02-24 | Task 1 | ✅ Completed | Created config module with constants, defaults, and barrel exports |
-| 2026-02-24 | Task 2 | ✅ Completed | Created errors module with SynnelError base class, MiddlewareRejectionError, and common error types |
-| 2026-02-24 | Task 3 | ✅ Completed | Created emitter module with type-safe EventEmitter class |
-| 2026-02-24 | Task 4 | ✅ Completed | Created transport base class with BaseTransport abstract class |
-| 2026-02-24 | Task 5 | ✅ Completed | Created WebSocketServerTransport with ws library integration |
-| 2026-02-24 | Task 6 | ✅ Completed | Created BaseChannel abstract class with state management, subscriber tracking, message history, and handler infrastructure |
-| 2026-02-24 | Task 7 | ✅ Completed | Created BroadcastTransport for server-to-all communication with publish filtering support |
-| 2026-02-24 | Task 8 | ✅ Completed | Created MulticastTransport extending BaseChannel for topic-based pub/sub messaging |
-| 2026-02-24 | Task 9 | ✅ Completed | Updated channel barrel file (index.ts) with all exports and convenience re-exports |
-| 2026-02-24 | Task 10 | ✅ Completed | Created ClientRegistry implementing IClientRegistry with proper types from types/ directory |
-| 2026-02-24 | Task 11 | ✅ Completed | Created ServerClientFactory with optional caching for efficient IServerClient wrapper creation |
-| 2026-02-24 | Task 12 | ✅ Completed | Created MiddlewareManager implementing IMiddlewareManager with context factory and execution methods |
-| 2026-02-24 | Task 13 | ✅ Completed | Created middleware factories: auth, logging, rate limit, and channel whitelist |
-| 2026-02-24 | Task 14 | ✅ Completed | Created handlers module: ConnectionHandler, MessageHandler, SignalHandler with proper types and lib utilities |
-| 2026-02-24 | Task 15 | ✅ Completed | Created SynnelServer class implementing ISynnelServer with full lifecycle, channel management, event handling, and stats |
-| 2026-02-24 | Task 16 | ✅ Completed | Created server factory (createSynnelServer) for convenient server creation with automatic HTTP/WebSocket server setup |
-| 2026-02-24 | Task 17 | ✅ Completed | Updated main index.ts with clean exports for all V2 modules (server, middleware, transport, channels, config, registry, handlers, errors, types) |
-| - | - | Initial plan created | 29 tasks across 6 phases |
+| Date       | Task    | Status               | Notes                                                                                                                                            |
+| ---------- | ------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-02-24 | Task 1  | ✅ Completed         | Created config module with constants, defaults, and barrel exports                                                                               |
+| 2026-02-24 | Task 2  | ✅ Completed         | Created errors module with SynnelError base class, MiddlewareRejectionError, and common error types                                              |
+| 2026-02-24 | Task 3  | ✅ Completed         | Created emitter module with type-safe EventEmitter class                                                                                         |
+| 2026-02-24 | Task 4  | ✅ Completed         | Created transport base class with BaseTransport abstract class                                                                                   |
+| 2026-02-24 | Task 5  | ✅ Completed         | Created WebSocketServerTransport with ws library integration                                                                                     |
+| 2026-02-24 | Task 6  | ✅ Completed         | Created BaseChannel abstract class with state management, subscriber tracking, message history, and handler infrastructure                       |
+| 2026-02-24 | Task 7  | ✅ Completed         | Created BroadcastTransport for server-to-all communication with publish filtering support                                                        |
+| 2026-02-24 | Task 8  | ✅ Completed         | Created MulticastTransport extending BaseChannel for topic-based pub/sub messaging                                                               |
+| 2026-02-24 | Task 9  | ✅ Completed         | Updated channel barrel file (index.ts) with all exports and convenience re-exports                                                               |
+| 2026-02-24 | Task 10 | ✅ Completed         | Created ClientRegistry implementing IClientRegistry with proper types from types/ directory                                                      |
+| 2026-02-24 | Task 11 | ✅ Completed         | Created ServerClientFactory with optional caching for efficient IServerClient wrapper creation                                                   |
+| 2026-02-24 | Task 12 | ✅ Completed         | Created MiddlewareManager implementing IMiddlewareManager with context factory and execution methods                                             |
+| 2026-02-24 | Task 13 | ✅ Completed         | Created middleware factories: auth, logging, rate limit, and channel whitelist                                                                   |
+| 2026-02-24 | Task 14 | ✅ Completed         | Created handlers module: ConnectionHandler, MessageHandler, SignalHandler with proper types and lib utilities                                    |
+| 2026-02-24 | Task 15 | ✅ Completed         | Created SynnelServer class implementing ISynnelServer with full lifecycle, channel management, event handling, and stats                         |
+| 2026-02-24 | Task 16 | ✅ Completed         | Created server factory (createSynnelServer) for convenient server creation with automatic HTTP/WebSocket server setup                            |
+| 2026-02-24 | Task 17 | ✅ Completed         | Updated main index.ts with clean exports for all V2 modules (server, middleware, transport, channels, config, registry, handlers, errors, types) |
+| -          | -       | Initial plan created | 29 tasks across 6 phases                                                                                                                         |
 
 ---
 
