@@ -691,6 +691,14 @@ describe('Handlers', () => {
       })
 
       it('should throw error for reserved channel', async () => {
+        // Create a reserved channel
+        const reservedChannel = new MulticastTransport<string>(
+          '__private__',
+          registry.connections,
+          { reserved: true },
+        )
+        registry.registerChannel(reservedChannel)
+
         const handlerStrict = new SignalHandler({
           registry,
           middleware,
@@ -704,20 +712,35 @@ describe('Handlers', () => {
 
         const message: SignalMessage = createSignalMessage('__private__', 'subscribe')
 
-        await expect(
-          handlerStrict.handleSubscribe(client, message),
-        ).rejects.toThrow(ChannelError)
+        const error = await handlerStrict
+          .handleSubscribe(client, message)
+          .catch((e) => e)
+
+        expect(error).toBeInstanceOf(ChannelError)
+        expect(error.message).toContain('Cannot subscribe to reserved channel')
       })
 
       it('should throw error for broadcast channel', async () => {
+        // Create a handler that allows reserved channels so we can test
+        // the broadcast channel check specifically
+        const handlerWithAllowReserved = new SignalHandler({
+          registry,
+          middleware,
+          emitter,
+          sendToClient: transport.sendToClient.bind(transport),
+          options: { allowReservedChannels: true },
+        })
+
         const connection = createMockConnection('client-1')
         const client = registry.register(connection, transport)
 
         const message: SignalMessage = createSignalMessage('__broadcast__', 'subscribe')
 
+        // The broadcast channel check comes after the reserved channel name check
+        // With allowReservedChannels: true, we skip that check and hit the broadcast check
         await expect(
-          handler.handleSubscribe(client, message),
-        ).rejects.toThrow(ChannelError)
+          handlerWithAllowReserved.handleSubscribe(client, message),
+        ).rejects.toThrow('Cannot subscribe to broadcast channel')
       })
 
       it('should throw error for non-existent channel', async () => {
@@ -729,6 +752,49 @@ describe('Handlers', () => {
         await expect(
           handler.handleSubscribe(client, message),
         ).rejects.toThrow(ChannelError)
+      })
+
+      it('should throw error when channel is full', async () => {
+        // Create a channel with max subscribers = 1
+        const fullChannel = new MulticastTransport<string>(
+          'full-channel',
+          registry.connections,
+          { maxSubscribers: 1 },
+        )
+        registry.registerChannel(fullChannel)
+
+        // First client subscribes
+        const conn1 = createMockConnection('client-1')
+        registry.register(conn1, transport)
+        registry.subscribe('client-1', 'full-channel')
+
+        // Second client tries to subscribe
+        const conn2 = createMockConnection('client-2')
+        const client2 = registry.register(conn2, transport)
+
+        const message: SignalMessage = createSignalMessage('full-channel', 'subscribe')
+
+        await expect(
+          handler.handleSubscribe(client2, message),
+        ).rejects.toThrow('Channel is full')
+      })
+
+      it('should throw error when registry subscribe fails', async () => {
+        const connection = createMockConnection('client-1')
+        const client = registry.register(connection, transport)
+
+        // Mock registry.subscribe to return false
+        const subscribeSpy = vi
+          .spyOn(registry, 'subscribe')
+          .mockReturnValue(false)
+
+        const message: SignalMessage = createSignalMessage('chat', 'subscribe')
+
+        await expect(
+          handler.handleSubscribe(client, message),
+        ).rejects.toThrow('Failed to subscribe')
+
+        subscribeSpy.mockRestore()
       })
     })
 

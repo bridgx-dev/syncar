@@ -363,6 +363,37 @@ describe('Channels', () => {
         expect(receivedClient).toBeDefined()
       })
 
+      it('should handle errors in onSubscribe handler gracefully', async () => {
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+        const errorClient = createMockClient('client-1')
+        const normalClient = createMockClient('client-2')
+
+        // Handler that throws an error
+        channel.onSubscribe(() => {
+          throw new Error('Subscribe handler error')
+        })
+
+        // Handler that should still be called
+        let normalHandlerCalled = false
+        channel.onSubscribe(() => {
+          normalHandlerCalled = true
+        })
+
+        // Should not throw despite error in handler
+        await expect(
+          channel.handleSubscribe(errorClient),
+        ).resolves.toBeUndefined()
+
+        // Wait a tick for the async handlers to complete
+        await new Promise((resolve) => setTimeout(resolve, 0))
+
+        expect(errorSpy).toHaveBeenCalled()
+        expect(normalHandlerCalled).toBe(true)
+
+        errorSpy.mockRestore()
+      })
+
       it('should register and call onUnsubscribe handler', async () => {
         let receivedClient: IClientConnection | undefined
 
@@ -377,6 +408,36 @@ describe('Channels', () => {
         expect(receivedClient).toBeDefined()
       })
 
+      it('should handle errors in onUnsubscribe handler gracefully', async () => {
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+        const errorClient = createMockClient('client-1')
+
+        // Handler that throws an error
+        channel.onUnsubscribe(() => {
+          throw new Error('Unsubscribe handler error')
+        })
+
+        // Handler that should still be called
+        let normalHandlerCalled = false
+        channel.onUnsubscribe(() => {
+          normalHandlerCalled = true
+        })
+
+        // Should not throw despite error in handler
+        await expect(
+          channel.handleUnsubscribe(errorClient),
+        ).resolves.toBeUndefined()
+
+        // Wait a tick for the async handlers to complete
+        await new Promise((resolve) => setTimeout(resolve, 0))
+
+        expect(errorSpy).toHaveBeenCalled()
+        expect(normalHandlerCalled).toBe(true)
+
+        errorSpy.mockRestore()
+      })
+
       it('should remove handler when unsubscribe function is called', () => {
         const handler = vi.fn()
         const unsubscribe = channel.onMessage(handler)
@@ -386,6 +447,75 @@ describe('Channels', () => {
         // Handler should be removed
         const handlers = (channel as any).messageHandlers
         expect(handlers.has(handler)).toBe(false)
+      })
+
+      it('should remove unsubscribe handler when its unsubscribe function is called', async () => {
+        let callCount = 0
+
+        const unsubscribe = channel.onUnsubscribe(() => {
+          callCount++
+        })
+
+        // Call the unsubscribe function to remove the handler
+        unsubscribe()
+
+        const client = createMockClient('client-1')
+
+        // Trigger handleUnsubscribe - the removed handler should not be called
+        await channel.handleUnsubscribe(client)
+
+        expect(callCount).toBe(0)
+      })
+
+      it('should handle errors in message handlers gracefully', async () => {
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+        // Handler that throws an error
+        channel.onMessage(() => {
+          throw new Error('Message handler error')
+        })
+
+        // Handler that should still be called
+        let secondHandlerCalled = false
+        channel.onMessage(() => {
+          secondHandlerCalled = true
+        })
+
+        const client = createMockClient('client-1')
+        const message = {
+          id: 'msg-1',
+          type: 'data' as const,
+          channel: 'test',
+          data: 'test data',
+          timestamp: Date.now(),
+        }
+
+        // Should not throw despite error in handler
+        await channel.receive('test data', client, message as any)
+
+        // Second handler should still be called
+        expect(secondHandlerCalled).toBe(true)
+        expect(errorSpy).toHaveBeenCalled()
+
+        errorSpy.mockRestore()
+      })
+
+      it('should execute unsubscribe function from onSubscribe', async () => {
+        let handlerCallCount = 0
+
+        const unsubscribe = channel.onSubscribe(() => {
+          handlerCallCount++
+        })
+
+        // Remove the handler using the returned function
+        unsubscribe()
+
+        const client = createMockClient('client-1')
+
+        // Trigger handleSubscribe - the removed handler should not be called
+        await channel.handleSubscribe(client)
+
+        expect(handlerCallCount).toBe(0)
       })
     })
 
@@ -504,6 +634,171 @@ describe('Channels', () => {
         // Only client-2 and client-3 should receive
         expect(client1.socket.send).not.toHaveBeenCalled()
 
+        expect(client2.socket.send).toHaveBeenCalled()
+        expect(client3.socket.send).toHaveBeenCalled()
+      })
+
+      it('should handle send errors gracefully', () => {
+        const client1 = clients.get('client-1')!
+        const errorClient = createMockClient('error-client')
+        // Make send throw an error
+        ;(errorClient.socket.send as any).mockImplementation(() => {
+          throw new Error('Send failed')
+        })
+        clients.set('error-client', errorClient)
+
+        // Should not throw, should log error instead
+        expect(() => broadcast.publish('Test message')).not.toThrow()
+
+        // Client 1 should still receive
+        expect(client1.socket.send).toHaveBeenCalled()
+      })
+
+      it('should handle errors in sendToAllExcept', () => {
+        const client2 = createMockClient('client-2')
+        const errorClient = createMockClient('error-client')
+        ;(errorClient.socket.send as any).mockImplementation(() => {
+          throw new Error('Send failed')
+        })
+
+        clients.set('client-2', client2)
+        clients.set('error-client', errorClient)
+
+        expect(() => broadcast.publish('Test', { exclude: ['client-1'] })).not.toThrow()
+
+        // Client 2 should still receive
+        expect(client2.socket.send).toHaveBeenCalled()
+      })
+
+      it('should handle errors in sendToSpecific', () => {
+        const client2 = createMockClient('client-2')
+        const errorClient = createMockClient('error-client')
+        ;(errorClient.socket.send as any).mockImplementation(() => {
+          throw new Error('Send failed')
+        })
+
+        clients.set('client-2', client2)
+        clients.set('error-client', errorClient)
+
+        expect(() =>
+          broadcast.publish('Test', {
+            to: ['client-1', 'client-2', 'error-client'],
+          }),
+        ).not.toThrow()
+
+        // Client 2 should still receive
+        expect(client2.socket.send).toHaveBeenCalled()
+      })
+
+      it('should handle empty to list by sending to all clients', () => {
+        const client1 = createMockClient('client-1')
+        clients.set('client-1', client1)
+
+        // Empty to list falls through to default (send to all)
+        broadcast.publish('Test', { to: [] })
+
+        expect(client1.socket.send).toHaveBeenCalled()
+      })
+
+      it('should handle to list with no matching clients', () => {
+        const client1 = createMockClient('client-1')
+        clients.set('client-1', client1)
+
+        // To list contains non-existent clients
+        broadcast.publish('Test', { to: ['client-99', 'client-100'] })
+
+        expect(client1.socket.send).not.toHaveBeenCalled()
+      })
+
+      it('should handle exclude list with all clients excluded', () => {
+        const client1 = createMockClient('client-1')
+        const client2 = createMockClient('client-2')
+        clients.set('client-1', client1)
+        clients.set('client-2', client2)
+
+        // Exclude all clients
+        broadcast.publish('Test', {
+          to: ['client-1', 'client-2'],
+          exclude: ['client-1', 'client-2'],
+        })
+
+        expect(client1.socket.send).not.toHaveBeenCalled()
+        expect(client2.socket.send).not.toHaveBeenCalled()
+      })
+
+      it('should handle sending to non-existent clients with exclude', () => {
+        const client1 = createMockClient('client-1')
+        clients.set('client-1', client1)
+
+        // To list contains non-existent clients, exclude also non-existent
+        broadcast.publish('Test', {
+          to: ['client-99'],
+          exclude: ['client-100'],
+        })
+
+        expect(client1.socket.send).not.toHaveBeenCalled()
+      })
+
+      it('should send to client that is in to list', () => {
+        const client1 = createMockClient('client-1')
+        const client2 = createMockClient('client-2')
+        clients.set('client-1', client1)
+        clients.set('client-2', client2)
+
+        // Only client-1 is in to list
+        broadcast.publish('Test', { to: ['client-1'] })
+
+        expect(client1.socket.send).toHaveBeenCalled()
+        expect(client2.socket.send).not.toHaveBeenCalled()
+      })
+
+      it('should not send to client that is in exclude list', () => {
+        const client1 = createMockClient('client-1')
+        clients.set('client-1', client1)
+
+        // Client is in to list but also in exclude list
+        broadcast.publish('Test', {
+          to: ['client-1'],
+          exclude: ['client-1'],
+        })
+
+        expect(client1.socket.send).not.toHaveBeenCalled()
+      })
+
+      it('should handle sendToSpecific with multiple clients where some are excluded', () => {
+        const client1 = createMockClient('client-1')
+        const client2 = createMockClient('client-2')
+        const client3 = createMockClient('client-3')
+        clients.set('client-1', client1)
+        clients.set('client-2', client2)
+        clients.set('client-3', client3)
+
+        // Send to 1 and 2, but exclude 2
+        broadcast.publish('Test', {
+          to: ['client-1', 'client-2', 'client-3'],
+          exclude: ['client-2'],
+        })
+
+        expect(client1.socket.send).toHaveBeenCalled()
+        expect(client2.socket.send).not.toHaveBeenCalled()
+        expect(client3.socket.send).toHaveBeenCalled()
+      })
+
+      it('should iterate through all clients in sendToSpecific', () => {
+        // This test ensures lines 148-151 are covered - the for loop and condition checks
+        const client1 = createMockClient('client-1')
+        const client2 = createMockClient('client-2')
+        const client3 = createMockClient('client-3')
+        clients.set('client-1', client1)
+        clients.set('client-2', client2)
+        clients.set('client-3', client3)
+
+        broadcast.publish('Test', {
+          to: ['client-1', 'client-2', 'client-3'],
+        })
+
+        // All three clients should receive the message
+        expect(client1.socket.send).toHaveBeenCalled()
         expect(client2.socket.send).toHaveBeenCalled()
         expect(client3.socket.send).toHaveBeenCalled()
       })

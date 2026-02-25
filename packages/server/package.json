@@ -26,10 +26,11 @@
     "prepublishOnly": "bun run build"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
-    "@types/ws": "^8.18.1",
     "@synnel/lib": "workspace:*",
     "@synnel/types": "workspace:*",
+    "@types/node": "^20.10.0",
+    "@types/ws": "^8.18.1",
+    "@vitest/coverage-v8": "^1.1.0",
     "tsup": "^8.5.1",
     "typescript": "^5",
     "vitest": "^1.1.0"

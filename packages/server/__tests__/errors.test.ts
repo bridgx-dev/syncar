@@ -189,6 +189,26 @@ describe('Errors', () => {
       const error = new MiddlewareRejectionError('Not allowed', 'connect')
       expect(error).toBeInstanceOf(Error)
     })
+
+    it('should handle action passed as wider string type', () => {
+      // When action is passed as a wider string type (not IMiddlewareAction),
+      // it should still work and trigger the string type check branch
+      const customAction: string = 'custom-action'
+      const error = new MiddlewareRejectionError('Not allowed', customAction)
+
+      expect(error.action).toBe('custom-action')
+    })
+
+    it('should store action as-is when already a string', () => {
+      // This tests the branch where typeof action === 'string' is true
+      // and the action is used directly
+      const error = new MiddlewareRejectionError(
+        'Test reason',
+        'my-custom-action' as string, // Explicitly typed as string
+      )
+
+      expect(error.action).toBe('my-custom-action')
+    })
   })
 
   describe('MiddlewareExecutionError', () => {
@@ -327,6 +347,72 @@ describe('Errors', () => {
       expect(error.toString()).toMatch(/MiddlewareRejectionError/)
       expect(error.toString()).toMatch(/Unauthorized/)
       expect(error.toString()).toMatch(/message/)
+    })
+
+    it('should format with custom action type', () => {
+      const error = new MiddlewareRejectionError('Not allowed', 'subscribe' as const)
+      expect(error.toString()).toBe('[MiddlewareRejectionError:subscribe] Not allowed')
+    })
+  })
+
+  describe('MiddlewareRejectionError serialization', () => {
+    it('should convert to JSON with all properties', () => {
+      const originalError = new Error('Original')
+      const error = new MiddlewareRejectionError(
+        'Authentication failed',
+        'connect',
+        'AUTH_001',
+        { userId: 'user-123', attempt: 3 },
+      )
+
+      const json = error.toJSON()
+
+      expect(json).toEqual({
+        name: 'MiddlewareRejectionError',
+        reason: 'Authentication failed',
+        action: 'connect',
+        code: 'AUTH_001',
+        context: { userId: 'user-123', attempt: 3 },
+        message: expect.stringContaining('connect'),
+        stack: expect.any(String),
+      })
+    })
+
+    it('should include optional code and context in JSON', () => {
+      const error = new MiddlewareRejectionError('Not allowed', 'message')
+      const json = error.toJSON()
+
+      expect(json.name).toBe('MiddlewareRejectionError')
+      expect(json.reason).toBe('Not allowed')
+      expect(json.action).toBe('message')
+      expect(json.code).toBeUndefined()
+      expect(json.context).toBeUndefined()
+    })
+  })
+
+  describe('MiddlewareExecutionError serialization', () => {
+    it('should provide custom toString format', () => {
+      const originalError = new Error('Database connection failed')
+      const error = new MiddlewareExecutionError(
+        'message',
+        'db-middleware',
+        originalError,
+      )
+
+      const str = error.toString()
+      expect(str).toBe('[MiddlewareExecutionError] db-middleware failed during message: Database connection failed')
+    })
+
+    it('should getCause return original error', () => {
+      const originalError = new Error('Cache miss')
+      const error = new MiddlewareExecutionError(
+        'subscribe',
+        'cache-middleware',
+        originalError,
+      )
+
+      expect(error.getCause()).toBe(originalError)
+      expect(error.getCause().message).toBe('Cache miss')
     })
   })
 })

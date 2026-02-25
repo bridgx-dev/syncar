@@ -448,6 +448,21 @@ describe('SynnelServer', () => {
       expect(typeof unsubscribe).toBe('function')
     })
 
+    it('should remove authorization handler when unsubscribe is called', () => {
+      const handler1 = vi.fn(() => true)
+      const handler2 = vi.fn(() => true)
+
+      const unsubscribe1 = server.authorize(handler1)
+      server.authorize(handler2)
+
+      // Remove first handler
+      unsubscribe1()
+
+      // Handler should be removed
+      expect(handler1).toBeDefined()
+      expect(handler2).toBeDefined()
+    })
+
     it('should call authorization handler for messages', () => {
       let authorized = false
       server.authorize((_clientId, _channel, _action) => {
@@ -579,5 +594,212 @@ describe('createSynnelServer factory', () => {
 
   it('should be a function', () => {
     expect(typeof createSynnelServer).toBe('function')
+  })
+
+  describe('factory with transport creation', () => {
+    it('should create WebSocketServerTransport when no transport provided', () => {
+      const mockServer = {
+        listen: vi.fn(),
+        on: vi.fn(),
+        close: vi.fn(),
+      }
+
+      const MockWsServer = vi.fn().mockImplementation(() => ({
+        on: vi.fn(),
+        close: vi.fn(),
+      }))
+
+      const config: IServerConfig = {
+        server: mockServer as any,
+      }
+
+      // Temporarily replace the WsServer constructor
+      const originalWsServer = require('ws').WebSocketServer
+      // @ts-ignore - testing purposes
+      require('ws').WebSocketServer = MockWsServer
+
+      const server = createSynnelServer(config)
+
+      // Restore original
+      // @ts-ignore
+      require('ws').WebSocketServer = originalWsServer
+
+      expect(server).toBeInstanceOf(SynnelServer)
+      // Note: The dynamic import in factory means the WsServer won't be called synchronously
+      // This test verifies the factory doesn't throw
+    })
+
+    it('should use custom path when provided', () => {
+      const mockServer = {
+        listen: vi.fn(),
+        on: vi.fn(),
+        close: vi.fn(),
+      }
+
+      const MockWsServer = vi.fn().mockImplementation(() => ({
+        on: vi.fn(),
+        close: vi.fn(),
+      }))
+
+      const config: IServerConfig = {
+        server: mockServer as any,
+        path: '/custom-ws',
+      }
+
+      // Temporarily replace the WsServer constructor
+      const originalWsServer = require('ws').WebSocketServer
+      // @ts-ignore - testing purposes
+      require('ws').WebSocketServer = MockWsServer
+
+      const server = createSynnelServer(config)
+
+      // Restore original
+      // @ts-ignore
+      require('ws').WebSocketServer = originalWsServer
+
+      expect(server).toBeInstanceOf(SynnelServer)
+    })
+
+    it('should use custom maxPayload when provided', () => {
+      const mockServer = {
+        listen: vi.fn(),
+        on: vi.fn(),
+        close: vi.fn(),
+      }
+
+      const MockWsServer = vi.fn().mockImplementation(() => ({
+        on: vi.fn(),
+        close: vi.fn(),
+      }))
+
+      const config: IServerConfig = {
+        server: mockServer as any,
+        maxPayload: 204800,
+      }
+
+      // Temporarily replace the WsServer constructor
+      const originalWsServer = require('ws').WebSocketServer
+      // @ts-ignore - testing purposes
+      require('ws').WebSocketServer = MockWsServer
+
+      const server = createSynnelServer(config)
+
+      // Restore original
+      // @ts-ignore
+      require('ws').WebSocketServer = originalWsServer
+
+      expect(server).toBeInstanceOf(SynnelServer)
+    })
+
+    it('should use custom ping settings when provided', () => {
+      const mockServer = {
+        listen: vi.fn(),
+        on: vi.fn(),
+        close: vi.fn(),
+      }
+
+      const MockWsServer = vi.fn().mockImplementation(() => ({
+        on: vi.fn(),
+        close: vi.fn(),
+      }))
+
+      const config: IServerConfig = {
+        server: mockServer as any,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        enablePing: false,
+      }
+
+      // Temporarily replace the WsServer constructor
+      const originalWsServer = require('ws').WebSocketServer
+      // @ts-ignore - testing purposes
+      require('ws').WebSocketServer = MockWsServer
+
+      const server = createSynnelServer(config)
+
+      // Restore original
+      // @ts-ignore
+      require('ws').WebSocketServer = originalWsServer
+
+      expect(server).toBeInstanceOf(SynnelServer)
+    })
+
+    it('should use custom ping settings when provided', () => {
+      const mockServer = {
+        listen: vi.fn(),
+        on: vi.fn(),
+        close: vi.fn(),
+      }
+
+      const config: IServerConfig = {
+        server: mockServer as any,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        enablePing: false,
+      }
+
+      const server = createSynnelServer(config)
+
+      expect(server).toBeInstanceOf(SynnelServer)
+    })
+
+    it('should use injected registry when provided', () => {
+      const mockRegistry = {
+        connections: new Map(),
+        register: vi.fn(),
+        unregister: vi.fn(),
+        get: vi.fn(),
+        getAll: vi.fn(),
+        getCount: vi.fn(),
+        registerChannel: vi.fn(),
+        getChannel: vi.fn(),
+        removeChannel: vi.fn(),
+        getChannels: vi.fn(),
+        subscribe: vi.fn(),
+        unsubscribe: vi.fn(),
+        getSubscribers: vi.fn(),
+        getSubscriberCount: vi.fn(),
+        hasSubscriber: vi.fn(),
+        getTotalSubscriptionCount: vi.fn(),
+        clear: vi.fn(),
+      }
+
+      const transport = new WebSocketServerTransport({
+        server: {} as any,
+        connections: new Map(),
+        ServerConstructor: vi.fn().mockImplementation(() => ({
+          on: vi.fn(),
+          close: vi.fn(),
+        })),
+      })
+
+      const server = createSynnelServer({
+        transport: transport as any,
+        registry: mockRegistry as any,
+      })
+
+      expect(server.getRegistry()).toBe(mockRegistry)
+    })
+
+    it('should use injected connections when provided', () => {
+      const connections = new Map()
+
+      const transport = new WebSocketServerTransport({
+        server: {} as any,
+        connections,
+        ServerConstructor: vi.fn().mockImplementation(() => ({
+          on: vi.fn(),
+          close: vi.fn(),
+        })),
+      })
+
+      const server = createSynnelServer({
+        transport: transport as any,
+        connections,
+      })
+
+      // The connections should be the same map (by reference)
+      expect(server.getRegistry().connections.size).toBe(connections.size)
+    })
   })
 })

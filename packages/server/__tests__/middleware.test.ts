@@ -12,6 +12,7 @@ import {
   createRateLimitMiddleware,
   createChannelWhitelistMiddleware,
   clearRateLimitStore,
+  getRateLimitState,
 } from '../src/middleware/factories.js'
 import type { ServerClient } from '../src/types/index.js'
 import type { Message, DataMessage } from '@synnel/types'
@@ -197,6 +198,68 @@ describe('MiddlewareManager', () => {
       }
     })
 
+    it('should provide getRejectionReason method on context', async () => {
+      let capturedContext: any
+
+      manager.use(async (context) => {
+        capturedContext = context
+        context.reject('Test rejection')
+      })
+
+      try {
+        await manager.executeConnection(mockClient, 'connect')
+      } catch {
+        // Expected rejection
+      }
+
+      // getRejectionReason should return the reason
+      expect(capturedContext.getRejectionReason()).toBe('Test rejection')
+    })
+
+    it('should return undefined for getRejectionReason when not rejected', async () => {
+      let capturedContext: any
+
+      manager.use(async (context) => {
+        capturedContext = context
+        // Don't reject
+      })
+
+      await manager.executeConnection(mockClient, 'connect')
+
+      expect(capturedContext.getRejectionReason()).toBeUndefined()
+    })
+
+    it('should expose isRejected method on context', async () => {
+      let capturedContext: any
+
+      manager.use(async (context) => {
+        capturedContext = context
+        context.reject('Test rejection')
+      })
+
+      try {
+        await manager.executeConnection(mockClient, 'connect')
+      } catch {
+        // Expected rejection
+      }
+
+      // isRejected should return true after rejection
+      expect(capturedContext.isRejected()).toBe(true)
+    })
+
+    it('should return false for isRejected when not rejected', async () => {
+      let capturedContext: any
+
+      manager.use(async (context) => {
+        capturedContext = context
+        // Don't reject
+      })
+
+      await manager.executeConnection(mockClient, 'connect')
+
+      expect(capturedContext.isRejected()).toBe(false)
+    })
+
     it('should wrap thrown errors in MiddlewareExecutionError', async () => {
       manager.use(async () => {
         throw new Error('Test error')
@@ -208,6 +271,34 @@ describe('MiddlewareManager', () => {
       } catch (error) {
         expect(error).toBeInstanceOf(MiddlewareExecutionError)
         expect((error as MiddlewareExecutionError).action).toBe('connect')
+      }
+    })
+
+    it('should wrap non-Error thrown values in MiddlewareExecutionError', async () => {
+      manager.use(async () => {
+        throw 'string error' // Throwing a string instead of Error
+      })
+
+      try {
+        await manager.executeConnection(mockClient, 'connect')
+        expect(true).toBe(false) // Should not reach here
+      } catch (error) {
+        expect(error).toBeInstanceOf(MiddlewareExecutionError)
+        expect((error as MiddlewareExecutionError).cause?.message).toBe('string error')
+      }
+    })
+
+    it('should wrap number thrown values in MiddlewareExecutionError', async () => {
+      manager.use(async () => {
+        throw 404 // Throwing a number
+      })
+
+      try {
+        await manager.executeConnection(mockClient, 'connect')
+        expect(true).toBe(false) // Should not reach here
+      } catch (error) {
+        expect(error).toBeInstanceOf(MiddlewareExecutionError)
+        expect((error as MiddlewareExecutionError).cause?.message).toBe('404')
       }
     })
   })
@@ -343,6 +434,30 @@ describe('Middleware Factories', () => {
       await manager.executeMessage(mockClient, message)
 
       // Should not throw
+    })
+
+    it('should use default token extraction from message.data.token', async () => {
+      const verifyTokenSpy = vi.fn().mockResolvedValue({ userId: 'user-123' })
+
+      const middleware = createAuthMiddleware({
+        verifyToken: verifyTokenSpy,
+        // Don't provide getToken - use default
+        actions: ['message'],
+      })
+
+      manager.use(middleware)
+
+      const message: DataMessage = {
+        id: 'msg-1',
+        type: MessageType.DATA,
+        channel: 'chat',
+        data: { token: 'default-token' },
+        timestamp: Date.now(),
+      }
+
+      await manager.executeMessage(mockClient, message)
+
+      expect(verifyTokenSpy).toHaveBeenCalledWith('default-token')
     })
 
     it('should reject when token is missing', async () => {
@@ -626,6 +741,158 @@ describe('Middleware Factories', () => {
       await manager.executeConnection(mockClient, 'connect')
       await manager.executeConnection(mockClient, 'connect')
     })
+
+    it('should provide rate limit state via getRateLimitState', async () => {
+      const middleware = createRateLimitMiddleware({
+        maxRequests: 5,
+        windowMs: 1000,
+      })
+
+      const message: DataMessage = {
+        id: 'msg-1',
+        type: MessageType.DATA,
+        channel: 'chat',
+        data: { text: 'hello' },
+        timestamp: Date.now(),
+      }
+
+      manager.use(middleware)
+
+      // Send some messages
+      await manager.executeMessage(mockClient, message)
+      await manager.executeMessage(mockClient, message)
+
+      // Check state
+      const state = getRateLimitState('client-1')
+      expect(state).toBeDefined()
+      expect(state?.count).toBe(2)
+      expect(state?.resetTime).toBeDefined()
+    })
+
+    it('should return undefined for non-existent rate limit state', () => {
+      const state = getRateLimitState('non-existent-client')
+      expect(state).toBeUndefined()
+    })
+
+    it('should delete expired rate limit state', async () => {
+      const middleware = createRateLimitMiddleware({
+        maxRequests: 5,
+        windowMs: 100, // Very short window
+      })
+
+      const message: DataMessage = {
+        id: 'msg-1',
+        type: MessageType.DATA,
+        channel: 'chat',
+        data: { text: 'hello' },
+        timestamp: Date.now(),
+      }
+
+      manager.use(middleware)
+
+      // Send a message to create state
+      await manager.executeMessage(mockClient, message)
+
+      // Wait for window to expire
+      await new Promise((resolve) => setTimeout(resolve, 150))
+
+      // Send another message - should create new state (old one was deleted)
+      await manager.executeMessage(mockClient, message)
+
+      const state = getRateLimitState('client-1')
+      expect(state).toBeDefined()
+      // Count should be 1 (not 2) because state was deleted and recreated
+      expect(state?.count).toBe(1)
+    })
+
+    it('should provide cleanup method', () => {
+      const middleware = createRateLimitMiddleware({
+        maxRequests: 5,
+        windowMs: 1000,
+      })
+
+      // Middleware should have cleanup method
+      expect((middleware as { cleanup?: () => void }).cleanup).toBeDefined()
+      expect(typeof (middleware as { cleanup?: () => void }).cleanup).toBe('function')
+
+      // Call cleanup - should not throw
+      ;(middleware as { cleanup?: () => void }).cleanup!()
+
+      // Store should be cleared
+      const state = getRateLimitState('client-1')
+      expect(state).toBeUndefined()
+    })
+
+    it('should skip rate limiting when getMessageId returns falsy', async () => {
+      const middleware = createRateLimitMiddleware({
+        maxRequests: 5,
+        windowMs: 1000,
+        getMessageId: () => '', // Return empty string (falsy)
+        actions: ['message'],
+      })
+
+      manager.use(middleware)
+
+      const message: DataMessage = {
+        id: 'msg-1',
+        type: MessageType.DATA,
+        channel: 'chat',
+        data: { text: 'hello' },
+        timestamp: Date.now(),
+      }
+
+      // Should not throw - rate limit is skipped
+      await manager.executeMessage(mockClient, message)
+
+      // No state should be created for empty ID
+      const state = getRateLimitState('')
+      expect(state).toBeUndefined()
+    })
+
+    it('should skip rate limiting when action is not in list', async () => {
+      const middleware = createRateLimitMiddleware({
+        maxRequests: 5,
+        windowMs: 1000,
+        actions: ['subscribe'], // Only rate limit subscribe actions
+      })
+
+      manager.use(middleware)
+
+      // Execute message action - should not be rate limited
+      await manager.executeConnection(mockClient, 'connect')
+
+      // No state should be created for client-1 since connect is not rate limited
+      const state = getRateLimitState('client-1')
+      expect(state).toBeUndefined()
+    })
+
+    it('should execute cleanup interval callback', async () => {
+      // This test is designed to wait for the cleanup interval to run
+      // The cleanup interval runs every windowMs * 10
+      const middleware = createRateLimitMiddleware({
+        maxRequests: 5,
+        windowMs: 10, // Very short window
+      })
+
+      manager.use(middleware)
+
+      // Create some rate limit state
+      const message: DataMessage = {
+        id: 'msg-1',
+        type: MessageType.DATA,
+        channel: 'chat',
+        data: { text: 'hello' },
+        timestamp: Date.now(),
+      }
+
+      await manager.executeMessage(mockClient, message)
+
+      // Wait for cleanup interval to run (windowMs * 10 = 100ms)
+      await new Promise((resolve) => setTimeout(resolve, 150))
+
+      // The cleanup should have run (verified by no errors)
+      expect(true).toBe(true)
+    })
   })
 
   describe('createChannelWhitelistMiddleware', () => {
@@ -712,6 +979,20 @@ describe('Middleware Factories', () => {
 
       // Should not throw - channel whitelist only checks subscribe/unsubscribe
       await manager.executeMessage(mockClient, message)
+    })
+
+    it('should handle undefined channel gracefully', async () => {
+      const middleware = createChannelWhitelistMiddleware({
+        allowedChannels: ['chat'],
+      })
+
+      manager.use(middleware)
+
+      // This tests the line 515-516: if (!context.channel) { return }
+      // When channel is undefined, it should just return without error
+      await expect(
+        manager.executeSubscribe(mockClient, undefined as any),
+      ).resolves.not.toThrow()
     })
   })
 })

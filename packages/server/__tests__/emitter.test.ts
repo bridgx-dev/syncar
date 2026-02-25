@@ -140,6 +140,49 @@ describe('EventEmitter', () => {
         emitter.off('connection', handler)
       }).not.toThrow()
     })
+
+    it('should remove once handler using off()', () => {
+      const handler = vi.fn()
+      const client = { id: 'client-1' }
+
+      emitter.once('connection', handler)
+      emitter.off('connection', handler)
+
+      emitter.emit('connection', client)
+      expect(handler).not.toHaveBeenCalled()
+    })
+
+    it('should remove once handler when multiple once handlers exist', () => {
+      const handler1 = vi.fn()
+      const handler2 = vi.fn()
+
+      emitter.once('connection', handler1)
+      emitter.once('connection', handler2)
+
+      // Remove the first one
+      emitter.off('connection', handler1)
+
+      emitter.emit('connection', { id: 'client-1' })
+
+      expect(handler1).not.toHaveBeenCalled()
+      expect(handler2).toHaveBeenCalledTimes(1)
+    })
+
+    it('should remove once handler when mixed with regular handlers', () => {
+      const onceHandler = vi.fn()
+      const regularHandler = vi.fn()
+
+      emitter.once('connection', onceHandler)
+      emitter.on('connection', regularHandler)
+
+      // Remove the once handler
+      emitter.off('connection', onceHandler)
+
+      emitter.emit('connection', { id: 'client-1' })
+
+      expect(onceHandler).not.toHaveBeenCalled()
+      expect(regularHandler).toHaveBeenCalledTimes(1)
+    })
   })
 
   describe('emit()', () => {

@@ -161,6 +161,25 @@ describe('ClientRegistry', () => {
       expect(connection.socket.close).toHaveBeenCalledWith(4000, 'Test disconnect')
     })
 
+    it('should use default disconnect values when not provided', async () => {
+      const connection = createMockConnection('client-1')
+      const client = registry.register(connection, transport)
+
+      // Call disconnect without parameters - should use defaults (code: 1000, reason: 'Disconnected')
+      await client.disconnect()
+
+      expect(connection.socket.close).toHaveBeenCalledWith(1000, 'Disconnected')
+    })
+
+    it('should use default code when only reason is provided', async () => {
+      const connection = createMockConnection('client-1')
+      const client = registry.register(connection, transport)
+
+      await client.disconnect(undefined, 'Custom reason')
+
+      expect(connection.socket.close).toHaveBeenCalledWith(1000, 'Custom reason')
+    })
+
     it('should provide getSubscriptions method', () => {
       const connection = createMockConnection('client-1')
       const client = registry.register(connection, transport)
@@ -311,6 +330,23 @@ describe('ClientRegistry', () => {
       const subscribers = registry.getSubscribers('chat')
 
       expect(subscribers).toEqual([])
+    })
+
+    it('should return empty array for non-existent channel', () => {
+      const subscribers = registry.getSubscribers('nonexistent')
+
+      expect(subscribers).toEqual([])
+    })
+
+    it('should return 0 for non-existent channel subscriber count', () => {
+      expect(registry.getSubscriberCount('nonexistent')).toBe(0)
+    })
+
+    it('should return false for isSubscribed on non-existent channel', () => {
+      const connection = createMockConnection('client-1')
+      registry.register(connection, transport)
+
+      expect(registry.isSubscribed('client-1', 'nonexistent')).toBe(false)
     })
 
     it('should get subscriber count for a channel', () => {
