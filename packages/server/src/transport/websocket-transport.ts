@@ -7,7 +7,6 @@
 
 import { BaseTransport } from './base-transport'
 import type {
-  IClientConnection,
   ClientId,
   Message,
   IServerTransport,
@@ -24,12 +23,8 @@ import {
 import { WebSocketServer as WsServer } from 'ws'
 
 // Instance types
-type WebSocketInstance = InstanceType<typeof import('ws')['default']>
+type WebSocketInstance = InstanceType<(typeof import('ws'))['default']>
 type ServerInstance = WsServer
-
-// ============================================================
-// WEBSOCKET SERVER TRANSPORT
-// ============================================================
 
 /**
  * WebSocket server transport configuration
@@ -140,11 +135,11 @@ export class WebSocketServerTransport
     const clientId = `client-${this.nextId++}` as ClientId
     const connectedAt = Date.now()
 
-    const connection: IClientConnection = {
+    const connection = {
+      socket,
       id: clientId,
       connectedAt,
       lastPingAt: undefined,
-      socket,
     }
 
     this.connections.set(clientId, connection)
