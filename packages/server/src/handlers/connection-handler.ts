@@ -189,7 +189,7 @@ export class ConnectionHandler {
    * await connectionHandler.handleDisconnection('client-123', 'Client disconnected')
    * ```
    */
-  async handleDisconnection(clientId: string, reason?: string): Promise<void> {
+  async handleDisconnection(clientId: string, _reason?: string): Promise<void> {
     const client = this.registry.get(clientId)
 
     if (!client) {

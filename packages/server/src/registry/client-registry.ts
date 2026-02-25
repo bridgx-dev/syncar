@@ -5,7 +5,6 @@
 
 import type {
   IClientRegistry,
-  IClientData,
   IServerClient,
 } from '../types/client.js'
 import type { IClientConnection } from '../types/base.js'

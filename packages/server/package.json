@@ -2,6 +2,7 @@
   "name": "@synnel/server",
   "version": "1.0.0-alpha.1",
   "description": "Node.js server for Synnel real-time synchronization",
+  "author": "M16BAPPI - [m16bappi@gmail.com]",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -9,10 +10,7 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "bun": "./src/index.ts",
-      "development": "./src/index.ts",
-      "import": "./dist/index.js",
-      "default": "./src/index.ts"
+      "import": "./dist/index.js"
     }
   },
   "files": [
@@ -20,20 +18,18 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "build": "tsup",
+    "dev": "tsup --watch",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage"
-  },
-  "dependencies": {
-    "@synnel/types": "workspace:*",
-    "@synnel/lib": "workspace:*"
+    "test:coverage": "vitest --coverage",
+    "prepublishOnly": "bun run build"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
     "@types/ws": "^8.18.1",
-    "typescript": "^5.3.3",
+    "tsup": "^8.5.1",
+    "typescript": "^5",
     "vitest": "^1.1.0"
   },
   "peerDependencies": {
@@ -46,8 +42,12 @@
     "websocket",
     "realtime",
     "server",
-    "synnel"
+    "synnel",
+    "pubsub",
+    "broadcast"
   ],
-  "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
 }

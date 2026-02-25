@@ -1,20 +1,45 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     // Environment setup & latest features
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "target": "ESNext",
-    "module": "Preserve",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "target": "ES2020",
+    "module": "ESNext",
     "moduleDetection": "force",
     "jsx": "react-jsx",
     "allowJs": true,
 
     // Bundler mode
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "noEmit": true,
+    "moduleResolution": "Bundler",
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
 
-    // Workspace path mappings
+    // Best practices
+    "strict": true,
+    "strictFunctionTypes": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+
+    // Declaration-only build (tsup handles JS)
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "incremental": true,
+    "isolatedModules": true,
+    "composite": true,
+    "noEmit": false,
+
+    // Workspace path mappings (for development)
+    "baseUrl": ".",
     "paths": {
       "@synnel/types": ["./packages/types/src"],
       "@synnel/lib": ["./packages/lib/src"],
@@ -22,18 +47,8 @@
       "@synnel/client": ["./packages/client/src"],
       "@synnel/server": ["./packages/server/src"],
       "@synnel/react": ["./packages/react/src"]
-    },
-
-    // Best practices
-    "strict": true,
-    "skipLibCheck": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-
-    // Some stricter flags (disabled by default)
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
-  }
+    }
+  },
+  "include": ["*.config.*"],
+  "exclude": ["node_modules", "dist", "dist-ts"]
 }

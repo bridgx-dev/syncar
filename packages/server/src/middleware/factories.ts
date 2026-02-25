@@ -10,7 +10,7 @@ import type {
   IMiddlewareAction,
 } from '../types/middleware.js'
 import type { IServerClient } from '../types/client.js'
-import type { ChannelName, ClientId } from '@synnel/types'
+import type { ChannelName } from '@synnel/types'
 
 // ============================================================
 // AUTH MIDDLEWARE FACTORY
