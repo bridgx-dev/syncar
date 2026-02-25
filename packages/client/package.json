@@ -2,6 +2,7 @@
   "name": "@synnel/client",
   "version": "1.0.0-alpha.1",
   "description": "Framework-agnostic client for Synnel real-time synchronization",
+  "private": true,
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

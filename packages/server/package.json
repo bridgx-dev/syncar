@@ -28,6 +28,8 @@
   "devDependencies": {
     "@types/node": "^20.10.0",
     "@types/ws": "^8.18.1",
+    "@synnel/lib": "workspace:*",
+    "@synnel/types": "workspace:*",
     "tsup": "^8.5.1",
     "typescript": "^5",
     "vitest": "^1.1.0"
