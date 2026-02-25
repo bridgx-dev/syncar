@@ -11,8 +11,6 @@ import type { Server as HttpServer } from 'http'
 import { SynnelServer } from './synnel-server.js'
 import { ClientRegistry } from '../registry/index.js'
 import { WebSocketServerTransport } from '../transport/websocket-transport.js'
-import type { IClientConnection } from '../types/base.js'
-import type { ClientId } from '@synnel/types'
 import {
   DEFAULT_PORT,
   DEFAULT_HOST,

@@ -16,7 +16,6 @@ import type {
   IBroadcastTransport,
   IMulticastTransport,
   IChannelOptions,
-  IChannelTransport,
 } from '../types/channel.js'
 import type { ChannelName, Message } from '@synnel/types'
 import { ClientRegistry } from '../registry/index.js'
@@ -31,7 +30,6 @@ import {
   DEFAULT_MAX_SUBSCRIBERS,
   DEFAULT_HISTORY_SIZE,
 } from '../config/constants.js'
-import { BROADCAST_CHANNEL } from '../config/constants.js'
 import { StateError, ConfigError } from '../errors/index.js'
 
 /**

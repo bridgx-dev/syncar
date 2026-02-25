@@ -92,8 +92,9 @@ export class MessageHandler {
     }
 
     // Route to channel for processing (if it exists)
-    // Note: Channels handle message delivery through their internal logic
-    // when messages are published to them.
+    if (channel) {
+      await channel.receive(message.data, client, message)
+    }
 
     // Emit message event
     if (this.options.emitMessageEvent) {

@@ -3,10 +3,9 @@
  * Types for channel-based messaging including broadcast and multicast transports.
  */
 
-import type { IChannel, IMessageHandler, ILifecycleHandler } from './base.js'
+import type { IChannel, IMessageHandler, ILifecycleHandler, IClientConnection } from './base.js'
 import type {
   ChannelName,
-  ClientId,
   SubscriberId,
   DataMessage,
   Timestamp,
@@ -194,20 +193,13 @@ export interface IChannelTransport<T> extends IChannel<T>, IMessageHistory<T> {
   unsubscribe(subscriber: SubscriberId): boolean
 
   /**
-   * Register a handler for incoming messages (alias for onMessage)
-   * Provides a more intuitive API for receiving messages.
+   * Process an incoming message on this channel
    *
-   * @param handler - Function to handle incoming messages
-   * @returns Unsubscribe function
-   *
-   * @example
-   * ```ts
-   * chat.receive((data, client) => {
-   *   console.log(`Received: ${data}`)
-   * })
-   * ```
+   * @param data - The message data
+   * @param client - The client that sent the message
+   * @param message - The original data message
    */
-  receive(handler: IMessageHandler<T>): () => void
+  receive(data: T, client: IClientConnection, message: DataMessage<T>): Promise<void>
 
   /**
    * Register a handler for new subscriptions
@@ -230,15 +222,22 @@ export interface IChannelTransport<T> extends IChannel<T>, IMessageHistory<T> {
    *
    * @param handler - Function to handle unsubscriptions
    * @returns Unsubscribe function
-   *
-   * @example
-   * ```ts
-   * channel.onUnsubscribe((client) => {
-   *   console.log(`${client.id} left the channel`)
-   * })
-   * ```
    */
   onUnsubscribe(handler: ILifecycleHandler): () => void
+
+  /**
+   * Trigger subscription lifecycle handlers
+   *
+   * @param client - The client that subscribed
+   */
+  handleSubscribe(client: IClientConnection): Promise<void>
+
+  /**
+   * Trigger unsubscription lifecycle handlers
+   *
+   * @param client - The client that unsubscribed
+   */
+  handleUnsubscribe(client: IClientConnection): Promise<void>
 
   /**
    * Get the current state of the channel

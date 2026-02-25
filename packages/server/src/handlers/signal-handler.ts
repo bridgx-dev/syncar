@@ -12,7 +12,6 @@ import type { IServerTransport } from '../types/transport.js'
 import type {
   SignalMessage,
   SignalType,
-  ChannelName,
 } from '@synnel/types'
 import {
   createSignalMessage,
@@ -172,6 +171,9 @@ export class SignalHandler {
       throw new ChannelError(`Failed to subscribe client ${client.id} to channel ${channel}`)
     }
 
+    // Trigger channel subscribe handlers
+    await channelInstance.handleSubscribe(client)
+
     // Emit subscribe event
     if (this.options.emitSubscribeEvent) {
       this.emitter.emit('subscribe', client, channel)
@@ -208,6 +210,12 @@ export class SignalHandler {
 
     // Unsubscribe from channel via registry
     this.registry.unsubscribe(client.id, channel)
+
+    // Trigger channel unsubscribe handlers
+    const channelInstance = this.registry.getChannel(channel)
+    if (channelInstance) {
+      await channelInstance.handleUnsubscribe(client)
+    }
 
     // Emit unsubscribe event
     if (this.options.emitUnsubscribeEvent) {

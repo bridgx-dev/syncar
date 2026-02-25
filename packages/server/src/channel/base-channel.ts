@@ -4,7 +4,6 @@
  */
 
 import type {
-  IChannel,
   IPublishOptions,
   IMessageHandler,
   ILifecycleHandler,
@@ -14,12 +13,10 @@ import type {
   IChannelState,
   IChannelOptions,
   IChannelTransport,
-  IMessageHistory,
 } from '../types/channel.js'
 import type {
   ChannelName,
   SubscriberId,
-  ClientId,
   DataMessage,
   Timestamp,
 } from '@synnel/types'
@@ -205,10 +202,10 @@ export abstract class BaseChannel<T = unknown>
   }
 
   /**
-   * Register a handler for incoming messages (alias for onMessage)
+   * Process an incoming message on this channel
    */
-  receive(handler: IMessageHandler<T>): () => void {
-    return this.onMessage(handler)
+  async receive(data: T, client: IClientConnection, message: DataMessage<T>): Promise<void> {
+    await this.handleMessage(data, client, message)
   }
 
   /**
