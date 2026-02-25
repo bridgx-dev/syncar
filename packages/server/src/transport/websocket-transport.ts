@@ -20,16 +20,12 @@ import {
   DEFAULT_WS_PATH,
 } from '../config'
 
-// Import ws library
-import wsModule from 'ws'
-
-// Extract WebSocketServer from ws module
-const { WebSocketServer: WsServer } = wsModule as any
+// Import ws library - WebSocketServer is a named export
+import { WebSocketServer as WsServer } from 'ws'
 
 // Instance types
-type WsModule = typeof import('ws')
-type WebSocketInstance = InstanceType<WsModule['default']>
-type ServerInstance = InstanceType<WsModule['WebSocketServer']>
+type WebSocketInstance = InstanceType<typeof import('ws')['default']>
+type ServerInstance = WsServer
 
 // ============================================================
 // WEBSOCKET SERVER TRANSPORT
@@ -100,6 +96,11 @@ export class WebSocketServerTransport
     })
 
     this.setupEventHandlers()
+  }
+
+  async start(): Promise<void> {
+    // WebSocket server is already started in constructor
+    // This method exists for compatibility with the transport interface
   }
 
   async sendToClient(clientId: ClientId, message: Message): Promise<void> {

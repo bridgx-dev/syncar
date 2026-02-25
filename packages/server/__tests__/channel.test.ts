@@ -1,5 +1,6 @@
 /**
  * Channel Tests
+ * Tests for broadcast and multicast transport channels
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
@@ -9,7 +10,6 @@ import {
   MulticastTransport,
 } from '../src/channel/index.js'
 import type { IClientConnection } from '../src/types/index.js'
-import type { IChannelTransport } from '../src/types/index.js'
 
 // Mock client connection
 function createMockClient(id: string): IClientConnection {
@@ -33,6 +33,28 @@ describe('Channels', () => {
     beforeEach(() => {
       clients = new Map()
       channel = new MulticastTransport<string>('test', clients)
+    })
+
+    describe('initialization', () => {
+      it('should have correct name', () => {
+        expect(channel.name).toBe('test')
+      })
+
+      it('should have 0 subscribers initially', () => {
+        expect(channel.subscriberCount).toBe(0)
+      })
+
+      it('should not be reserved by default', () => {
+        expect(channel.isReserved()).toBe(false)
+      })
+
+      it('should be empty initially', () => {
+        expect(channel.isEmpty()).toBe(true)
+      })
+
+      it('should not be full initially', () => {
+        expect(channel.isFull()).toBe(false)
+      })
     })
 
     describe('subscription', () => {
@@ -82,14 +104,6 @@ describe('Channels', () => {
         expect(result).toBe(false)
         expect(limitedChannel.isFull()).toBe(true)
       })
-
-      it('should check if client has subscribed', () => {
-        expect(channel.hasSubscriber('client-1')).toBe(false)
-
-        channel.subscribe('client-1')
-
-        expect(channel.hasSubscriber('client-1')).toBe(true)
-      })
     })
 
     describe('publish', () => {
@@ -123,6 +137,8 @@ describe('Channels', () => {
 
         expect(client1.socket.send).toHaveBeenCalled()
         // client2 should not receive the message
+        const client2 = clients.get('client-2')!
+        expect(client2.socket.send).not.toHaveBeenCalled()
       })
 
       it('should exclude specified subscribers with "exclude" option', () => {
@@ -132,18 +148,14 @@ describe('Channels', () => {
         channel.publish('Message for client-2', { exclude: ['client-1'] })
 
         // client1 should NOT receive the message
-        const calls1 = (client1.socket.send as any).mock.calls
-        const relevant1 = calls1.filter((call: any[]) =>
-          call[0].includes('Message for client-2'),
+        expect(client1.socket.send).not.toHaveBeenCalledWith(
+          expect.stringContaining('Message for client-2'),
         )
-        expect(relevant1).toHaveLength(0)
 
         // client2 should receive
-        const calls2 = (client2.socket.send as any).mock.calls
-        const relevant2 = calls2.filter((call: any[]) =>
-          call[0].includes('Message for client-2'),
+        expect(client2.socket.send).toHaveBeenCalledWith(
+          expect.stringContaining('Message for client-2'),
         )
-        expect(relevant2.length).toBeGreaterThan(0)
       })
 
       it('should combine "to" and "exclude" options', () => {
@@ -156,92 +168,35 @@ describe('Channels', () => {
         })
 
         // client1 should NOT receive
-        const calls1 = (client1.socket.send as any).mock.calls
-        const relevant1 = calls1.filter((call: any[]) =>
-          call[0].includes('Message'),
-        )
-        expect(relevant1).toHaveLength(0)
+        expect(client1.socket.send).not.toHaveBeenCalled()
 
         // client2 should receive
-        const calls2 = (client2.socket.send as any).mock.calls
-        const relevant2 = calls2.filter((call: any[]) =>
-          call[0].includes('Message'),
-        )
-        expect(relevant2.length).toBeGreaterThan(0)
+        expect(client2.socket.send).toHaveBeenCalled()
       })
     })
 
-    describe('handler registration', () => {
-      it('should register onMessage handler', () => {
-        let receivedData: string | undefined
-        let receivedClient: IClientConnection | undefined
+    describe('publishTo', () => {
+      it('should send message to specific subscriber', () => {
+        const client = createMockClient('client-1')
+        clients.set('client-1', client)
+        channel.subscribe('client-1')
 
-        const unsubscribe = channel.onMessage((data, client) => {
-          receivedData = data
-          receivedClient = client
-        })
+        channel.publishTo('client-1', 'Direct message')
 
-        expect(typeof unsubscribe).toBe('function')
-
-        // Trigger handler manually via protected method
-        ;(channel as any).handleMessage(
-          'test data',
-          createMockClient('client-1'),
-          {
-            type: 'data',
-            channel: 'test',
-            data: 'test data',
-            timestamp: Date.now(),
-          },
+        expect(client.socket.send).toHaveBeenCalledWith(
+          expect.stringContaining('Direct message'),
         )
-
-        expect(receivedData).toBe('test data')
-        expect(receivedClient).toBeDefined()
       })
 
-      it('should register onSubscribe handler', () => {
-        let receivedClient: IClientConnection | undefined
+      it('should not send to non-subscribed client', () => {
+        const client = createMockClient('client-1')
+        clients.set('client-1', client)
+        // Don't subscribe the client
 
-        const unsubscribe = channel.onSubscribe((client) => {
-          receivedClient = client
-        })
+        channel.publishTo('client-1', 'Message')
 
-        // Trigger handler manually
-        ;(channel as any).handleSubscribe(createMockClient('client-1'))
-
-        expect(receivedClient).toBeDefined()
-      })
-
-      it('should register onUnsubscribe handler', () => {
-        let receivedClient: IClientConnection | undefined
-
-        const unsubscribe = channel.onUnsubscribe((client) => {
-          receivedClient = client
-        })
-
-        // Trigger handler manually
-        ;(channel as any).handleUnsubscribe(createMockClient('client-1'))
-
-        expect(receivedClient).toBeDefined()
-      })
-
-      it('should remove handler when unsubscribe function is called', () => {
-        const handler = vi.fn()
-        const unsubscribe = channel.onMessage(handler)
-
-        unsubscribe()
-
-        // Trigger manually - handler should not be called
-        ;(channel as any).handleMessage('test', createMockClient('client-1'), {
-          type: 'data',
-          channel: 'test',
-          data: 'test',
-          timestamp: Date.now(),
-        })
-
-        // Handler was removed, so it shouldn't be called
-        // We can't directly test this without inspecting the internal handlers set
-        expect(typeof unsubscribe).toBe('function')
+        // Should not send because client is not subscribed
+        expect(client.socket.send).not.toHaveBeenCalled()
       })
     })
 
@@ -257,7 +212,7 @@ describe('Channels', () => {
         expect(state.lastMessageAt).toBeUndefined()
       })
 
-      it('should update lastMessageAt after publish', async () => {
+      it('should update lastMessageAt after publish', () => {
         const client = createMockClient('client-1')
         clients.set('client-1', client)
         channel.subscribe('client-1')
@@ -289,9 +244,13 @@ describe('Channels', () => {
       it('should check if channel is reserved', () => {
         expect(channel.isReserved()).toBe(false)
 
-        const reservedChannel = new MulticastTransport('__private__', clients, {
-          reserved: true,
-        })
+        const reservedChannel = new MulticastTransport<string>(
+          '__private__',
+          clients,
+          {
+            reserved: true,
+          },
+        )
 
         expect(reservedChannel.isReserved()).toBe(true)
       })
@@ -363,28 +322,83 @@ describe('Channels', () => {
       })
     })
 
-    describe('publishTo', () => {
-      it('should send message to specific subscriber', () => {
+    describe('handlers', () => {
+      it('should register and call onMessage handler', async () => {
+        let receivedData: string | undefined
+        let receivedClient: IClientConnection | undefined
+
+        const unsubscribe = channel.onMessage((data, client) => {
+          receivedData = data
+          receivedClient = client
+        })
+
+        expect(typeof unsubscribe).toBe('function')
+
         const client = createMockClient('client-1')
-        clients.set('client-1', client)
-        channel.subscribe('client-1')
+        const message = {
+          id: 'msg-1',
+          type: 'data',
+          channel: 'test',
+          data: 'test data',
+          timestamp: Date.now(),
+        } as const
 
-        channel.publishTo('client-1', 'Direct message')
+        await channel.receive('test data', client, message as any)
 
-        expect(client.socket.send).toHaveBeenCalledWith(
-          expect.stringContaining('Direct message'),
-        )
+        expect(receivedData).toBe('test data')
+        expect(receivedClient).toBeDefined()
       })
 
-      it('should not send to non-subscribed client', () => {
+      it('should register and call onSubscribe handler', async () => {
+        let receivedClient: IClientConnection | undefined
+
+        const unsubscribe = channel.onSubscribe((client) => {
+          receivedClient = client
+        })
+
         const client = createMockClient('client-1')
-        clients.set('client-1', client)
-        // Don't subscribe the client
 
-        channel.publishTo('client-1', 'Message')
+        await channel.handleSubscribe(client)
 
-        // Should not send because client is not subscribed
-        // (implementation checks both existence and subscription)
+        expect(receivedClient).toBeDefined()
+      })
+
+      it('should register and call onUnsubscribe handler', async () => {
+        let receivedClient: IClientConnection | undefined
+
+        const unsubscribe = channel.onUnsubscribe((client) => {
+          receivedClient = client
+        })
+
+        const client = createMockClient('client-1')
+
+        await channel.handleUnsubscribe(client)
+
+        expect(receivedClient).toBeDefined()
+      })
+
+      it('should remove handler when unsubscribe function is called', () => {
+        const handler = vi.fn()
+        const unsubscribe = channel.onMessage(handler)
+
+        unsubscribe()
+
+        // Handler should be removed
+        const handlers = (channel as any).messageHandlers
+        expect(handlers.has(handler)).toBe(false)
+      })
+    })
+
+    describe('clear', () => {
+      it('should clear all subscribers', () => {
+        channel.subscribe('client-1')
+        channel.subscribe('client-2')
+
+        expect(channel.subscriberCount).toBe(2)
+
+        channel.clear()
+
+        expect(channel.subscriberCount).toBe(0)
       })
     })
   })
@@ -412,6 +426,16 @@ describe('Channels', () => {
         clients.set('client-2', createMockClient('client-2'))
         expect(broadcast.subscriberCount).toBe(2)
       })
+
+      it('should always return true for subscribe', () => {
+        expect(broadcast.subscribe('client-1')).toBe(true)
+        expect(broadcast.subscribe('client-1')).toBe(true) // Duplicate still returns true
+      })
+
+      it('should always return true for unsubscribe', () => {
+        expect(broadcast.unsubscribe('client-1')).toBe(true)
+        expect(broadcast.unsubscribe('client-1')).toBe(true) // Non-existent still returns true
+      })
     })
 
     describe('publish', () => {
@@ -438,17 +462,13 @@ describe('Channels', () => {
 
       it('should send to specific clients with "to" option', () => {
         const client1 = clients.get('client-1')!
-        const client2 = clients.get('client-2')!
 
         broadcast.publish('Targeted message', { to: ['client-1'] })
 
         expect(client1.socket.send).toHaveBeenCalled()
         // client2 should NOT receive the message
-        const calls = (client2.socket.send as any).mock.calls
-        const relevantCalls = calls.filter((call: any[]) =>
-          call[0].includes('Targeted message'),
-        )
-        expect(relevantCalls).toHaveLength(0)
+        const client2 = clients.get('client-2')!
+        expect(client2.socket.send).not.toHaveBeenCalled()
       })
 
       it('should exclude specified clients with "exclude" option', () => {
@@ -458,18 +478,14 @@ describe('Channels', () => {
         broadcast.publish('Message for client-2', { exclude: ['client-1'] })
 
         // client1 should not receive
-        const calls1 = (client1.socket.send as any).mock.calls
-        const relevant1 = calls1.filter((call) =>
-          call[0].includes('Message for client-2'),
+        expect(client1.socket.send).not.toHaveBeenCalledWith(
+          expect.stringContaining('Message for client-2'),
         )
-        expect(relevant1).toHaveLength(0)
 
         // client2 should receive
-        const calls2 = (client2.socket.send as any).mock.calls
-        const relevant2 = calls2.filter((call) =>
-          call[0].includes('Message for client-2'),
+        expect(client2.socket.send).toHaveBeenCalledWith(
+          expect.stringContaining('Message for client-2'),
         )
-        expect(relevant2.length).toBeGreaterThan(0)
       })
 
       it('should combine "to" and "exclude" options', () => {
@@ -486,26 +502,10 @@ describe('Channels', () => {
         })
 
         // Only client-2 and client-3 should receive
-        // client1 should NOT receive
-        const calls1 = (client1.socket.send as any).mock.calls
-        const relevant1 = calls1.filter((call: any[]) =>
-          call[0].includes('Message'),
-        )
-        expect(relevant1).toHaveLength(0)
+        expect(client1.socket.send).not.toHaveBeenCalled()
 
-        // client2 should receive
-        const calls2 = (client2.socket.send as any).mock.calls
-        const relevant2 = calls2.filter((call: any[]) =>
-          call[0].includes('Message'),
-        )
-        expect(relevant2.length).toBeGreaterThan(0)
-
-        // client3 should receive
-        const calls3 = (client3.socket.send as any).mock.calls
-        const relevant3 = calls3.filter((call: any[]) =>
-          call[0].includes('Message'),
-        )
-        expect(relevant3.length).toBeGreaterThan(0)
+        expect(client2.socket.send).toHaveBeenCalled()
+        expect(client3.socket.send).toHaveBeenCalled()
       })
     })
 

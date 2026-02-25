@@ -41,6 +41,12 @@ export interface IBaseTransport extends EventEmitter {
   readonly connections: Map<ClientId, IClientConnection>
 
   /**
+   * Start the transport
+   * Called when the server starts listening for connections.
+   */
+  start?(): Promise<void>
+
+  /**
    * Send a message to a specific client
    *
    * @param clientId - The target client ID

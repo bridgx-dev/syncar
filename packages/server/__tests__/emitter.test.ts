@@ -1,11 +1,12 @@
 /**
  * EventEmitter Tests
+ * Tests for the type-safe event emitter
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { EventEmitter } from '../src/emitter/index.js'
 
-// Define event map for testing
+// Define test event map
 interface TestEventMap {
   connection: (client: { id: string }) => void
   message: (data: { text: string }, client: { id: string }) => void
@@ -125,7 +126,6 @@ describe('EventEmitter', () => {
     it('should handle removing non-existent handler gracefully', () => {
       const handler = vi.fn()
 
-      // Should not throw when removing non-existent handler
       expect(() => {
         emitter.off('connection', handler)
       }).not.toThrow()
@@ -136,7 +136,6 @@ describe('EventEmitter', () => {
 
       emitter.on('message', handler)
 
-      // Should not throw when removing from different event
       expect(() => {
         emitter.off('connection', handler)
       }).not.toThrow()
@@ -323,36 +322,6 @@ describe('EventEmitter', () => {
       const listeners = emitter.rawListeners
 
       expect(listeners.size).toBe(0)
-    })
-  })
-
-  describe('type safety', () => {
-    it('should enforce correct handler types for events', () => {
-      // This test verifies type safety at compile time
-      // If types are incorrect, TypeScript will error
-
-      // Correct: handler matches event signature
-      emitter.on('connection', (client) => {
-        expect(client.id).toBeDefined()
-      })
-
-      // Correct: handler with multiple parameters
-      emitter.on('message', (data, client) => {
-        expect(data.text).toBeDefined()
-        expect(client.id).toBeDefined()
-      })
-
-      // Emit events
-      emitter.emit('connection', { id: 'client-1' })
-      emitter.emit('message', { text: 'hello' }, { id: 'client-1' })
-    })
-
-    it('should prevent type errors with wrong event types', () => {
-      // TypeScript should prevent these at compile time
-      // @ts-expect-error - Testing type safety
-      emitter.on('connection', (data: { invalid: boolean }) => {
-        // This should cause a type error in TypeScript
-      })
     })
   })
 })

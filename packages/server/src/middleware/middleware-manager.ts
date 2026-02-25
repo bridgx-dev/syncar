@@ -41,6 +41,11 @@ class MiddlewareContext implements IMiddlewareContext {
   private _rejected = false
   private _rejectionReason?: string
 
+  // Bind methods to preserve `this` when destructured
+  public readonly reject: (reason: string) => void
+  public readonly isRejected: () => boolean
+  public readonly getRejectionReason: () => string | undefined
+
   constructor(data: {
     client?: IServerClient
     message?: Message
@@ -51,6 +56,11 @@ class MiddlewareContext implements IMiddlewareContext {
     this.message = data.message
     this.channel = data.channel
     this.action = data.action
+
+    // Bind methods to preserve `this`
+    this.reject = this._reject.bind(this)
+    this.isRejected = this._isRejected.bind(this)
+    this.getRejectionReason = this._getRejectionReason.bind(this)
   }
 
   /**
@@ -65,7 +75,7 @@ class MiddlewareContext implements IMiddlewareContext {
    * context.reject('User not authorized')
    * ```
    */
-  reject(reason: string): void {
+  private _reject(reason: string): void {
     this._rejected = true
     this._rejectionReason = reason
     throw new MiddlewareRejectionError(reason, this.action)
@@ -75,7 +85,7 @@ class MiddlewareContext implements IMiddlewareContext {
    * Check if this context was rejected
    * Used internally by the middleware manager
    */
-  isRejected(): boolean {
+  private _isRejected(): boolean {
     return this._rejected
   }
 
@@ -83,7 +93,7 @@ class MiddlewareContext implements IMiddlewareContext {
    * Get the rejection reason
    * Used internally by the middleware manager
    */
-  getRejectionReason(): string | undefined {
+  private _getRejectionReason(): string | undefined {
     return this._rejectionReason
   }
 }

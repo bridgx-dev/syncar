@@ -1,5 +1,6 @@
 /**
  * Errors Tests
+ * Tests for custom error classes
  */
 
 import { describe, it, expect } from 'vitest'
