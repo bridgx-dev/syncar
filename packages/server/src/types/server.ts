@@ -325,6 +325,40 @@ export interface ISynnelServer {
     handler: IServerEventMap[E],
   ): () => void
 
+  /**
+   * Register a one-time event handler
+   *
+   * @template E The event type
+   * @param event - The event to listen for
+   * @param handler - The event handler
+   * @returns Unsubscribe function
+   */
+  once<E extends IServerEventType>(
+    event: E,
+    handler: IServerEventMap[E],
+  ): () => void
+
+  /**
+   * Remove an event handler
+   *
+   * @template E The event type
+   * @param event - The event to remove
+   * @param handler - The event handler to remove
+   */
+  off<E extends IServerEventType>(event: E, handler: IServerEventMap[E]): void
+
+  /**
+   * Emit an event locally
+   *
+   * @template E The event type
+   * @param event - The event to emit
+   * @param args - The event data
+   */
+  emit<E extends IServerEventType>(
+    event: E,
+    ...args: IServerEventMap[E] extends (...args: infer P) => any ? P : never
+  ): void
+
   // ============================================================
   // UTILITY METHODS
   // ============================================================

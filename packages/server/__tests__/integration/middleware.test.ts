@@ -4,72 +4,35 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { EventEmitter } from 'node:events'
 import { SynnelServer } from '../../src/server/index.js'
 import { createAuthMiddleware, createLoggingMiddleware, createRateLimitMiddleware, createChannelWhitelistMiddleware, clearRateLimitStore } from '../../src/middleware/index.js'
 import { clearRateLimitStore as clearRateLimitStoreFromFactories } from '../../src/middleware/factories.js'
 import type { ISynnelServer, IServerTransport } from '../../src/types/index.js'
-import type { IClientConnection } from '../../src/types/index.js'
+import type { IClientConnection, IServerEventMap } from '../../src/types/index.js'
 import type { ClientId } from '@synnel/types'
 import { MessageType, SignalType } from '@synnel/types'
 
 // Mock transport implementation
-class MockTransport implements IServerTransport {
+class MockTransport extends EventEmitter implements IServerTransport {
   public connections: Map<ClientId, IClientConnection> = new Map()
 
-  private listeners: Map<string, Set<Function>> = new Map()
-
-  on(event: string, handler: Function): () => void {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set())
-    }
-    this.listeners.get(event)!.add(handler)
-    return () => this.off(event, handler)
-  }
-
-  off(event: string, handler: Function): void {
-    const handlers = this.listeners.get(event)
-    if (handlers) {
-      handlers.delete(handler)
-    }
-  }
-
-  async emit(event: string, ...args: any[]): Promise<void> {
-    const handlers = this.listeners.get(event)
-    if (handlers) {
-      for (const handler of handlers) {
-        try {
-          const result = handler(...args)
-          // Await if handler returns a Promise
-          if (result instanceof Promise) {
-            await result
-          }
-        } catch (e) {
-          // Ignore errors
-        }
-      }
-    }
-  }
-
-  // Synchronous emit for backward compatibility
-  emitSync(event: string, ...args: any[]): void {
-    const handlers = this.listeners.get(event)
-    if (handlers) {
-      handlers.forEach((handler) => {
-        try {
-          handler(...args)
-        } catch (e) {
-          // Ignore errors
-        }
-      })
-    }
-  }
-
-  async sendToClient(_clientId: ClientId, _message: any): Promise<void> {
+  async start(): Promise<void> {
     // Mock implementation
   }
 
   async stop(): Promise<void> {
     this.connections.clear()
+  }
+
+  async emitAsync(event: string, ...args: any[]): Promise<void> {
+    const listeners = this.listeners(event) as Function[]
+    for (const listener of listeners) {
+      const result = listener(...args)
+      if (result instanceof Promise) {
+        await result
+      }
+    }
   }
 
   async addMockClient(id: ClientId): Promise<IClientConnection> {
@@ -79,20 +42,23 @@ class MockTransport implements IServerTransport {
     const client: IClientConnection = {
       id,
       socket: {
-        send: vi.fn(),
+        send: vi.fn().mockImplementation((_msg, cb) => {
+          if (typeof cb === 'function') {
+            process.nextTick(() => cb())
+          }
+        }),
         close: vi.fn((code: number, reason: string) => {
           socketClosed = true
           // Remove from connections when closed (simulating real transport behavior)
           this.connections.delete(id)
         }),
       } as any,
-      status: 'connected',
       connectedAt: Date.now(),
     }
     // Add to connections AFTER creating client (to be available for handlers)
     this.connections.set(id, client)
     // Emit connection event and await handlers
-    await this.emit('connection', client)
+    await this.emitAsync('connection', client)
 
     // If socket was closed during handler execution, remove from connections
     if (socketClosed) {
@@ -102,9 +68,9 @@ class MockTransport implements IServerTransport {
     return client
   }
 
-  removeMockClient(id: ClientId): void {
+  async removeMockClient(id: ClientId): Promise<void> {
     this.connections.delete(id)
-    this.emit('disconnection', id)
+    await this.emitAsync('disconnection', id)
   }
 }
 
@@ -183,7 +149,7 @@ describe('Middleware Integration Tests', () => {
     it('should allow connections when auth is only applied to specific actions', async () => {
       const authMiddleware = createAuthMiddleware({
         verifyToken: async () => ({ userId: 'user-123' }),
-        getToken: (context) => (context.message as any)?.data?.token,
+        getToken: (context: any) => (context.message as any)?.data?.token,
         actions: ['message'], // Only check messages, not connections
       })
 
@@ -243,7 +209,7 @@ describe('Middleware Integration Tests', () => {
       const loggingMiddleware = createLoggingMiddleware({
         logger,
         logLevel: 'info',
-        logConnections: true,
+        actions: ['connect'],
       })
 
       server.use(loggingMiddleware)
@@ -278,7 +244,7 @@ describe('Middleware Integration Tests', () => {
         timestamp: Date.now(),
       }
 
-      await transport.emit('message', 'client-1', message)
+      await transport.emitAsync('message', 'client-1', message)
 
       // The logger should have been called for both connect and message
       expect(logger.info).toHaveBeenCalledTimes(2)
@@ -296,7 +262,7 @@ describe('Middleware Integration Tests', () => {
       const loggingMiddleware = createLoggingMiddleware({
         logger,
         logLevel: 'info',
-        logSubscriptions: true,
+        actions: [SignalType.SUBSCRIBE],
       })
 
       server.use(loggingMiddleware)
@@ -309,14 +275,14 @@ describe('Middleware Integration Tests', () => {
         id: 'sig-1',
         type: MessageType.SIGNAL,
         channel: 'chat',
-        signal: 'subscribe',
+        signal: SignalType.SUBSCRIBE,
         timestamp: Date.now(),
       }
 
-      await transport.emit('message', 'client-1', signal)
+      await transport.emitAsync('message', 'client-1', signal)
 
       expect(logger.info).toHaveBeenCalledWith(
-        expect.stringContaining('subscribe'),
+        expect.stringContaining(SignalType.SUBSCRIBE),
       )
     })
 
@@ -326,7 +292,7 @@ describe('Middleware Integration Tests', () => {
       const loggingMiddleware = createLoggingMiddleware({
         logger,
         logLevel: 'log',
-        format: ({ action, clientId }) => `[${action}] ${clientId}`,
+        format: ({ action, clientId }: any) => `[${action}] ${clientId}`,
       })
 
       server.use(loggingMiddleware)
@@ -359,7 +325,7 @@ describe('Middleware Integration Tests', () => {
         maxRequests: 2,
         windowMs: 1000,
         actions: ['message'],
-        getMessageId: (ctx) => ctx.client?.id ?? 'unknown',
+        getMessageId: (ctx: any) => ctx.client?.id ?? 'unknown',
       })
 
       server.use(rateLimitMiddleware)
@@ -389,12 +355,12 @@ describe('Middleware Integration Tests', () => {
         id: 'sig-1',
         type: MessageType.SIGNAL,
         channel: 'chat',
-        signal: 'subscribe',
+        signal: SignalType.SUBSCRIBE,
         timestamp: Date.now(),
       }
 
       // Should not throw (channel is whitelisted)
-      await transport.emit('message', 'client-1', signal)
+      await transport.emitAsync('message', 'client-1', signal)
 
       // Client should be subscribed
       expect(server.hasChannel('chat')).toBe(true)
@@ -402,7 +368,7 @@ describe('Middleware Integration Tests', () => {
 
     it('should use dynamic check function', async () => {
       const whitelistMiddleware = createChannelWhitelistMiddleware({
-        isDynamic: (channel) => {
+        isDynamic: (channel: string) => {
           // Only allow channels starting with 'public-'
           return channel.startsWith('public-')
         },
@@ -419,11 +385,11 @@ describe('Middleware Integration Tests', () => {
         id: 'sig-1',
         type: MessageType.SIGNAL,
         channel: 'public-chat',
-        signal: 'subscribe',
+        signal: SignalType.SUBSCRIBE,
         timestamp: Date.now(),
       }
 
-      await transport.emit('message', 'client-1', publicSignal)
+      await transport.emitAsync('message', 'client-1', publicSignal)
 
       // Subscribe to private-chat should be rejected
       // The middleware will reject but won't remove the client
@@ -432,12 +398,12 @@ describe('Middleware Integration Tests', () => {
         id: 'sig-2',
         type: MessageType.SIGNAL,
         channel: 'private-chat',
-        signal: 'subscribe',
+        signal: SignalType.SUBSCRIBE,
         timestamp: Date.now(),
       }
 
       // This should not throw but the subscription won't happen
-      await transport.emit('message', 'client-1', privateSignal)
+      await transport.emitAsync('message', 'client-1', privateSignal)
 
       // Verify public-chat has the subscriber
       expect(publicChat.hasSubscriber('client-1')).toBe(true)
@@ -461,22 +427,22 @@ describe('Middleware Integration Tests', () => {
         id: 'sig-1',
         type: MessageType.SIGNAL,
         channel: 'chat',
-        signal: 'subscribe',
+        signal: SignalType.SUBSCRIBE,
         timestamp: Date.now(),
       }
 
-      await transport.emit('message', 'client-1', subscribeSignal)
+      await transport.emitAsync('message', 'client-1', subscribeSignal)
 
       // Unsubscribe should also be allowed (whitelisted)
       const unsubscribeSignal: any = {
         id: 'sig-2',
         type: MessageType.SIGNAL,
         channel: 'chat',
-        signal: 'unsubscribe',
+        signal: SignalType.UNSUBSCRIBE,
         timestamp: Date.now(),
       }
 
-      await transport.emit('message', 'client-1', unsubscribeSignal)
+      await transport.emitAsync('message', 'client-1', unsubscribeSignal)
 
       expect(server.hasChannel('chat')).toBe(true)
     })
@@ -508,7 +474,7 @@ describe('Middleware Integration Tests', () => {
       server.on('error', errorSpy)
 
       const testError = new Error('Transport error')
-      transport.emitSync('error', testError)
+      transport.emit('error', testError)
 
       expect(errorSpy).toHaveBeenCalledWith(testError)
     })
@@ -520,7 +486,7 @@ describe('Middleware Integration Tests', () => {
       let rateLimitCalled = false
 
       const loggingMiddleware = createLoggingMiddleware({
-        logConnections: true,
+        actions: ['connect'],
         logger: {
           log: vi.fn(),
           info: vi.fn(() => {
@@ -552,7 +518,7 @@ describe('Middleware Integration Tests', () => {
           if (token === 'valid') return { userId: 'user-1' }
           throw new Error('Invalid')
         },
-        getToken: (ctx) => (ctx.message as any)?.data?.token,
+        getToken: (ctx: any) => (ctx.message as any)?.data?.token,
         actions: ['message'],
       })
 

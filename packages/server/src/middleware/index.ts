@@ -11,4 +11,6 @@ export {
   createLoggingMiddleware,
   createRateLimitMiddleware,
   createChannelWhitelistMiddleware,
+  clearRateLimitStore,
+  getRateLimitState,
 } from './factories'

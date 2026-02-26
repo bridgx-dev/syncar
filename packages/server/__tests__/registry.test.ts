@@ -11,16 +11,18 @@ import type {
   IServerTransport,
   Message,
 } from '../src/types/index.js'
+import { MessageType } from '@synnel/types'
 
 // Mock connection
 function createMockConnection(id: string): IClientConnection {
   return {
     id,
     socket: {
-      send: vi.fn(),
+      send: vi.fn((_data: string, cb?: (err?: Error) => void) => {
+        cb?.()
+      }),
       close: vi.fn(),
     } as any,
-    status: 'connected',
     connectedAt: Date.now(),
     lastPingAt: undefined,
   }
@@ -31,13 +33,12 @@ function createMockTransport(): IServerTransport {
   const connections = new Map()
   return {
     connections,
-    sendToClient: vi.fn().mockResolvedValue(undefined),
     on: vi.fn(),
     off: vi.fn(),
     emit: vi.fn(),
     start: vi.fn().mockResolvedValue(undefined),
     stop: vi.fn(),
-  }
+  } as any
 }
 
 describe('ClientRegistry', () => {
@@ -52,7 +53,7 @@ describe('ClientRegistry', () => {
   describe('client registration', () => {
     it('should register a new client', () => {
       const connection = createMockConnection('client-1')
-      const client = registry.register(connection, transport)
+      const client = registry.register(connection)
 
       expect(client).toBeDefined()
       expect(client.id).toBe('client-1')
@@ -61,8 +62,8 @@ describe('ClientRegistry', () => {
 
     it('should create new client wrapper for duplicate registration', () => {
       const connection = createMockConnection('client-1')
-      const client1 = registry.register(connection, transport)
-      const client2 = registry.register(connection, transport)
+      const client1 = registry.register(connection)
+      const client2 = registry.register(connection)
 
       // Registry creates a new wrapper each time but stores the same connection
       expect(client1.id).toBe(client2.id)
@@ -71,7 +72,7 @@ describe('ClientRegistry', () => {
 
     it('should unregister a client', () => {
       const connection = createMockConnection('client-1')
-      registry.register(connection, transport)
+      registry.register(connection)
 
       const result = registry.unregister('client-1')
 
@@ -88,7 +89,7 @@ describe('ClientRegistry', () => {
 
     it('should get a client by ID', () => {
       const connection = createMockConnection('client-1')
-      const registeredClient = registry.register(connection, transport)
+      const registeredClient = registry.register(connection)
 
       const client = registry.get('client-1')
 
@@ -103,9 +104,9 @@ describe('ClientRegistry', () => {
     })
 
     it('should get all registered clients', () => {
-      registry.register(createMockConnection('client-1'), transport)
-      registry.register(createMockConnection('client-2'), transport)
-      registry.register(createMockConnection('client-3'), transport)
+      registry.register(createMockConnection('client-1'))
+      registry.register(createMockConnection('client-2'))
+      registry.register(createMockConnection('client-3'))
 
       const clients = registry.getAll()
 
@@ -126,10 +127,10 @@ describe('ClientRegistry', () => {
     it('should return correct client count', () => {
       expect(registry.getCount()).toBe(0)
 
-      registry.register(createMockConnection('client-1'), transport)
+      registry.register(createMockConnection('client-1'))
       expect(registry.getCount()).toBe(1)
 
-      registry.register(createMockConnection('client-2'), transport)
+      registry.register(createMockConnection('client-2'))
       expect(registry.getCount()).toBe(2)
     })
   })
@@ -137,11 +138,11 @@ describe('ClientRegistry', () => {
   describe('server client wrapper', () => {
     it('should provide send method', async () => {
       const connection = createMockConnection('client-1')
-      const client = registry.register(connection, transport)
+      const client = registry.register(connection)
 
       const message: Message = {
         id: 'msg-1',
-        type: 'data',
+        type: MessageType.DATA,
         channel: 'test',
         data: 'test data',
         timestamp: Date.now(),
@@ -149,12 +150,14 @@ describe('ClientRegistry', () => {
 
       await client.send(message)
 
-      expect(transport.sendToClient).toHaveBeenCalledWith('client-1', message)
+      expect(connection.socket.send).toHaveBeenCalled()
+      const sentData = (connection.socket.send as any).mock.calls[0][0]
+      expect(sentData).toContain('test data')
     })
 
     it('should provide disconnect method', async () => {
       const connection = createMockConnection('client-1')
-      const client = registry.register(connection, transport)
+      const client = registry.register(connection)
 
       await client.disconnect(4000, 'Test disconnect')
 
@@ -163,7 +166,7 @@ describe('ClientRegistry', () => {
 
     it('should use default disconnect values when not provided', async () => {
       const connection = createMockConnection('client-1')
-      const client = registry.register(connection, transport)
+      const client = registry.register(connection)
 
       // Call disconnect without parameters - should use defaults (code: 1000, reason: 'Disconnected')
       await client.disconnect()
@@ -173,7 +176,7 @@ describe('ClientRegistry', () => {
 
     it('should use default code when only reason is provided', async () => {
       const connection = createMockConnection('client-1')
-      const client = registry.register(connection, transport)
+      const client = registry.register(connection)
 
       await client.disconnect(undefined, 'Custom reason')
 
@@ -182,7 +185,7 @@ describe('ClientRegistry', () => {
 
     it('should provide getSubscriptions method', () => {
       const connection = createMockConnection('client-1')
-      const client = registry.register(connection, transport)
+      const client = registry.register(connection)
 
       // Register a channel and subscribe the client
       const channel = new MulticastTransport('test', registry.connections)
@@ -196,7 +199,7 @@ describe('ClientRegistry', () => {
 
     it('should provide hasSubscription method', () => {
       const connection = createMockConnection('client-1')
-      const client = registry.register(connection, transport)
+      const client = registry.register(connection)
 
       // Register a channel and subscribe the client
       const channel = new MulticastTransport('test', registry.connections)
@@ -276,7 +279,7 @@ describe('ClientRegistry', () => {
 
     it('should subscribe a client to a channel', () => {
       const connection = createMockConnection('client-1')
-      registry.register(connection, transport)
+      registry.register(connection)
 
       const result = registry.subscribe('client-1', 'chat')
 
@@ -286,7 +289,7 @@ describe('ClientRegistry', () => {
 
     it('should return false when subscribing to non-existent channel', () => {
       const connection = createMockConnection('client-1')
-      registry.register(connection, transport)
+      registry.register(connection)
 
       const result = registry.subscribe('client-1', 'nonexistent')
 
@@ -295,7 +298,7 @@ describe('ClientRegistry', () => {
 
     it('should unsubscribe a client from a channel', () => {
       const connection = createMockConnection('client-1')
-      registry.register(connection, transport)
+      registry.register(connection)
       registry.subscribe('client-1', 'chat')
 
       const result = registry.unsubscribe('client-1', 'chat')
@@ -306,7 +309,7 @@ describe('ClientRegistry', () => {
 
     it('should return false when unsubscribing from non-existent channel', () => {
       const connection = createMockConnection('client-1')
-      registry.register(connection, transport)
+      registry.register(connection)
 
       const result = registry.unsubscribe('client-1', 'nonexistent')
 
@@ -314,8 +317,8 @@ describe('ClientRegistry', () => {
     })
 
     it('should get subscribers for a channel', () => {
-      registry.register(createMockConnection('client-1'), transport)
-      registry.register(createMockConnection('client-2'), transport)
+      registry.register(createMockConnection('client-1'))
+      registry.register(createMockConnection('client-2'))
 
       registry.subscribe('client-1', 'chat')
       registry.subscribe('client-2', 'chat')
@@ -344,14 +347,14 @@ describe('ClientRegistry', () => {
 
     it('should return false for isSubscribed on non-existent channel', () => {
       const connection = createMockConnection('client-1')
-      registry.register(connection, transport)
+      registry.register(connection)
 
       expect(registry.isSubscribed('client-1', 'nonexistent')).toBe(false)
     })
 
     it('should get subscriber count for a channel', () => {
-      registry.register(createMockConnection('client-1'), transport)
-      registry.register(createMockConnection('client-2'), transport)
+      registry.register(createMockConnection('client-1'))
+      registry.register(createMockConnection('client-2'))
 
       expect(registry.getSubscriberCount('chat')).toBe(0)
 
@@ -364,7 +367,7 @@ describe('ClientRegistry', () => {
 
     it('should check if client is subscribed to a channel', () => {
       const connection = createMockConnection('client-1')
-      registry.register(connection, transport)
+      registry.register(connection)
 
       expect(registry.isSubscribed('client-1', 'chat')).toBe(false)
 
@@ -375,7 +378,7 @@ describe('ClientRegistry', () => {
 
     it('should return false for non-existent channel when checking subscription', () => {
       const connection = createMockConnection('client-1')
-      registry.register(connection, transport)
+      registry.register(connection)
 
       expect(registry.isSubscribed('client-1', 'nonexistent')).toBe(false)
     })
@@ -387,9 +390,9 @@ describe('ClientRegistry', () => {
       registry.registerChannel(new MulticastTransport('news', registry.connections))
       registry.registerChannel(new MulticastTransport('updates', registry.connections))
 
-      registry.register(createMockConnection('client-1'), transport)
-      registry.register(createMockConnection('client-2'), transport)
-      registry.register(createMockConnection('client-3'), transport)
+      registry.register(createMockConnection('client-1'))
+      registry.register(createMockConnection('client-2'))
+      registry.register(createMockConnection('client-3'))
     })
 
     it('should return 0 initially', () => {
@@ -432,7 +435,7 @@ describe('ClientRegistry', () => {
       registry.registerChannel(news)
 
       const connection = createMockConnection('client-1')
-      registry.register(connection, transport)
+      registry.register(connection)
 
       // Subscribe to multiple channels
       registry.subscribe('client-1', 'chat')
@@ -452,8 +455,8 @@ describe('ClientRegistry', () => {
 
   describe('clear', () => {
     it('should clear all clients', () => {
-      registry.register(createMockConnection('client-1'), transport)
-      registry.register(createMockConnection('client-2'), transport)
+      registry.register(createMockConnection('client-1'))
+      registry.register(createMockConnection('client-2'))
 
       expect(registry.getCount()).toBe(2)
 
@@ -478,7 +481,7 @@ describe('ClientRegistry', () => {
       const chat = new MulticastTransport('chat', registry.connections)
       registry.registerChannel(chat)
 
-      registry.register(createMockConnection('client-1'), transport)
+      registry.register(createMockConnection('client-1'))
       registry.subscribe('client-1', 'chat')
 
       expect(chat.subscriberCount).toBe(1)
@@ -492,7 +495,7 @@ describe('ClientRegistry', () => {
   describe('shared connections map', () => {
     it('should provide access to shared connections map', () => {
       const connection = createMockConnection('client-1')
-      registry.register(connection, transport)
+      registry.register(connection)
 
       expect(registry.connections.has('client-1')).toBe(true)
       expect(registry.connections.get('client-1')).toBe(connection)
