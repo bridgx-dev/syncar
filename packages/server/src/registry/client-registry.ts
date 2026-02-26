@@ -7,7 +7,6 @@ import type {
   IClientRegistry,
   IServerClient,
   IClientConnection,
-  IServerTransport,
   IChannelTransport,
   ClientId,
   ChannelName,
@@ -50,13 +49,12 @@ export class ClientRegistry implements IClientRegistry {
    */
   register(
     connection: IClientConnection,
-    transport: IServerTransport,
   ): IServerClient {
     // Add to shared connections map
     this.connections.set(connection.id, connection)
 
     // Create and store server client wrapper
-    const client = this.createServerClient(connection, transport)
+    const client = this.createServerClient(connection)
     this.serverClients.set(connection.id, client)
 
     return client
@@ -266,7 +264,6 @@ export class ClientRegistry implements IClientRegistry {
    */
   protected createServerClient(
     connection: IClientConnection,
-    transport: IServerTransport,
   ): IServerClient {
     const registry = this
 
@@ -277,7 +274,16 @@ export class ClientRegistry implements IClientRegistry {
       socket: connection.socket,
 
       send: async (message: Message): Promise<void> => {
-        await transport.sendToClient(connection.id, message)
+        return new Promise<void>((resolve, reject) => {
+          try {
+            connection.socket.send(JSON.stringify(message), (error) => {
+              if (error) reject(error)
+              else resolve()
+            })
+          } catch (error) {
+            reject(error)
+          }
+        })
       },
 
       disconnect: async (code?: number, reason?: string): Promise<void> => {

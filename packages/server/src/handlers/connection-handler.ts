@@ -12,7 +12,6 @@ import type {
   IMiddlewareManager,
   IEventEmitter,
   IServerEventMap,
-  IServerTransport,
 } from '../types'
 import { CLOSE_CODES } from '../config'
 
@@ -86,7 +85,6 @@ export class ConnectionHandler {
   private readonly registry: IClientRegistry
   private readonly middleware: IMiddlewareManager
   private readonly emitter: IEventEmitter<IServerEventMap>
-  private readonly transport: IServerTransport
   private readonly options: Required<ConnectionHandlerOptions>
 
   /**
@@ -108,13 +106,11 @@ export class ConnectionHandler {
     registry: IClientRegistry
     middleware: IMiddlewareManager
     emitter: IEventEmitter<IServerEventMap>
-    transport: IServerTransport
     options?: ConnectionHandlerOptions
   }) {
     this.registry = dependencies.registry
     this.middleware = dependencies.middleware
     this.emitter = dependencies.emitter
-    this.transport = dependencies.transport
 
     // Apply defaults
     this.options = {
@@ -153,7 +149,7 @@ export class ConnectionHandler {
     connection: IClientConnection,
   ): Promise<IServerClient> {
     // Register client in registry first (creates IServerClient wrapper)
-    const client = this.registry.register(connection, this.transport)
+    const client = this.registry.register(connection)
 
     // Execute connection middleware
     try {

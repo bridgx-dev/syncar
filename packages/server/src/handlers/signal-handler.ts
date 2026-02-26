@@ -9,7 +9,6 @@ import type {
   IMiddlewareManager,
   IEventEmitter,
   IServerEventMap,
-  IServerTransport,
   SignalMessage,
 } from '../types'
 import { SignalType } from '@synnel/types'
@@ -17,11 +16,6 @@ import { createSignalMessage } from '@synnel/lib'
 import { ChannelError, MessageError } from '../errors'
 import { BROADCAST_CHANNEL } from '../config'
 import { isReservedChannelName } from '@synnel/lib'
-
-/**
- * Extract sendToClient method type from transport interface
- */
-type SendToClientFn = IServerTransport['sendToClient']
 
 /**
  * Signal handler options
@@ -66,7 +60,6 @@ export class SignalHandler {
   private readonly registry: IClientRegistry
   private readonly middleware: IMiddlewareManager
   private readonly emitter: IEventEmitter<IServerEventMap>
-  private readonly sendToClient: SendToClientFn
   private readonly options: Required<SignalHandlerOptions>
 
   /**
@@ -76,13 +69,11 @@ export class SignalHandler {
     registry: IClientRegistry
     middleware: IMiddlewareManager
     emitter: IEventEmitter<IServerEventMap>
-    sendToClient: SendToClientFn
     options?: SignalHandlerOptions
   }) {
     this.registry = dependencies.registry
     this.middleware = dependencies.middleware
     this.emitter = dependencies.emitter
-    this.sendToClient = dependencies.sendToClient
 
     // Apply defaults
     this.options = {
@@ -186,7 +177,7 @@ export class SignalHandler {
         undefined,
         message.id,
       )
-      await this.sendToClient(client.id, ackMessage)
+      await client.send(ackMessage)
     }
   }
 
@@ -229,7 +220,7 @@ export class SignalHandler {
         undefined,
         message.id,
       )
-      await this.sendToClient(client.id, ackMessage)
+      await client.send(ackMessage)
     }
   }
 
@@ -247,7 +238,7 @@ export class SignalHandler {
         undefined,
         message.id,
       )
-      await this.sendToClient(client.id, pongMessage)
+      await client.send(pongMessage)
     }
   }
 

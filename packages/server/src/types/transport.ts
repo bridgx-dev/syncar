@@ -8,7 +8,7 @@
 
 import type { EventEmitter } from 'node:events'
 import type { IClientConnection } from './base'
-import type { Message, ClientId } from '@synnel/types'
+import type { ClientId } from '@synnel/types'
 
 // ============================================================
 // BASE TRANSPORT INTERFACE
@@ -46,14 +46,6 @@ export interface IBaseTransport extends EventEmitter {
    */
   start?(): Promise<void>
 
-  /**
-   * Send a message to a specific client
-   *
-   * @param clientId - The target client ID
-   * @param message - The message to send
-   * @throws Error if client not found or not connected
-   */
-  sendToClient(clientId: ClientId, message: Message): Promise<void>
 
   /**
    * Stop the transport and clean up resources

@@ -114,7 +114,6 @@ export class SynnelServer implements ISynnelServer {
       registry: this.registry,
       middleware: this.middleware,
       emitter: this.emitter,
-      transport: this.transport,
     })
 
     this.messageHandler = new MessageHandler({
@@ -127,7 +126,6 @@ export class SynnelServer implements ISynnelServer {
       registry: this.registry,
       middleware: this.middleware,
       emitter: this.emitter,
-      sendToClient: this.transport.sendToClient.bind(this.transport),
     })
 
     // Set up transport event handlers

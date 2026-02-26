@@ -4,7 +4,6 @@
  */
 
 import type { IClientConnection } from './base'
-import type { IServerTransport } from './transport'
 import type { IChannelTransport } from './channel'
 import type { ChannelName, ClientId, Message, MergeTypes } from '@synnel/types'
 
@@ -100,7 +99,6 @@ export interface IClientRegistry {
    */
   register(
     connection: IClientConnection,
-    transport: IServerTransport,
   ): IServerClient
 
   /**
