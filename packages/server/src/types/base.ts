@@ -22,8 +22,8 @@ import type { ClientId, Timestamp, ChannelName } from '@synnel/types'
  *
  * @example
  * ```ts
- * // Extending for custom metadata
- * type IClientWithMetadata<T> = IClientConnection & T
+ * // Standard usage
+ * const client: IClientConnection = ...
  * ```
  */
 export interface IClientConnection {

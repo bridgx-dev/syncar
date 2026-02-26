@@ -28,7 +28,7 @@ import { MiddlewareRejectionError, MiddlewareExecutionError } from '../errors'
  * @example
  * ```ts
  * const context = new MiddlewareContext({
- *   client: serverClient,
+ *   client: client,
  *   action: 'connect'
  * })
  * ```

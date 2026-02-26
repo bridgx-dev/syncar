@@ -2,7 +2,7 @@
 
 > **Objective**: Replace Node.js WebSocket implementation with Rust to reduce memory consumption and improve performance.
 > **Target**: WebSocket transport layer and client registry
-> **Current Memory Issues**: High V8 heap usage, per-client closure overhead, unbounded client connections, no memory limits
+> **Current Memory Issues**: High V8 heap usage, JavaScript object overhead, unbounded client connections, no memory limits
 
 ---
 
@@ -27,8 +27,7 @@
 
 | Component | Memory Impact | Current Implementation | Issue |
 |-----------|---------------|------------------------|-------|
-| **Client Connections** | High | `Map<ClientId, IClientConnection>` | Each connection stores full socket object + metadata |
-| **Client Wrappers** | Medium-High | Closure-based `IServerClient` | Per-client closure overhead for `send()`/`disconnect()` |
+| **Connection Objects** | Medium | `Map<ClientId, IClientConnection>` | JavaScript object overhead per connection |
 | **Channel Subscriptions** | Medium | `Set<SubscriberId>` per channel | JavaScript object overhead per set entry |
 | **Message History** | Variable | Array with push/shift | Unbounded growth if historySize not configured |
 | **Event Handlers** | Low-Medium | EventEmitter with Sets | Handler registration overhead |
@@ -38,8 +37,7 @@
 
 ```
 Base WebSocket object:    ~2-4 KB
-Connection metadata:      ~200-500 bytes
-Client wrapper closures:  ~1-2 KB
+Connection overhead:      ~500-1000 bytes
 Event listener overhead:  ~100-200 bytes
 Channel subscriptions:    ~50-100 bytes per channel
 
@@ -49,11 +47,10 @@ At 10,000 clients:        ~40-70 MB minimum (V8 overhead often 2-3x)
 
 ### Root Causes
 
-1. **V8 Heap Overhead**: JavaScript objects have significant metadata overhead
-2. **Closure Allocation**: Each client wrapper creates closures for methods
-3. **Unbounded Growth**: No hard limits on connections or memory
-4. **GC Pressure**: Frequent allocation/deallocation creates garbage collection pressure
-5. **No Memory Pools**: No reuse of buffers or connection structures
+1. **V8 Heap Overhead**: JavaScript objects have significant metadata overhead per instance
+2. **Event Listener Memory**: Each connection maintains multiple event listener registrations
+3. **GC Pressure**: Frequent allocation/deallocation creates garbage collection pressure
+4. **No Memory Pools**: No reuse of buffers or connection structures
 
 ---
 

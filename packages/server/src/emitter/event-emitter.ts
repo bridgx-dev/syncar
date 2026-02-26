@@ -23,8 +23,8 @@ import type { IEventEmitter, IEventUnsubscriber } from '../types'
  *
  * // Define event map
  * interface MyEvents {
- *   connection: (client: ServerClient) => void
- *   message: (client: ServerClient, data: string) => void
+ *   connection: (client: IClientConnection) => void
+ *   message: (client: IClientConnection, data: string) => void
  *   error: (error: Error) => void
  * }
  *
@@ -141,8 +141,8 @@ export class EventEmitter<
       // Remove from once tracking
       this.onceListeners.delete(wrapper)
 
-      // Call original handler
-      ;(handler as any)(...args)
+        // Call original handler
+        ; (handler as any)(...args)
     }
 
     // Track the original handler for removal via off()
@@ -234,7 +234,7 @@ export class EventEmitter<
     // Clone the set to avoid issues if handlers modify the set during iteration
     for (const handler of Array.from(handlers)) {
       try {
-        ;(handler as any)(...args)
+        ; (handler as any)(...args)
       } catch (error) {
         // Log error but continue with other handlers
         console.error(`Error in ${String(event)} handler:`, error)

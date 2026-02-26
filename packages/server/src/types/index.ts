@@ -10,8 +10,7 @@
  *   ISynnelServer,
  *   IClientRegistry,
  *   IChannelTransport,
- *   IMiddleware,
- *   IClientWithMetadata
+ *   IMiddleware
  * } from '@synnel/server/types'
  * ```
  */
