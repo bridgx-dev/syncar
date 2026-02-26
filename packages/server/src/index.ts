@@ -20,34 +20,15 @@
  * ```
  */
 
-// ============================================================
-// SERVER
-// ============================================================
-
-export {
-  SynnelServer,
-  createSynnelServer,
-} from './server/index.js'
-
-// Synnel class alias for cleaner API
-export { SynnelServer as Synnel } from './server/index.js'
-
-// ============================================================
-// MIDDLEWARE
-// ============================================================
-
+export { SynnelServer, createSynnelServer } from './server'
+export { SynnelServer as Synnel } from './server'
 export {
   MiddlewareManager,
   createAuthMiddleware,
   createLoggingMiddleware,
   createRateLimitMiddleware,
   createChannelWhitelistMiddleware,
-} from './middleware/index.js'
-
-// ============================================================
-// ERRORS
-// ============================================================
-
+} from './middleware'
 export {
   SynnelError,
   ConfigError,
@@ -59,29 +40,9 @@ export {
   StateError,
   MiddlewareRejectionError,
   MiddlewareExecutionError,
-} from './errors/index.js'
-
-// ============================================================
-// TRANSPORT
-// ============================================================
-
-export {
-  WebSocketServerTransport,
-} from './transport/index.js'
-
-// ============================================================
-// CHANNELS
-// ============================================================
-
-export {
-  BaseChannel,
-  BroadcastTransport,
-  MulticastTransport,
-} from './channel/index.js'
-
-// ============================================================
-// CONFIG
-// ============================================================
+} from './errors'
+export { WebSocketServerTransport } from './transport'
+export { BaseChannel, BroadcastTransport, MulticastTransport } from './channel'
 
 export {
   DEFAULT_PORT,
@@ -93,7 +54,7 @@ export {
   DEFAULT_SERVER_CONFIG,
   DEFAULT_CHANNEL_OPTIONS,
   DEFAULTS,
-} from './config/index.js'
+} from './config'
 
 export {
   BROADCAST_CHANNEL,
@@ -101,34 +62,13 @@ export {
   ERROR_CODES,
   DEFAULT_MAX_SUBSCRIBERS,
   DEFAULT_HISTORY_SIZE,
-} from './config/constants.js'
+} from './config'
 
-// ============================================================
-// REGISTRY
-// ============================================================
+export { ClientRegistry } from './registry'
 
-export {
-  ClientRegistry,
-  ServerClientFactory,
-  defaultClientFactory,
-} from './registry/index.js'
-
-// ============================================================
-// HANDLERS
-// ============================================================
-
-export {
-  ConnectionHandler,
-  MessageHandler,
-  SignalHandler,
-} from './handlers/index.js'
-
-// ============================================================
-// TYPES - Re-export all types from types/index.js
-// ============================================================
+export { ConnectionHandler, MessageHandler, SignalHandler } from './handlers'
 
 export type {
-  // Utility types
   MergeTypes,
   DeepPartial,
   DeepReadonly,
@@ -151,25 +91,20 @@ export type {
   UnionToIntersection,
   LastOfTuple,
   TupleToUnion,
-  // Base types
   IClientConnection,
   IChannel,
   IMessageHandler,
   ILifecycleHandler,
   IPublishOptions,
-  // Transport types
   IBaseTransport,
   IHttpServer,
   IServerTransportConfig,
   IServerTransport,
-  // Client types
   IClientData,
   IServerClient,
   IClientRegistry,
-  IServerClientFactory,
   IClientWithMetadata,
   IDisconnectionEvent,
-  // Channel types
   IChannelState,
   IChannelOptions,
   IMessageHistory,
@@ -178,7 +113,6 @@ export type {
   IMulticastTransport,
   IInternalChannelState,
   IMessageBusOptions,
-  // Middleware types
   IMiddlewareAction,
   IMiddlewareContext,
   IMiddleware,
@@ -188,14 +122,12 @@ export type {
   IMiddlewareChain,
   IComposedMiddleware,
   IActionMiddleware,
-  // Server config types
   IServerConfig,
   IDefaultServerConfig,
   IServerConfigWithDefaults,
   IPartialServerConfig,
   IServerStats,
   ISynnelServer,
-  // Event types
   IServerEventType,
   IServerEventMap,
   IEventHandler,
@@ -205,7 +137,6 @@ export type {
   IEventListenerStorage,
   IAsyncEventHandler,
   IAsyncServerEventMap,
-  // Shared types from @synnel/types
   MessageId,
   ClientId,
   SubscriberId,
@@ -224,4 +155,4 @@ export type {
   MessageType,
   SignalType,
   ErrorCode,
-} from './types/index.js'
+} from './types'

@@ -4,16 +4,17 @@
  */
 
 import type { Server as HttpServer } from 'node:http'
-import type { Message, DeepPartial } from '@synnel/types'
-import type { IServerTransport } from './transport.js'
-import type { IMiddleware } from './middleware.js'
+import type { Message, DeepPartial, ClientId } from '@synnel/types'
+import type { IServerTransport } from './transport'
+import type { IMiddleware } from './middleware'
 import type {
   IBroadcastTransport,
   IChannelOptions,
   IMulticastTransport,
-} from './channel.js'
-import type { IServerEventMap, IServerEventType } from './events.js'
-import type { IServerClient } from './client.js'
+} from './channel'
+import type { IServerEventMap, IServerEventType } from './events'
+import type { IServerClient, IClientRegistry } from './client'
+import type { IClientConnection } from './base'
 
 // ============================================================
 // SERVER CONFIGURATION
@@ -102,6 +103,16 @@ export interface IServerConfig {
    * @default 5000
    */
   pingTimeout?: number
+
+  /**
+   * Custom client registry (optional)
+   */
+  registry?: IClientRegistry
+
+  /**
+   * Shared connection map (optional, shared with transport)
+   */
+  connections?: Map<ClientId, IClientConnection>
 
   /**
    * Middleware functions for processing messages and connections
@@ -314,6 +325,40 @@ export interface ISynnelServer {
     handler: IServerEventMap[E],
   ): () => void
 
+  /**
+   * Register a one-time event handler
+   *
+   * @template E The event type
+   * @param event - The event to listen for
+   * @param handler - The event handler
+   * @returns Unsubscribe function
+   */
+  once<E extends IServerEventType>(
+    event: E,
+    handler: IServerEventMap[E],
+  ): () => void
+
+  /**
+   * Remove an event handler
+   *
+   * @template E The event type
+   * @param event - The event to remove
+   * @param handler - The event handler to remove
+   */
+  off<E extends IServerEventType>(event: E, handler: IServerEventMap[E]): void
+
+  /**
+   * Emit an event locally
+   *
+   * @template E The event type
+   * @param event - The event to emit
+   * @param args - The event data
+   */
+  emit<E extends IServerEventType>(
+    event: E,
+    ...args: IServerEventMap[E] extends (...args: infer P) => any ? P : never
+  ): void
+
   // ============================================================
   // UTILITY METHODS
   // ============================================================
@@ -380,4 +425,4 @@ export interface ISynnelServer {
 // ============================================================
 
 // Re-export IChannelOptions for convenience (defined in channel.ts)
-export type { IChannelOptions } from './channel.js'
+export type { IChannelOptions } from './channel'

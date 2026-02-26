@@ -111,7 +111,12 @@ describe('message', () => {
     it('accepts data and custom message ID', () => {
       const customId = 'custom-id'
       const data = { userId: '123' }
-      const message = createSignalMessage('chat', SignalType.SUBSCRIBE, data, customId)
+      const message = createSignalMessage(
+        'chat',
+        SignalType.SUBSCRIBE,
+        data,
+        customId,
+      )
 
       expect(message.id).toBe(customId)
       expect(message.data).toEqual(data)
@@ -120,7 +125,10 @@ describe('message', () => {
 
   describe('createErrorMessage', () => {
     it('creates a valid error message', () => {
-      const message = createErrorMessage('Something went wrong', ErrorCode.INVALID_MESSAGE_FORMAT)
+      const message = createErrorMessage(
+        'Something went wrong',
+        ErrorCode.INVALID_MESSAGE_FORMAT,
+      )
 
       expect(message.type).toBe(MessageType.ERROR)
       expect(message.data.message).toBe('Something went wrong')

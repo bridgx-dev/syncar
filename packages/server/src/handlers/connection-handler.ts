@@ -5,13 +5,15 @@
  * @module handlers/connection-handler
  */
 
-import type { IClientRegistry, IServerClient } from '../types/client.js'
-import type { IClientConnection } from '../types/base.js'
-import type { IMiddlewareManager } from '../types/middleware.js'
-import type { IEventEmitter } from '../types/events.js'
-import type { IServerEventMap } from '../types/events.js'
-import type { IServerTransport } from '../types/transport.js'
-import { CLOSE_CODES } from '../config/constants.js'
+import type {
+  IClientRegistry,
+  IServerClient,
+  IClientConnection,
+  IMiddlewareManager,
+  IEventEmitter,
+  IServerEventMap,
+} from '../types'
+import { CLOSE_CODES } from '../config'
 
 // ============================================================
 // CONNECTION HANDLER OPTIONS
@@ -83,7 +85,6 @@ export class ConnectionHandler {
   private readonly registry: IClientRegistry
   private readonly middleware: IMiddlewareManager
   private readonly emitter: IEventEmitter<IServerEventMap>
-  private readonly transport: IServerTransport
   private readonly options: Required<ConnectionHandlerOptions>
 
   /**
@@ -105,13 +106,11 @@ export class ConnectionHandler {
     registry: IClientRegistry
     middleware: IMiddlewareManager
     emitter: IEventEmitter<IServerEventMap>
-    transport: IServerTransport
     options?: ConnectionHandlerOptions
   }) {
     this.registry = dependencies.registry
     this.middleware = dependencies.middleware
     this.emitter = dependencies.emitter
-    this.transport = dependencies.transport
 
     // Apply defaults
     this.options = {
@@ -150,11 +149,7 @@ export class ConnectionHandler {
     connection: IClientConnection,
   ): Promise<IServerClient> {
     // Register client in registry first (creates IServerClient wrapper)
-    const client = this.registry.register(
-      connection.id,
-      this.transport,
-      connection,
-    )
+    const client = this.registry.register(connection)
 
     // Execute connection middleware
     try {
@@ -193,7 +188,7 @@ export class ConnectionHandler {
    * await connectionHandler.handleDisconnection('client-123', 'Client disconnected')
    * ```
    */
-  async handleDisconnection(clientId: string, reason?: string): Promise<void> {
+  async handleDisconnection(clientId: string, _reason?: string): Promise<void> {
     const client = this.registry.get(clientId)
 
     if (!client) {
@@ -232,15 +227,3 @@ export class ConnectionHandler {
     return this.options
   }
 }
-
-// ============================================================
-// RE-EXPORT TYPES
-// ============================================================
-
-export type { IClientRegistry, IServerClient } from '../types/client.js'
-
-export type { IClientConnection } from '../types/base.js'
-export type { IMiddlewareManager } from '../types/middleware.js'
-export type { IEventEmitter } from '../types/events.js'
-export type { IServerEventMap } from '../types/events.js'
-export type { IServerTransport } from '../types/transport.js'

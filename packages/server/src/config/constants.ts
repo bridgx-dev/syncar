@@ -5,10 +5,6 @@
  * @module config/constants
  */
 
-// ============================================================
-// CHANNEL CONSTANTS
-// ============================================================
-
 /**
  * Broadcast channel name
  * Messages sent to this channel reach ALL connected clients

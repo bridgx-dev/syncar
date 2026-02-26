@@ -3,7 +3,7 @@
  * Types for the middleware system that processes connections, messages, and actions.
  */
 
-import type { IServerClient } from './client.js'
+import type { IServerClient } from './client'
 import type { ChannelName, Message } from '@synnel/types'
 
 // ============================================================
@@ -32,11 +32,11 @@ import type { ChannelName, Message } from '@synnel/types'
  * ```
  */
 export type IMiddlewareAction =
-  | 'connect'      // New client connection
-  | 'disconnect'   // Client disconnection
-  | 'message'      // Message received from client
-  | 'subscribe'    // Client subscribing to channel
-  | 'unsubscribe'  // Client unsubscribing from channel
+  | 'connect' // New client connection
+  | 'disconnect' // Client disconnection
+  | 'message' // Message received from client
+  | 'subscribe' // Client subscribing to channel
+  | 'unsubscribe' // Client unsubscribing from channel
 
 // ============================================================
 // MIDDLEWARE CONTEXT INTERFACE
@@ -145,9 +145,7 @@ export interface IMiddlewareContext {
  * }
  * ```
  */
-export type IMiddleware = (
-  context: IMiddlewareContext,
-) => void | Promise<void>
+export type IMiddleware = (context: IMiddlewareContext) => void | Promise<void>
 
 // ============================================================
 // MIDDLEWARE MANAGER INTERFACE
@@ -198,7 +196,10 @@ export interface IMiddlewareManager {
    * @param action - The action type ('connect' | 'disconnect')
    * @throws MiddlewareRejectionError if any middleware rejects
    */
-  executeConnection(client: IServerClient, action: 'connect' | 'disconnect'): Promise<void>
+  executeConnection(
+    client: IServerClient,
+    action: 'connect' | 'disconnect',
+  ): Promise<void>
 
   /**
    * Execute middleware for a message action
@@ -290,7 +291,10 @@ export interface IMiddlewareContextFactory {
    * @param message - The message
    * @returns Middleware context
    */
-  createMessageContext(client: IServerClient, message: Message): IMiddlewareContext
+  createMessageContext(
+    client: IServerClient,
+    message: Message,
+  ): IMiddlewareContext
 
   /**
    * Create context for a subscribe action
@@ -299,7 +303,10 @@ export interface IMiddlewareContextFactory {
    * @param channel - The channel name
    * @returns Middleware context
    */
-  createSubscribeContext(client: IServerClient, channel: ChannelName): IMiddlewareContext
+  createSubscribeContext(
+    client: IServerClient,
+    channel: ChannelName,
+  ): IMiddlewareContext
 
   /**
    * Create context for an unsubscribe action
@@ -308,7 +315,10 @@ export interface IMiddlewareContextFactory {
    * @param channel - The channel name
    * @returns Middleware context
    */
-  createUnsubscribeContext(client: IServerClient, channel: ChannelName): IMiddlewareContext
+  createUnsubscribeContext(
+    client: IServerClient,
+    channel: ChannelName,
+  ): IMiddlewareContext
 }
 
 // ============================================================

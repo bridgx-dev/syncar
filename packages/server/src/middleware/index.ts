@@ -5,38 +5,12 @@
  * @module middleware
  */
 
-// ============================================================
-// MIDDLEWARE MANAGER
-// ============================================================
-
-export { MiddlewareManager } from './middleware-manager.js'
-
-// ============================================================
-// MIDDLEWARE FACTORIES
-// ============================================================
-
+export { MiddlewareManager } from './middleware-manager'
 export {
   createAuthMiddleware,
   createLoggingMiddleware,
   createRateLimitMiddleware,
   createChannelWhitelistMiddleware,
-} from './factories.js'
-
-// ============================================================
-// RE-EXPORT TYPES
-// ============================================================
-
-export type {
-  IMiddleware,
-  IMiddlewareContext,
-  IMiddlewareManager,
-  IMiddlewareAction,
-  IMiddlewareChain,
-  IComposedMiddleware,
-  IActionMiddleware,
-  IMiddlewareContextFactory,
-} from '../types/middleware.js'
-
-export type { IServerClient } from '../types/client.js'
-
-export type { ChannelName, Message } from '@synnel/types'
+  clearRateLimitStore,
+  getRateLimitState,
+} from './factories'

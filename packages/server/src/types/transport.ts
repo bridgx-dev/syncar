@@ -7,8 +7,8 @@
  */
 
 import type { EventEmitter } from 'node:events'
-import type { IClientConnection } from './base.js'
-import type { Message, ClientId } from '@synnel/types'
+import type { IClientConnection } from './base'
+import type { ClientId } from '@synnel/types'
 
 // ============================================================
 // BASE TRANSPORT INTERFACE
@@ -41,13 +41,11 @@ export interface IBaseTransport extends EventEmitter {
   readonly connections: Map<ClientId, IClientConnection>
 
   /**
-   * Send a message to a specific client
-   *
-   * @param clientId - The target client ID
-   * @param message - The message to send
-   * @throws Error if client not found or not connected
+   * Start the transport
+   * Called when the server starts listening for connections.
    */
-  sendToClient(clientId: ClientId, message: Message): Promise<void>
+  start?(): Promise<void>
+
 
   /**
    * Stop the transport and clean up resources
@@ -129,6 +127,9 @@ export interface IServerTransportConfig {
 
   /** Ping timeout in milliseconds */
   pingTimeout?: number
+
+  /** Shared connection map (optional, can be provided by registry) */
+  connections?: Map<ClientId, IClientConnection>
 
   /** Custom WebSocket Server constructor (for testing) */
   ServerConstructor?: new (config: {

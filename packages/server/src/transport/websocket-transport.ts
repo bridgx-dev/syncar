@@ -5,35 +5,25 @@
  * @module transport/websocket-transport
  */
 
-import { BaseTransport } from './base-transport.js'
+import { BaseTransport } from './base-transport'
 import type {
-  IClientConnection,
   ClientId,
-  Message,
   IServerTransport,
   IServerTransportConfig,
-} from '../types/index.js'
+} from '../types'
 import {
   DEFAULT_MAX_PAYLOAD,
   DEFAULT_PING_INTERVAL,
   DEFAULT_PING_TIMEOUT,
   DEFAULT_WS_PATH,
-} from '../config/index.js'
+} from '../config'
 
-// Import ws library
-import wsModule from 'ws'
-
-// Extract WebSocketServer from ws module
-const { WebSocketServer: WsServer } = wsModule as any
+// Import ws library - WebSocketServer is a named export
+import { WebSocketServer as WsServer } from 'ws'
 
 // Instance types
-type WsModule = typeof import('ws')
-type WebSocketInstance = InstanceType<WsModule['default']>
-type ServerInstance = InstanceType<WsModule['WebSocketServer']>
-
-// ============================================================
-// WEBSOCKET SERVER TRANSPORT
-// ============================================================
+type WebSocketInstance = InstanceType<(typeof import('ws'))['default']>
+type ServerInstance = WsServer
 
 /**
  * WebSocket server transport configuration
@@ -53,15 +43,6 @@ interface WebSocketServerTransportConfig extends IServerTransportConfig {
   }) => ServerInstance
 }
 
-/**
- * Client ping/pong tracking data
- * Kept separate from IClientConnection since its properties are readonly
- */
-interface ClientPingData {
-  pingTimer?: ReturnType<typeof setInterval>
-  pongTimer?: ReturnType<typeof setTimeout>
-  lastPingAt?: number
-}
 
 /**
  * WebSocket server transport
@@ -76,11 +57,11 @@ export class WebSocketServerTransport
   private readonly config: Required<
     Omit<WebSocketServerTransportConfig, 'ServerConstructor'>
   >
-  private readonly clientPingData: Map<ClientId, ClientPingData> = new Map()
+  private pingTimer?: ReturnType<typeof setInterval>
   private nextId = 0
 
   constructor(config: WebSocketServerTransportConfig) {
-    super()
+    super(config.connections)
 
     this.config = {
       server: config.server,
@@ -89,6 +70,7 @@ export class WebSocketServerTransport
       enablePing: config.enablePing ?? true,
       pingInterval: config.pingInterval ?? DEFAULT_PING_INTERVAL,
       pingTimeout: config.pingTimeout ?? DEFAULT_PING_TIMEOUT,
+      connections: config.connections ?? this.connections,
     }
 
     const ServerConstructor = config.ServerConstructor ?? WsServer
@@ -99,30 +81,17 @@ export class WebSocketServerTransport
     })
 
     this.setupEventHandlers()
+
+    if (this.config.enablePing) {
+      this.startPingTimer()
+    }
   }
 
-  async sendToClient(clientId: ClientId, message: Message): Promise<void> {
-    const client = this.connections.get(clientId)
-    if (!client) {
-      throw new Error(`Client not found: ${clientId}`)
-    }
-
-    const socket = client.socket as WebSocketInstance
-    if (socket.readyState !== 1) {
-      throw new Error(`Client not connected: ${clientId}`)
-    }
-
-    return new Promise<void>((resolve, reject) => {
-      try {
-        socket.send(JSON.stringify(message), (error) => {
-          if (error) reject(error)
-          else resolve()
-        })
-      } catch (error) {
-        reject(error)
-      }
-    })
+  async start(): Promise<void> {
+    // WebSocket server is already started in constructor
+    // This method exists for compatibility with the transport interface
   }
+
 
   private setupEventHandlers(): void {
     this.wsServer.on('connection', (socket: WebSocketInstance) => {
@@ -138,15 +107,14 @@ export class WebSocketServerTransport
     const clientId = `client-${this.nextId++}` as ClientId
     const connectedAt = Date.now()
 
-    const connection: IClientConnection = {
+    const connection = {
+      socket,
       id: clientId,
       connectedAt,
-      lastPingAt: undefined,
-      socket,
+      lastPingAt: connectedAt,
     }
 
     this.connections.set(clientId, connection)
-    this.clientPingData.set(clientId, {})
 
     socket.on('message', (data: Buffer) => {
       this.handleMessage(clientId, data)
@@ -170,14 +138,15 @@ export class WebSocketServerTransport
 
   private handleMessage(clientId: ClientId, data: Buffer): void {
     try {
-      const message = JSON.parse(data.toString()) as Message
-      const pingData = this.clientPingData.get(clientId)
+      const message = JSON.parse(data.toString())
+      const connection = this.connections.get(clientId)
+
       if (
-        pingData &&
+        connection &&
         message.type === 'signal' &&
-        (message as any).signal === 'PONG'
+        message.signal === 'PONG'
       ) {
-        pingData.lastPingAt = Date.now()
+        connection.lastPingAt = Date.now()
       }
       // Emit message event via inherited EventEmitter
       this.emit('message', clientId, message)
@@ -188,56 +157,54 @@ export class WebSocketServerTransport
 
   private handleDisconnection(clientId: ClientId): void {
     this.emit('disconnection', clientId)
-    this.cleanupPingData(clientId)
     this.connections.delete(clientId)
   }
 
   private setupPingPong(clientId: ClientId, socket: WebSocketInstance): void {
-    const pingData = this.clientPingData.get(clientId)
-    if (!pingData) return
-
-    pingData.pingTimer = setInterval(() => {
-      if (socket.readyState === 1) {
-        socket.ping()
-        pingData.lastPingAt = Date.now()
-
-        pingData.pongTimer = setTimeout(() => {
-          if (socket.readyState === 1) {
-            socket.close(1000, 'Ping timeout')
-          }
-        }, this.config.pingTimeout)
-      }
-    }, this.config.pingInterval)
-
-    socket.on('close', () => {
-      this.cleanupPingData(clientId)
-    })
-
     socket.on('pong', () => {
-      if (pingData.pongTimer) {
-        clearTimeout(pingData.pongTimer)
-        pingData.pongTimer = undefined
-      }
-      if (pingData) {
-        pingData.lastPingAt = Date.now()
+      const connection = this.connections.get(clientId)
+      if (connection) {
+        connection.lastPingAt = Date.now()
       }
     })
   }
 
-  private cleanupPingData(clientId: ClientId): void {
-    const pingData = this.clientPingData.get(clientId)
-    if (pingData) {
-      if (pingData.pingTimer) clearInterval(pingData.pingTimer)
-      if (pingData.pongTimer) clearTimeout(pingData.pongTimer)
-      this.clientPingData.delete(clientId)
+  private startPingTimer(): void {
+    if (this.pingTimer) {
+      clearInterval(this.pingTimer)
+    }
+
+    this.pingTimer = setInterval(() => {
+      this.checkConnections()
+    }, this.config.pingInterval)
+  }
+
+  private checkConnections(): void {
+    const now = Date.now()
+    const connections = Array.from(this.connections.values())
+
+    for (const connection of connections) {
+      const socket = connection.socket as WebSocketInstance
+      const lastPing = connection.lastPingAt ?? connection.connectedAt
+
+      // Check for timeout
+      if (now - lastPing > this.config.pingInterval + this.config.pingTimeout) {
+        socket.close(1000, 'Ping timeout')
+        continue
+      }
+
+      // Send ping if socket is open
+      if (socket.readyState === 1) {
+        socket.ping()
+      }
     }
   }
 
   stop(): void {
-    for (const clientId of this.clientPingData.keys()) {
-      this.cleanupPingData(clientId)
+    if (this.pingTimer) {
+      clearInterval(this.pingTimer)
+      this.pingTimer = undefined
     }
-    this.clientPingData.clear()
 
     for (const client of Array.from(this.connections.values())) {
       try {
@@ -261,6 +228,5 @@ export type {
   IServerTransport,
   IClientConnection,
   ClientId,
-  Message,
   IServerTransportConfig,
-} from '../types/index.js'
+} from '../types'

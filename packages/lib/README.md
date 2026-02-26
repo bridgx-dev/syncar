@@ -45,6 +45,7 @@ const delay = calculateBackoff(3, {
 ## Available Utilities
 
 ### ID Generation (`./id.ts`)
+
 - `generateMessageId()` - Generate unique message IDs
 - `generateClientId()` - Generate unique client IDs
 - `generateSubscriberId()` - Generate unique subscriber IDs
@@ -54,12 +55,14 @@ const delay = calculateBackoff(3, {
 - `isValidSubscriberId()` - Validate subscriber ID format
 
 ### Validation (`./validation.ts`)
+
 - `isValidChannelName()` - Validate channel name format
 - `isReservedChannelName()` - Check if channel name is reserved
 - `isNonReservedChannelName()` - Validate non-reserved channel name
 - `assertValidChannelName()` - Assert channel name is valid (throws if not)
 
 ### Message Utilities (`./message.ts`)
+
 - `isDataMessage()` - Type guard for DataMessage
 - `isSignalMessage()` - Type guard for SignalMessage
 - `isErrorMessage()` - Type guard for ErrorMessage
@@ -70,6 +73,7 @@ const delay = calculateBackoff(3, {
 - `createAckMessage()` - Factory for creating acknowledgment messages
 
 ### Reconnection (`./reconnection.ts`)
+
 - `calculateBackoff()` - Calculate exponential backoff delay
 - `calculateBackoffWithJitter()` - Calculate backoff with deterministic jitter
 - `shouldReconnect()` - Check if reconnection should be attempted
@@ -78,6 +82,7 @@ const delay = calculateBackoff(3, {
 - `resetReconnectionState()` - Reset reconnection state after success
 
 ### Logger (`./logger.ts`)
+
 - `createDefaultLogger()` - Create console-based logger
 - `createNoOpLogger()` - Create silent logger
 - `createPrefixedLogger()` - Create logger with prefix

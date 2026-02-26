@@ -1,72 +1,42 @@
 /**
  * Broadcast Transport
  * Server-to-all communication channel that reaches every connected client.
- *
- * Unlike multicast channels, broadcast does not require subscription.
- * All connected clients receive broadcast messages.
- *
- * @module channel/broadcast-transport
  */
 
-import type { IPublishOptions, IClientConnection } from '../types/base.js'
-import type { IBroadcastTransport } from '../types/channel.js'
-import type { ClientId, DataMessage } from '@synnel/types'
+import type {
+  IPublishOptions,
+  IClientConnection,
+  IBroadcastTransport,
+  ClientId,
+  DataMessage,
+  SubscriberId,
+} from '../types'
 import { createDataMessage } from '@synnel/lib'
-import { BROADCAST_CHANNEL } from '../config/constants.js'
-
-// ============================================================
-// BROADCAST TRANSPORT CLASS
-// ============================================================
+import { BROADCAST_CHANNEL } from '../config'
+import { BaseChannel } from './base-channel'
 
 /**
  * Broadcast Transport - sends messages to ALL connected clients
- *
- * This is a server-to-client only channel (one-way communication).
- * Unlike multicast channels, broadcast does not require subscription -
- * all connected clients receive broadcast messages.
- *
- * @template T The type of data broadcast
- *
- * @example
- * ```ts
- * import { BroadcastTransport } from '@synnel/server/channel'
- *
- * const broadcast = new BroadcastTransport(clientsMap)
- *
- * // Send to all connected clients
- * broadcast.publish('Server maintenance in 5 minutes')
- *
- * // Send to all except specific clients
- * broadcast.publish('You have been logged out', { exclude: ['client-123'] })
- *
- * // Send to specific clients only
- * broadcast.publish('Private announcement', { to: ['client-1', 'client-2'] })
- * ```
  */
-export class BroadcastTransport<T = unknown> implements IBroadcastTransport<T> {
+export class BroadcastTransport<T = unknown>
+  extends BaseChannel<T>
+  implements IBroadcastTransport<T>
+{
   /**
    * Channel name (always '__broadcast__')
    */
-  public readonly name: '__broadcast__' = BROADCAST_CHANNEL
+  public override readonly name: '__broadcast__' = BROADCAST_CHANNEL
 
   /**
    * Map of all connected clients
-   * This is a reference to the transport's connections Map
    */
   protected readonly clients: Map<ClientId, IClientConnection>
 
   /**
    * Create a new BroadcastTransport
-   *
-   * @param clients - Map of all connected clients
-   *
-   * @example
-   * ```ts
-   * const transport = new WebSocketServerTransport({ server: httpServer })
-   * const broadcast = new BroadcastTransport(transport.connections)
-   * ```
    */
   constructor(clients: Map<ClientId, IClientConnection>) {
+    super(BROADCAST_CHANNEL)
     this.clients = clients
   }
 
@@ -74,8 +44,22 @@ export class BroadcastTransport<T = unknown> implements IBroadcastTransport<T> {
    * Get the current subscriber count
    * For broadcast, this is the total number of connected clients
    */
-  get subscriberCount(): number {
+  public override get subscriberCount(): number {
     return this.clients.size
+  }
+
+  /**
+   * For broadcast, everyone is always "subscribed"
+   */
+  public override subscribe(_subscriber: SubscriberId): boolean {
+    return true
+  }
+
+  /**
+   * For broadcast, unsubscription is a no-op
+   */
+  public override unsubscribe(_subscriber: SubscriberId): boolean {
+    return true
   }
 
   // ============================================================
@@ -84,33 +68,12 @@ export class BroadcastTransport<T = unknown> implements IBroadcastTransport<T> {
 
   /**
    * Publish data to connected clients
-   *
-   * Without options: sends to ALL connected clients
-   * With options: filters recipients based on `to` and `exclude`
-   *
-   * @param data - The data to publish
-   * @param options - Optional publish options for filtering recipients
-   *
-   * @example
-   * ```ts
-   * // Send to all connected clients
-   * broadcast.publish('Hello everyone!')
-   *
-   * // Send to specific clients only
-   * broadcast.publish('Private message', { to: ['client-1', 'client-2'] })
-   *
-   * // Send to all except specific clients
-   * broadcast.publish('Hello', { exclude: ['client-3'] })
-   *
-   * // Combine to and exclude
-   * broadcast.publish('Message', {
-   *   to: ['client-1', 'client-2', 'client-3'],
-   *   exclude: ['client-2']
-   * }) // Only sends to client-1 and client-3
-   * ```
    */
   publish(data: T, options?: IPublishOptions): void {
     const message = createDataMessage(this.name, data)
+
+    // Add to history if enabled
+    this.addToHistory(message)
 
     // If no options, send to all clients
     if (!options) {
@@ -140,8 +103,6 @@ export class BroadcastTransport<T = unknown> implements IBroadcastTransport<T> {
 
   /**
    * Send message to all connected clients
-   *
-   * @param message - The message to send
    */
   protected sendToAll(message: DataMessage<T>): void {
     for (const client of this.clients.values()) {
@@ -155,9 +116,6 @@ export class BroadcastTransport<T = unknown> implements IBroadcastTransport<T> {
 
   /**
    * Send message to all clients except specified ones
-   *
-   * @param message - The message to send
-   * @param excludeIds - Client IDs to exclude
    */
   protected sendToAllExcept(
     message: DataMessage<T>,
@@ -178,10 +136,6 @@ export class BroadcastTransport<T = unknown> implements IBroadcastTransport<T> {
 
   /**
    * Send message to specific clients, with optional exclusions
-   *
-   * @param message - The message to send
-   * @param toIds - Client IDs to send to
-   * @param excludeIds - Optional client IDs to exclude from the `to` list
    */
   protected sendToSpecific(
     message: DataMessage<T>,
@@ -204,21 +158,3 @@ export class BroadcastTransport<T = unknown> implements IBroadcastTransport<T> {
     }
   }
 }
-
-// ============================================================
-// RE-EXPORT BROADCAST CHANNEL CONSTANT
-// ============================================================
-
-export { BROADCAST_CHANNEL } from '../config/constants.js'
-
-// ============================================================
-// RE-EXPORT TYPES
-// ============================================================
-
-export type {
-  IChannel,
-  IPublishOptions,
-  IClientConnection,
-} from '../types/base.js'
-
-export type { IBroadcastTransport } from '../types/channel.js'

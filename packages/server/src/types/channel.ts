@@ -3,10 +3,14 @@
  * Types for channel-based messaging including broadcast and multicast transports.
  */
 
-import type { IChannel, IMessageHandler, ILifecycleHandler } from './base.js'
+import type {
+  IChannel,
+  IMessageHandler,
+  ILifecycleHandler,
+  IClientConnection,
+} from './base'
 import type {
   ChannelName,
-  ClientId,
   SubscriberId,
   DataMessage,
   Timestamp,
@@ -178,20 +182,33 @@ export interface IChannelTransport<T> extends IChannel<T>, IMessageHistory<T> {
   onMessage(handler: IMessageHandler<T>): () => void
 
   /**
-   * Register a handler for incoming messages (alias for onMessage)
-   * Provides a more intuitive API for receiving messages.
+   * Subscribe a client to this channel
    *
-   * @param handler - Function to handle incoming messages
-   * @returns Unsubscribe function
-   *
-   * @example
-   * ```ts
-   * chat.receive((data, client) => {
-   *   console.log(`Received: ${data}`)
-   * })
-   * ```
+   * @param subscriber - Subscriber ID to subscribe
+   * @returns true if subscribed, false otherwise
    */
-  receive(handler: IMessageHandler<T>): () => void
+  subscribe(subscriber: SubscriberId): boolean
+
+  /**
+   * Unsubscribe a client from this channel
+   *
+   * @param subscriber - Subscriber ID to unsubscribe
+   * @returns true if unsubscribed, false otherwise
+   */
+  unsubscribe(subscriber: SubscriberId): boolean
+
+  /**
+   * Process an incoming message on this channel
+   *
+   * @param data - The message data
+   * @param client - The client that sent the message
+   * @param message - The original data message
+   */
+  receive(
+    data: T,
+    client: IClientConnection,
+    message: DataMessage<T>,
+  ): Promise<void>
 
   /**
    * Register a handler for new subscriptions
@@ -214,15 +231,22 @@ export interface IChannelTransport<T> extends IChannel<T>, IMessageHistory<T> {
    *
    * @param handler - Function to handle unsubscriptions
    * @returns Unsubscribe function
-   *
-   * @example
-   * ```ts
-   * channel.onUnsubscribe((client) => {
-   *   console.log(`${client.id} left the channel`)
-   * })
-   * ```
    */
   onUnsubscribe(handler: ILifecycleHandler): () => void
+
+  /**
+   * Trigger subscription lifecycle handlers
+   *
+   * @param client - The client that subscribed
+   */
+  handleSubscribe(client: IClientConnection): Promise<void>
+
+  /**
+   * Trigger unsubscription lifecycle handlers
+   *
+   * @param client - The client that unsubscribed
+   */
+  handleUnsubscribe(client: IClientConnection): Promise<void>
 
   /**
    * Get the current state of the channel
@@ -297,7 +321,7 @@ export interface IChannelTransport<T> extends IChannel<T>, IMessageHistory<T> {
  * broadcast.publish('Private announcement', { to: ['client-1', 'client-2'] })
  * ```
  */
-export interface IBroadcastTransport<T> extends IChannel<T> {
+export interface IBroadcastTransport<T> extends IChannelTransport<T> {
   /**
    * Channel name (always '__broadcast__')
    */

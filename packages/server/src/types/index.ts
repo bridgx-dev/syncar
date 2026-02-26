@@ -54,7 +54,7 @@ export type {
   IMessageHandler,
   ILifecycleHandler,
   IPublishOptions,
-} from './base.js'
+} from './base'
 
 // ============================================================
 // TRANSPORT TYPES
@@ -64,7 +64,7 @@ export type {
   IHttpServer,
   IServerTransportConfig,
   IServerTransport,
-} from './transport.js'
+} from './transport'
 
 // ============================================================
 // CLIENT TYPES
@@ -73,10 +73,9 @@ export type {
   IClientData,
   IServerClient,
   IClientRegistry,
-  IServerClientFactory,
   IClientWithMetadata,
   IDisconnectionEvent,
-} from './client.js'
+} from './client'
 
 // ============================================================
 // CHANNEL TYPES
@@ -90,7 +89,7 @@ export type {
   IMulticastTransport,
   IInternalChannelState,
   IMessageBusOptions,
-} from './channel.js'
+} from './channel'
 
 // ============================================================
 // MIDDLEWARE TYPES
@@ -105,7 +104,7 @@ export type {
   IMiddlewareChain,
   IComposedMiddleware,
   IActionMiddleware,
-} from './middleware.js'
+} from './middleware'
 
 // ============================================================
 // SERVER CONFIG TYPES
@@ -117,7 +116,7 @@ export type {
   IPartialServerConfig,
   IServerStats,
   ISynnelServer,
-} from './server.js'
+} from './server'
 
 // ============================================================
 // EVENT TYPES
@@ -132,7 +131,7 @@ export type {
   IEventListenerStorage,
   IAsyncEventHandler,
   IAsyncServerEventMap,
-} from './events.js'
+} from './events'
 
 // ============================================================
 // RE-EXPORT SHARED TYPES FROM @synnel/types

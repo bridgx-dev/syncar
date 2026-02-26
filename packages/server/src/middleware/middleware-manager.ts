@@ -11,10 +11,11 @@ import type {
   IMiddlewareManager,
   IMiddlewareContextFactory,
   IMiddlewareAction,
-} from '../types/middleware.js'
-import type { IServerClient } from '../types/client.js'
-import type { ChannelName, Message } from '@synnel/types'
-import { MiddlewareRejectionError, MiddlewareExecutionError } from '../errors/middleware.js'
+  IServerClient,
+  ChannelName,
+  Message,
+} from '../types'
+import { MiddlewareRejectionError, MiddlewareExecutionError } from '../errors'
 
 // ============================================================
 // MIDDLEWARE CONTEXT CLASS
@@ -40,6 +41,11 @@ class MiddlewareContext implements IMiddlewareContext {
   private _rejected = false
   private _rejectionReason?: string
 
+  // Bind methods to preserve `this` when destructured
+  public readonly reject: (reason: string) => void
+  public readonly isRejected: () => boolean
+  public readonly getRejectionReason: () => string | undefined
+
   constructor(data: {
     client?: IServerClient
     message?: Message
@@ -50,6 +56,11 @@ class MiddlewareContext implements IMiddlewareContext {
     this.message = data.message
     this.channel = data.channel
     this.action = data.action
+
+    // Bind methods to preserve `this`
+    this.reject = this._reject.bind(this)
+    this.isRejected = this._isRejected.bind(this)
+    this.getRejectionReason = this._getRejectionReason.bind(this)
   }
 
   /**
@@ -64,7 +75,7 @@ class MiddlewareContext implements IMiddlewareContext {
    * context.reject('User not authorized')
    * ```
    */
-  reject(reason: string): void {
+  private _reject(reason: string): void {
     this._rejected = true
     this._rejectionReason = reason
     throw new MiddlewareRejectionError(reason, this.action)
@@ -74,7 +85,7 @@ class MiddlewareContext implements IMiddlewareContext {
    * Check if this context was rejected
    * Used internally by the middleware manager
    */
-  isRejected(): boolean {
+  private _isRejected(): boolean {
     return this._rejected
   }
 
@@ -82,7 +93,7 @@ class MiddlewareContext implements IMiddlewareContext {
    * Get the rejection reason
    * Used internally by the middleware manager
    */
-  getRejectionReason(): string | undefined {
+  private _getRejectionReason(): string | undefined {
     return this._rejectionReason
   }
 }
@@ -112,7 +123,9 @@ class MiddlewareContext implements IMiddlewareContext {
  * await manager.executeConnection(client, 'connect')
  * ```
  */
-export class MiddlewareManager implements IMiddlewareManager, IMiddlewareContextFactory {
+export class MiddlewareManager
+  implements IMiddlewareManager, IMiddlewareContextFactory
+{
   /**
    * Registered middleware functions
    * Stored in an array to maintain execution order
@@ -196,7 +209,10 @@ export class MiddlewareManager implements IMiddlewareManager, IMiddlewareContext
    * }
    * ```
    */
-  async executeConnection(client: IServerClient, action: 'connect' | 'disconnect'): Promise<void> {
+  async executeConnection(
+    client: IServerClient,
+    action: 'connect' | 'disconnect',
+  ): Promise<void> {
     const context = this.createConnectionContext(client, action)
     await this.executeMiddlewares(context, action)
   }
@@ -244,7 +260,10 @@ export class MiddlewareManager implements IMiddlewareManager, IMiddlewareContext
    * }
    * ```
    */
-  async executeSubscribe(client: IServerClient, channel: ChannelName): Promise<void> {
+  async executeSubscribe(
+    client: IServerClient,
+    channel: ChannelName,
+  ): Promise<void> {
     const context = this.createSubscribeContext(client, channel)
     await this.executeMiddlewares(context, 'subscribe')
   }
@@ -268,7 +287,10 @@ export class MiddlewareManager implements IMiddlewareManager, IMiddlewareContext
    * }
    * ```
    */
-  async executeUnsubscribe(client: IServerClient, channel: ChannelName): Promise<void> {
+  async executeUnsubscribe(
+    client: IServerClient,
+    channel: ChannelName,
+  ): Promise<void> {
     const context = this.createUnsubscribeContext(client, channel)
     await this.executeMiddlewares(context, 'unsubscribe')
   }
@@ -301,7 +323,10 @@ export class MiddlewareManager implements IMiddlewareManager, IMiddlewareContext
    * @param message - The message
    * @returns Middleware context
    */
-  createMessageContext(client: IServerClient, message: Message): IMiddlewareContext {
+  createMessageContext(
+    client: IServerClient,
+    message: Message,
+  ): IMiddlewareContext {
     return new MiddlewareContext({
       client,
       message,
@@ -316,7 +341,10 @@ export class MiddlewareManager implements IMiddlewareManager, IMiddlewareContext
    * @param channel - The channel name
    * @returns Middleware context
    */
-  createSubscribeContext(client: IServerClient, channel: ChannelName): IMiddlewareContext {
+  createSubscribeContext(
+    client: IServerClient,
+    channel: ChannelName,
+  ): IMiddlewareContext {
     return new MiddlewareContext({
       client,
       channel,
@@ -331,7 +359,10 @@ export class MiddlewareManager implements IMiddlewareManager, IMiddlewareContext
    * @param channel - The channel name
    * @returns Middleware context
    */
-  createUnsubscribeContext(client: IServerClient, channel: ChannelName): IMiddlewareContext {
+  createUnsubscribeContext(
+    client: IServerClient,
+    channel: ChannelName,
+  ): IMiddlewareContext {
     return new MiddlewareContext({
       client,
       channel,
@@ -351,10 +382,14 @@ export class MiddlewareManager implements IMiddlewareManager, IMiddlewareContext
    * @throws MiddlewareRejectionError if any middleware rejects
    * @throws MiddlewareExecutionError if any middleware throws unexpectedly
    */
-  protected async executeMiddlewares(context: IMiddlewareContext, action: string): Promise<void> {
+  protected async executeMiddlewares(
+    context: IMiddlewareContext,
+    action: string,
+  ): Promise<void> {
     for (let i = 0; i < this.middlewares.length; i++) {
       const middleware = this.middlewares[i]!
-      const middlewareName = (middleware as { name?: string }).name || `middleware[${i}]`
+      const middlewareName =
+        (middleware as { name?: string }).name || `middleware[${i}]`
 
       try {
         await middleware(context)
@@ -409,22 +444,3 @@ export class MiddlewareManager implements IMiddlewareManager, IMiddlewareContext
     return this.middlewares.length > 0
   }
 }
-
-// ============================================================
-// RE-EXPORT TYPES
-// ============================================================
-
-export type {
-  IMiddleware,
-  IMiddlewareContext,
-  IMiddlewareManager,
-  IMiddlewareAction,
-  IMiddlewareChain,
-  IComposedMiddleware,
-  IActionMiddleware,
-  IMiddlewareContextFactory,
-} from '../types/middleware.js'
-
-export type { IServerClient } from '../types/client.js'
-
-export type { ChannelName, Message } from '@synnel/types'

@@ -40,7 +40,7 @@ export interface IClientConnection {
   readonly connectedAt: Timestamp
 
   /** Last ping timestamp (undefined if never pinged) */
-  readonly lastPingAt?: Timestamp
+  lastPingAt?: Timestamp
 
   /** Raw WebSocket instance for this connection */
   readonly socket: WebSocket

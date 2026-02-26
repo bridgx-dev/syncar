@@ -13,7 +13,14 @@ import type {
 } from '@synnel/types'
 
 // Re-export common types from @synnel/types for convenience
-export type { Message, DataMessage, ChannelName, SubscriberId, MessageType, SignalType }
+export type {
+  Message,
+  DataMessage,
+  ChannelName,
+  SubscriberId,
+  MessageType,
+  SignalType,
+}
 
 // ============================================================
 // TRANSPORT TYPES (from base.ts)
@@ -401,4 +408,6 @@ export type MessageFilter = (message: Message) => boolean
 /**
  * Message handler function
  */
-export type ClientMessageHandler<T = unknown> = (message: DataMessage<T>) => void
+export type ClientMessageHandler<T = unknown> = (
+  message: DataMessage<T>,
+) => void

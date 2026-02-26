@@ -3,8 +3,8 @@
  * Types for client management and server-side client representation.
  */
 
-import type { IClientConnection } from './base.js'
-import type { IServerTransport } from './transport.js'
+import type { IClientConnection } from './base'
+import type { IChannelTransport } from './channel'
 import type { ChannelName, ClientId, Message, MergeTypes } from '@synnel/types'
 
 // ============================================================
@@ -12,60 +12,15 @@ import type { ChannelName, ClientId, Message, MergeTypes } from '@synnel/types'
 // ============================================================
 
 /**
- * Internal client data structure
- * Used by ClientRegistry to track client state.
- *
- * This is an internal type - external code should use IServerClient.
- *
- * @example
- * ```ts
- * const clientData: IClientData = {
- *   id: 'client-123',
- *   transport: serverTransport,
- *   subscriptions: new Set(['chat', 'notifications'])
- * }
- * ```
+ * Internal client data structure - alias for IClientConnection
+ * Used by ClientRegistry to track client connections.
  */
-export interface IClientData {
-  /** Unique client identifier */
-  id: string
-
-  /** Transport layer for sending messages */
-  transport: IServerTransport
-
-  /** Channels this client is subscribed to */
-  subscriptions: Set<ChannelName>
-}
+export type IClientData = IClientConnection
 
 // ============================================================
 // SERVER CLIENT INTERFACE
 // ============================================================
-
-/**
- * Server client interface
- * Extends IClientConnection with server-side methods for message handling
- * and subscription management.
- *
- * This is the primary interface for working with connected clients on the server.
- *
- * @example
- * ```ts
- * function handleClient(client: IServerClient) {
- *   // Inherited from IClientConnection
- *   console.log(`Client ${client.id} connected at ${client.connectedAt}`)
- *
- *   // Server-specific methods
- *   await client.send({ type: 'data', data: 'Hello!' })
- *   const channels = client.getSubscriptions()
- *   await client.disconnect()
- * }
- *
- * // Type-safe event handling
- * server.on('connection', (client: IServerClient) => {
- *   await client.send({ type: 'signal', signal: 'WELCOME' })
- * })
- * ```
- */
+// ... (IServerClient stays same for now) ...
 export interface IServerClient extends IClientConnection {
   /**
    * Send a message to this client
@@ -116,7 +71,7 @@ export interface IServerClient extends IClientConnection {
  * const registry: IClientRegistry = ...
  *
  * // Register a new client
- * const client = registry.register(clientId, transport, connection)
+ * const client = registry.register(connection, transport)
  *
  * // Subscribe to channel
  * registry.subscribe(clientId, 'chat')
@@ -130,16 +85,19 @@ export interface IServerClient extends IClientConnection {
  */
 export interface IClientRegistry {
   /**
+   * Shared map of all connected clients by ID
+   * This property is shared with the transport layer for memory efficiency.
+   */
+  readonly connections: Map<ClientId, IClientConnection>
+
+  /**
    * Register a new client
    *
-   * @param clientId - Unique client identifier
-   * @param transport - Transport layer for communication
    * @param connection - The connection object
+   * @param transport - Transport layer for communication
    * @returns Server client wrapper
    */
   register(
-    clientId: ClientId,
-    transport: IServerTransport,
     connection: IClientConnection,
   ): IServerClient
 
@@ -172,6 +130,33 @@ export interface IClientRegistry {
    * @returns Client count
    */
   getCount(): number
+
+  // ============================================================
+  // CHANNEL MANAGEMENT
+  // ============================================================
+
+  /**
+   * Register a channel instance
+   *
+   * @param channel - Channel instance to register
+   */
+  registerChannel(channel: IChannelTransport<unknown>): void
+
+  /**
+   * Get a channel instance by name
+   *
+   * @param name - Channel name
+   * @returns Channel instance or undefined if not found
+   */
+  getChannel<T = unknown>(name: ChannelName): IChannelTransport<T> | undefined
+
+  /**
+   * Remove a channel instance
+   *
+   * @param name - Channel name to remove
+   * @returns true if channel was found and removed, false otherwise
+   */
+  removeChannel(name: ChannelName): boolean
 
   /**
    * Subscribe a client to a channel
@@ -208,7 +193,7 @@ export interface IClientRegistry {
   getSubscriberCount(channel: ChannelName): number
 
   /**
-   * Get all channels that have subscribers
+   * Get all active channel names
    *
    * @returns Array of channel names
    */
@@ -234,40 +219,6 @@ export interface IClientRegistry {
    * Clear all clients and subscriptions
    */
   clear(): void
-}
-
-// ============================================================
-// CLIENT FACTORY INTERFACE
-// ============================================================
-
-/**
- * Server client factory interface
- * Creates IServerClient instances from internal data.
- *
- * Implementations can customize how clients are created,
- * allowing for extensions with metadata or custom behavior.
- *
- * @example
- * ```ts
- * // Type usage
- * const factory: IServerClientFactory = ...
- *
- * // Create client from internal data and connection
- * const client = factory.createClient(clientData, connection)
- * ```
- */
-export interface IServerClientFactory {
-  /**
-   * Create a server client wrapper
-   *
-   * @param clientData - Internal client data
-   * @param connection - The connection object
-   * @returns Server client wrapper
-   */
-  createClient(
-    clientData: IClientData,
-    connection: IClientConnection,
-  ): IServerClient
 }
 
 // ============================================================

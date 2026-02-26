@@ -32,22 +32,26 @@ const status: ConnectionStatus = 'connected'
 ## Available Types
 
 ### Common Types
+
 - `MessageId`, `ClientId`, `SubscriberId`
 - `ChannelName`, `Timestamp`
 - `DataPayload<T>`
 
 ### Connection Types
+
 - `ConnectionStatus`
 - `TransportConfig`
 - `MessageQueueOptions`
 
 ### Channel Types
+
 - `ChannelState<T>`
 - `ChannelOptions`
 - `MessageBusOptions`
 - `SubscriptionState`
 
 ### Message Types
+
 - `Message<T>`
 - `DataMessage<T>`
 - `SignalMessage`
@@ -58,6 +62,7 @@ const status: ConnectionStatus = 'connected'
 - `ErrorCode` (enum)
 
 ### Client Types
+
 - `ClientStatus`
 - `Transport`
 - `ClientConfig`

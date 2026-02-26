@@ -1,26 +1,9 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
-    "composite": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "emitDeclarationOnly": false,
-    "noEmit": false,
-    "baseUrl": ".",
-    "paths": {
-      "@synnel/types": ["../types/src"],
-      "@synnel/lib": ["../lib/src"],
-      "@synnel/core": ["../core/src"]
-    }
+    "incremental": false
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"],
-  "references": [
-    { "path": "../types" },
-    { "path": "../lib" },
-    { "path": "../core" }
-  ]
+  "include": ["src", "*.config.*"]
 }

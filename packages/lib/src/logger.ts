@@ -135,7 +135,10 @@ export function createThresholdLogger(
 /**
  * Create a debug logger wrapper
  */
-export function createDebugLogger(baseLogger: LoggerFn, debug = true): LoggerFn {
+export function createDebugLogger(
+  baseLogger: LoggerFn,
+  debug = true,
+): LoggerFn {
   if (!debug) {
     return createFilteredLogger(baseLogger, ['info', 'warn', 'error'])
   }

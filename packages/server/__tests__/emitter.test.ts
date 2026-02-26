@@ -1,11 +1,12 @@
 /**
  * EventEmitter Tests
+ * Tests for the type-safe event emitter
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { EventEmitter } from '../src/emitter/index.js'
 
-// Define event map for testing
+// Define test event map
 interface TestEventMap {
   connection: (client: { id: string }) => void
   message: (data: { text: string }, client: { id: string }) => void
@@ -125,7 +126,6 @@ describe('EventEmitter', () => {
     it('should handle removing non-existent handler gracefully', () => {
       const handler = vi.fn()
 
-      // Should not throw when removing non-existent handler
       expect(() => {
         emitter.off('connection', handler)
       }).not.toThrow()
@@ -136,10 +136,52 @@ describe('EventEmitter', () => {
 
       emitter.on('message', handler)
 
-      // Should not throw when removing from different event
       expect(() => {
         emitter.off('connection', handler)
       }).not.toThrow()
+    })
+
+    it('should remove once handler using off()', () => {
+      const handler = vi.fn()
+      const client = { id: 'client-1' }
+
+      emitter.once('connection', handler)
+      emitter.off('connection', handler)
+
+      emitter.emit('connection', client)
+      expect(handler).not.toHaveBeenCalled()
+    })
+
+    it('should remove once handler when multiple once handlers exist', () => {
+      const handler1 = vi.fn()
+      const handler2 = vi.fn()
+
+      emitter.once('connection', handler1)
+      emitter.once('connection', handler2)
+
+      // Remove the first one
+      emitter.off('connection', handler1)
+
+      emitter.emit('connection', { id: 'client-1' })
+
+      expect(handler1).not.toHaveBeenCalled()
+      expect(handler2).toHaveBeenCalledTimes(1)
+    })
+
+    it('should remove once handler when mixed with regular handlers', () => {
+      const onceHandler = vi.fn()
+      const regularHandler = vi.fn()
+
+      emitter.once('connection', onceHandler)
+      emitter.on('connection', regularHandler)
+
+      // Remove the once handler
+      emitter.off('connection', onceHandler)
+
+      emitter.emit('connection', { id: 'client-1' })
+
+      expect(onceHandler).not.toHaveBeenCalled()
+      expect(regularHandler).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -274,7 +316,9 @@ describe('EventEmitter', () => {
       emitter.on('connection', () => {})
       emitter.on('connection', () => {})
 
-      expect(emitter.eventNames().filter(n => n === 'connection')).toHaveLength(1)
+      expect(
+        emitter.eventNames().filter((n) => n === 'connection'),
+      ).toHaveLength(1)
     })
   })
 
@@ -321,36 +365,6 @@ describe('EventEmitter', () => {
       const listeners = emitter.rawListeners
 
       expect(listeners.size).toBe(0)
-    })
-  })
-
-  describe('type safety', () => {
-    it('should enforce correct handler types for events', () => {
-      // This test verifies type safety at compile time
-      // If types are incorrect, TypeScript will error
-
-      // Correct: handler matches event signature
-      emitter.on('connection', (client) => {
-        expect(client.id).toBeDefined()
-      })
-
-      // Correct: handler with multiple parameters
-      emitter.on('message', (data, client) => {
-        expect(data.text).toBeDefined()
-        expect(client.id).toBeDefined()
-      })
-
-      // Emit events
-      emitter.emit('connection', { id: 'client-1' })
-      emitter.emit('message', { text: 'hello' }, { id: 'client-1' })
-    })
-
-    it('should prevent type errors with wrong event types', () => {
-      // TypeScript should prevent these at compile time
-      // @ts-expect-error - Testing type safety
-      emitter.on('connection', (data: { invalid: boolean }) => {
-        // This should cause a type error in TypeScript
-      })
     })
   })
 })

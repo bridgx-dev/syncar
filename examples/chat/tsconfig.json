@@ -19,17 +19,11 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@synnel/core": ["../../packages/core/src/index.ts"],
-      "@synnel/client": ["../../packages/client/src/index.ts"],
-      "@synnel/react": ["../../packages/react/src/index.ts"],
-      "@synnel/server": ["../../packages/server/src/index.ts"]
+      "@synnel/core": ["../../packages/core/src"],
+      "@synnel/client": ["../../packages/client/src"],
+      "@synnel/react": ["../../packages/react/src"],
+      "@synnel/server": ["../../packages/server/src"]
     }
   },
-  "include": ["client", "server", "vite.config.ts"],
-  "references": [
-    { "path": "../../packages/core" },
-    { "path": "../../packages/client" },
-    { "path": "../../packages/react" },
-    { "path": "../../packages/server" }
-  ]
+  "include": ["client", "server", "vite.config.ts"]
 }
