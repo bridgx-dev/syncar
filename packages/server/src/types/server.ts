@@ -12,8 +12,8 @@ import type {
   IChannelOptions,
   IMulticastTransport,
 } from './channel'
-import type { IServerEventMap, IServerEventType } from './events'
-import type { IServerClient, IClientRegistry } from './client'
+import type { IServerEventMap, IServerEventType, IEventEmitter } from './events'
+import type { IClientRegistry } from './client'
 import type { IClientConnection } from './base'
 
 // ============================================================
@@ -39,7 +39,7 @@ import type { IClientConnection } from './base'
  * const app = express()
  * const httpServer = app.listen(3000)
  *
- * const configWithServer: IServerConfig = {
+ * const config: IServerConfig = {
  *   server: httpServer,
  *   path: '/ws'
  * }
@@ -121,7 +121,11 @@ export interface IServerConfig {
    * ```ts
    * middleware: [
    *   createAuthMiddleware({ verify: verifyToken }),
-   *   createLoggingMiddleware(),
+   *   createLoggingMiddleware({
+   *     actions: ['connect'],
+   *     logger,
+   *     logLevel: 'log',
+   *   }),
    *   createRateLimitMiddleware({ maxMessages: 100 })
    * ]
    * ```
@@ -416,8 +420,23 @@ export interface ISynnelServer {
    * ```
    */
   onMessage(
-    handler: (client: IServerClient, message: Message) => void,
+    handler: (client: IClientConnection, message: Message) => void,
   ): () => void
+
+  /**
+   * Get the client registry
+   */
+  getRegistry(): IClientRegistry
+
+  /**
+   * Get the server configuration
+   */
+  getConfig(): Readonly<IServerConfig>
+
+  /**
+   * Get the event emitter
+   */
+  getEmitter(): IEventEmitter<IServerEventMap>
 }
 
 // ============================================================

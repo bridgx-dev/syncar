@@ -20,8 +20,7 @@ import { createDataMessage } from '@synnel/lib'
  */
 export class MulticastTransport<T = unknown>
   extends BaseChannel<T>
-  implements IChannelTransport<T>
-{
+  implements IChannelTransport<T> {
   /**
    * Map of all connected clients (reference to transport connections)
    */
@@ -83,7 +82,7 @@ export class MulticastTransport<T = unknown>
       if (!client) continue
 
       try {
-        client.socket.send(JSON.stringify(message))
+        client.socket.send(JSON.stringify(message), () => { })
       } catch (error) {
         console.error(
           `Failed to publish to ${subscriberId} in channel ${this.name}:`,
@@ -109,7 +108,7 @@ export class MulticastTransport<T = unknown>
       if (!client) continue
 
       try {
-        client.socket.send(JSON.stringify(message))
+        client.socket.send(JSON.stringify(message), () => { })
       } catch (error) {
         console.error(
           `Failed to publish to ${subscriberId} in channel ${this.name}:`,
@@ -139,7 +138,7 @@ export class MulticastTransport<T = unknown>
       if (!client) continue
 
       try {
-        client.socket.send(JSON.stringify(message))
+        client.socket.send(JSON.stringify(message), () => { })
       } catch (error) {
         console.error(
           `Failed to publish to ${subscriberId} in channel ${this.name}:`,
@@ -162,7 +161,7 @@ export class MulticastTransport<T = unknown>
     this.addToHistory(message)
 
     try {
-      client.socket.send(JSON.stringify(message))
+      client.socket.send(JSON.stringify(message), () => { })
     } catch (error) {
       console.error(
         `Failed to publish to ${clientId} in channel ${this.name}:`,

@@ -19,9 +19,7 @@ function createMockClient(id: string): IClientConnection {
       send: vi.fn(),
       close: vi.fn(),
     } as any,
-    status: 'connected',
     connectedAt: Date.now(),
-    metadata: {},
   }
 }
 
@@ -124,9 +122,11 @@ describe('Channels', () => {
 
         expect(client1.socket.send).toHaveBeenCalledWith(
           expect.stringContaining('Hello everyone'),
+          expect.any(Function),
         )
         expect(client2.socket.send).toHaveBeenCalledWith(
           expect.stringContaining('Hello everyone'),
+          expect.any(Function),
         )
       })
 
@@ -150,11 +150,13 @@ describe('Channels', () => {
         // client1 should NOT receive the message
         expect(client1.socket.send).not.toHaveBeenCalledWith(
           expect.stringContaining('Message for client-2'),
+          expect.any(Function),
         )
 
         // client2 should receive
         expect(client2.socket.send).toHaveBeenCalledWith(
           expect.stringContaining('Message for client-2'),
+          expect.any(Function),
         )
       })
 
@@ -185,6 +187,7 @@ describe('Channels', () => {
 
         expect(client.socket.send).toHaveBeenCalledWith(
           expect.stringContaining('Direct message'),
+          expect.any(Function),
         )
       })
 
@@ -364,7 +367,7 @@ describe('Channels', () => {
       })
 
       it('should handle errors in onSubscribe handler gracefully', async () => {
-        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => { })
 
         const errorClient = createMockClient('client-1')
         const normalClient = createMockClient('client-2')
@@ -409,7 +412,7 @@ describe('Channels', () => {
       })
 
       it('should handle errors in onUnsubscribe handler gracefully', async () => {
-        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => { })
 
         const errorClient = createMockClient('client-1')
 
@@ -468,7 +471,7 @@ describe('Channels', () => {
       })
 
       it('should handle errors in message handlers gracefully', async () => {
-        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => { })
 
         // Handler that throws an error
         channel.onMessage(() => {
@@ -584,9 +587,11 @@ describe('Channels', () => {
 
         expect(client1.socket.send).toHaveBeenCalledWith(
           expect.stringContaining('Broadcast to everyone'),
+          expect.any(Function),
         )
         expect(client2.socket.send).toHaveBeenCalledWith(
           expect.stringContaining('Broadcast to everyone'),
+          expect.any(Function),
         )
       })
 
@@ -610,11 +615,13 @@ describe('Channels', () => {
         // client1 should not receive
         expect(client1.socket.send).not.toHaveBeenCalledWith(
           expect.stringContaining('Message for client-2'),
+          expect.any(Function),
         )
 
         // client2 should receive
         expect(client2.socket.send).toHaveBeenCalledWith(
           expect.stringContaining('Message for client-2'),
+          expect.any(Function),
         )
       })
 
@@ -641,10 +648,10 @@ describe('Channels', () => {
       it('should handle send errors gracefully', () => {
         const client1 = clients.get('client-1')!
         const errorClient = createMockClient('error-client')
-        // Make send throw an error
-        ;(errorClient.socket.send as any).mockImplementation(() => {
-          throw new Error('Send failed')
-        })
+          // Make send throw an error
+          ; (errorClient.socket.send as any).mockImplementation(() => {
+            throw new Error('Send failed')
+          })
         clients.set('error-client', errorClient)
 
         // Should not throw, should log error instead
@@ -657,9 +664,9 @@ describe('Channels', () => {
       it('should handle errors in sendToAllExcept', () => {
         const client2 = createMockClient('client-2')
         const errorClient = createMockClient('error-client')
-        ;(errorClient.socket.send as any).mockImplementation(() => {
-          throw new Error('Send failed')
-        })
+          ; (errorClient.socket.send as any).mockImplementation(() => {
+            throw new Error('Send failed')
+          })
 
         clients.set('client-2', client2)
         clients.set('error-client', errorClient)
@@ -673,9 +680,9 @@ describe('Channels', () => {
       it('should handle errors in sendToSpecific', () => {
         const client2 = createMockClient('client-2')
         const errorClient = createMockClient('error-client')
-        ;(errorClient.socket.send as any).mockImplementation(() => {
-          throw new Error('Send failed')
-        })
+          ; (errorClient.socket.send as any).mockImplementation(() => {
+            throw new Error('Send failed')
+          })
 
         clients.set('client-2', client2)
         clients.set('error-client', errorClient)

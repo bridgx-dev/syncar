@@ -17,17 +17,11 @@ import type { ClientId, Timestamp, ChannelName } from '@synnel/types'
  * Base client connection interface
  * Single source of truth for all client-related types.
  *
- * All client types (IServerClient, IClientData, etc.) should extend
+ * All client types should extend
  * this interface to ensure consistency across the codebase.
  *
  * @example
  * ```ts
- * // Extending for server client
- * interface IServerClient extends IClientConnection {
- *   send(message: Message): Promise<void>
- *   disconnect(): Promise<void>
- * }
- *
  * // Extending for custom metadata
  * type IClientWithMetadata<T> = IClientConnection & T
  * ```

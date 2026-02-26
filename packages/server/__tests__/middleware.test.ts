@@ -14,39 +14,25 @@ import {
   clearRateLimitStore,
   getRateLimitState,
 } from '../src/middleware/factories.js'
-import type { ServerClient } from '../src/types/index.js'
+import type { IClientConnection } from '../src/types/index.js'
 import type { Message, DataMessage } from '@synnel/types'
 import { MessageType } from '@synnel/types'
 
 // Mock client
-const createMockClient = (id: string): ServerClient => {
-  const metadata: Map<string, unknown> = new Map()
+const createMockClient = (id: string): IClientConnection => {
   return {
     id,
-    status: 'connected' as const,
     connectedAt: Date.now(),
-    get metadata() {
-      return Object.fromEntries(metadata)
-    },
-    send: vi.fn().mockResolvedValue(undefined),
-    disconnect: vi.fn().mockResolvedValue(undefined),
-    subscribe: vi.fn().mockResolvedValue(true),
-    unsubscribe: vi.fn().mockResolvedValue(true),
-    isSubscribed: vi.fn().mockReturnValue(false),
-    getSubscriptions: vi.fn().mockReturnValue([]),
-    getConnection: vi.fn(),
-    setMetadata: (key: string, value: unknown) => {
-      metadata.set(key, value)
-    },
-    getMetadata: <T = unknown>(key: string) => {
-      return metadata.get(key) as T | undefined
-    },
+    socket: {
+      send: vi.fn().mockResolvedValue(undefined),
+      close: vi.fn(),
+    } as any,
   }
 }
 
 describe('MiddlewareManager', () => {
   let manager: MiddlewareManager
-  let mockClient: ServerClient
+  let mockClient: IClientConnection
 
   beforeEach(() => {
     manager = new MiddlewareManager()
@@ -66,7 +52,7 @@ describe('MiddlewareManager', () => {
     })
 
     it('should remove middleware', () => {
-      const middleware = async () => {}
+      const middleware = async () => { }
       manager.use(middleware)
 
       expect(manager.remove(middleware)).toBe(true)
@@ -74,8 +60,8 @@ describe('MiddlewareManager', () => {
     })
 
     it('should clear all middleware', async () => {
-      manager.use(async () => {})
-      manager.use(async () => {})
+      manager.use(async () => { })
+      manager.use(async () => { })
 
       manager.clear()
 
@@ -86,8 +72,8 @@ describe('MiddlewareManager', () => {
     it('should get middleware count', () => {
       expect(manager.getCount()).toBe(0)
 
-      manager.use(async () => {})
-      manager.use(async () => {})
+      manager.use(async () => { })
+      manager.use(async () => { })
 
       expect(manager.getCount()).toBe(2)
     })
@@ -95,7 +81,7 @@ describe('MiddlewareManager', () => {
     it('should check if has middleware', () => {
       expect(manager.hasMiddleware()).toBe(false)
 
-      manager.use(async () => {})
+      manager.use(async () => { })
 
       expect(manager.hasMiddleware()).toBe(true)
     })
@@ -400,7 +386,7 @@ describe('MiddlewareManager', () => {
 
 describe('Middleware Factories', () => {
   let manager: MiddlewareManager
-  let mockClient: ServerClient
+  let mockClient: IClientConnection
 
   beforeEach(() => {
     manager = new MiddlewareManager()
@@ -555,7 +541,7 @@ describe('Middleware Factories', () => {
     it('should log connections when enabled', async () => {
       const logger = { log: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
       const middleware = createLoggingMiddleware({
-        logConnections: true,
+        actions: ['connect'],
         logger,
         logLevel: 'log',
       })
@@ -574,7 +560,7 @@ describe('Middleware Factories', () => {
     it('should log messages when enabled', async () => {
       const logger = { log: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
       const middleware = createLoggingMiddleware({
-        logMessages: true,
+        actions: ['message'],
         logger,
         logLevel: 'info',
       })
@@ -599,7 +585,7 @@ describe('Middleware Factories', () => {
     it('should log subscriptions when enabled', async () => {
       const logger = { log: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
       const middleware = createLoggingMiddleware({
-        logSubscriptions: true,
+        actions: ['subscribe'],
         logger,
         logLevel: 'warn',
       })
@@ -815,8 +801,8 @@ describe('Middleware Factories', () => {
       expect((middleware as { cleanup?: () => void }).cleanup).toBeDefined()
       expect(typeof (middleware as { cleanup?: () => void }).cleanup).toBe('function')
 
-      // Call cleanup - should not throw
-      ;(middleware as { cleanup?: () => void }).cleanup!()
+        // Call cleanup - should not throw
+        ; (middleware as { cleanup?: () => void }).cleanup!()
 
       // Store should be cleared
       const state = getRateLimitState('client-1')

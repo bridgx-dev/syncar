@@ -6,12 +6,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { SynnelServer, createSynnelServer } from '../src/server/index.js'
 import { WebSocketServerTransport } from '../src/transport/index.js'
-import { MiddlewareManager } from '../src/middleware/index.js'
-import { EventEmitter } from '../src/emitter/index.js'
-import type { IServerConfig, IServerClient, Message } from '../src/types/index.js'
-import type { ServerClient } from '../src/types/index.js'
+import type { IServerConfig } from '../src/types/index.js'
 import { StateError, ConfigError } from '../src/errors/index.js'
-import { MessageType, SignalType, createDataMessage, createSignalMessage } from '@synnel/lib'
 
 // Mock transport factory
 function createMockTransport() {
@@ -103,8 +99,8 @@ describe('SynnelServer', () => {
     })
 
     it('should accept middleware array', () => {
-      const middleware1 = async () => {}
-      const middleware2 = async () => {}
+      const middleware1 = async () => { }
+      const middleware2 = async () => { }
 
       const config: IServerConfig = {
         middleware: [middleware1, middleware2],
@@ -377,15 +373,15 @@ describe('SynnelServer', () => {
     it('should register middleware via use method', () => {
       server = new SynnelServer()
 
-      const middleware = async () => {}
+      const middleware = async () => { }
       server.use(middleware)
 
       // Middleware should be registered
     })
 
     it('should register middleware from config', async () => {
-      const middleware1 = async () => {}
-      const middleware2 = async () => {}
+      const middleware1 = async () => { }
+      const middleware2 = async () => { }
 
       const transport = new WebSocketServerTransport({
         server: {} as any,
@@ -674,7 +670,6 @@ describe('createSynnelServer factory', () => {
 
       const config: IServerConfig = {
         server: mockServer as any,
-        maxPayload: 204800,
       }
 
       // Temporarily replace the WsServer constructor

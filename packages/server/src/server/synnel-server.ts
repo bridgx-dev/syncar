@@ -9,7 +9,7 @@ import type {
   IServerStats,
   IServerTransport,
   IClientRegistry,
-  IServerClient,
+  IClientConnection,
   IMiddlewareManager,
   IEventEmitter,
   IServerEventMap,
@@ -54,15 +54,15 @@ export class SynnelServer implements ISynnelServer {
 
   private broadcastChannel: IBroadcastTransport<unknown> | undefined
   private readonly globalMessageHandlers: Set<
-    (client: IServerClient, message: Message) => void
+    (client: IClientConnection, message: Message) => void
   >
 
   private authorizationHandler:
     | ((
-        clientId: string,
-        channel: string,
-        action: string,
-      ) => boolean | Promise<boolean>)
+      clientId: string,
+      channel: string,
+      action: string,
+    ) => boolean | Promise<boolean>)
     | undefined
 
   private readonly state: ServerState
@@ -270,7 +270,7 @@ export class SynnelServer implements ISynnelServer {
   // ============================================================
 
   onMessage(
-    handler: (client: IServerClient, message: Message) => void,
+    handler: (client: IClientConnection, message: Message) => void,
   ): () => void {
     this.globalMessageHandlers.add(handler)
     return () => this.globalMessageHandlers.delete(handler)
@@ -370,7 +370,7 @@ export class SynnelServer implements ISynnelServer {
           }
         }
 
-        // Route to appropriate handler
+        // ROUTE TO APPROPRIATE HANDLER
         if (message.type === 'data') {
           await this.messageHandler!.handleMessage(client, message as any)
         } else if (message.type === 'signal') {

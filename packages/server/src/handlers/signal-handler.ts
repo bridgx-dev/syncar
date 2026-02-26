@@ -5,14 +5,14 @@
 
 import type {
   IClientRegistry,
-  IServerClient,
+  IClientConnection,
   IMiddlewareManager,
   IEventEmitter,
   IServerEventMap,
   SignalMessage,
 } from '../types'
-import { SignalType } from '@synnel/types'
 import { createSignalMessage } from '@synnel/lib'
+import { SignalType } from '@synnel/types'
 import { ChannelError, MessageError } from '../errors'
 import { BROADCAST_CHANNEL } from '../config'
 import { isReservedChannelName } from '@synnel/lib'
@@ -90,7 +90,7 @@ export class SignalHandler {
    * Handle a signal message from a client
    */
   async handleSignal(
-    client: IServerClient,
+    client: IClientConnection,
     message: SignalMessage,
   ): Promise<void> {
     switch (message.signal) {
@@ -119,7 +119,7 @@ export class SignalHandler {
    * Handle SUBSCRIBE signal
    */
   async handleSubscribe(
-    client: IServerClient,
+    client: IClientConnection,
     message: SignalMessage,
   ): Promise<void> {
     const { channel } = message
@@ -177,7 +177,7 @@ export class SignalHandler {
         undefined,
         message.id,
       )
-      await client.send(ackMessage)
+      client.socket.send(JSON.stringify(ackMessage), () => { })
     }
   }
 
@@ -185,7 +185,7 @@ export class SignalHandler {
    * Handle UNSUBSCRIBE signal
    */
   async handleUnsubscribe(
-    client: IServerClient,
+    client: IClientConnection,
     message: SignalMessage,
   ): Promise<void> {
     const { channel } = message
@@ -220,7 +220,7 @@ export class SignalHandler {
         undefined,
         message.id,
       )
-      await client.send(ackMessage)
+      client.socket.send(JSON.stringify(ackMessage), () => { })
     }
   }
 
@@ -228,7 +228,7 @@ export class SignalHandler {
    * Handle PING signal
    */
   async handlePing(
-    client: IServerClient,
+    client: IClientConnection,
     message: SignalMessage,
   ): Promise<void> {
     if (this.options.autoRespondToPing) {
@@ -238,7 +238,7 @@ export class SignalHandler {
         undefined,
         message.id,
       )
-      await client.send(pongMessage)
+      client.socket.send(JSON.stringify(pongMessage), () => { })
     }
   }
 
@@ -246,7 +246,7 @@ export class SignalHandler {
    * Handle PONG signal
    */
   async handlePong(
-    _client: IServerClient,
+    _client: IClientConnection,
     _message: SignalMessage,
   ): Promise<void> {
     // PONG is handled by transport layer for health monitoring

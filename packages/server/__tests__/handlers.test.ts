@@ -15,7 +15,6 @@ import { EventEmitter } from '../src/emitter/index.js'
 import { MulticastTransport } from '../src/channel/index.js'
 import type {
   IClientConnection,
-  IServerClient,
   IServerTransport,
   DataMessage,
   SignalMessage,
@@ -100,7 +99,7 @@ describe('Handlers', () => {
     })
 
     describe('handleConnection', () => {
-      it('should register client and return server client', async () => {
+      it('should register client and return connection', async () => {
         const connection = createMockConnection('client-1')
 
         const client = await handler.handleConnection(connection)

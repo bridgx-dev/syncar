@@ -60,14 +60,14 @@ describe('ClientRegistry', () => {
       expect(client.connectedAt).toBe(connection.connectedAt)
     })
 
-    it('should create new client wrapper for duplicate registration', () => {
+    it('should return the same connection for duplicate registration', () => {
       const connection = createMockConnection('client-1')
       const client1 = registry.register(connection)
       const client2 = registry.register(connection)
 
-      // Registry creates a new wrapper each time but stores the same connection
-      expect(client1.id).toBe(client2.id)
-      expect(registry.getCount()).toBe(1) // Only one connection stored
+      expect(client1).toBe(connection)
+      expect(client2).toBe(connection)
+      expect(registry.getCount()).toBe(1)
     })
 
     it('should unregister a client', () => {
@@ -135,81 +135,6 @@ describe('ClientRegistry', () => {
     })
   })
 
-  describe('server client wrapper', () => {
-    it('should provide send method', async () => {
-      const connection = createMockConnection('client-1')
-      const client = registry.register(connection)
-
-      const message: Message = {
-        id: 'msg-1',
-        type: MessageType.DATA,
-        channel: 'test',
-        data: 'test data',
-        timestamp: Date.now(),
-      }
-
-      await client.send(message)
-
-      expect(connection.socket.send).toHaveBeenCalled()
-      const sentData = (connection.socket.send as any).mock.calls[0][0]
-      expect(sentData).toContain('test data')
-    })
-
-    it('should provide disconnect method', async () => {
-      const connection = createMockConnection('client-1')
-      const client = registry.register(connection)
-
-      await client.disconnect(4000, 'Test disconnect')
-
-      expect(connection.socket.close).toHaveBeenCalledWith(4000, 'Test disconnect')
-    })
-
-    it('should use default disconnect values when not provided', async () => {
-      const connection = createMockConnection('client-1')
-      const client = registry.register(connection)
-
-      // Call disconnect without parameters - should use defaults (code: 1000, reason: 'Disconnected')
-      await client.disconnect()
-
-      expect(connection.socket.close).toHaveBeenCalledWith(1000, 'Disconnected')
-    })
-
-    it('should use default code when only reason is provided', async () => {
-      const connection = createMockConnection('client-1')
-      const client = registry.register(connection)
-
-      await client.disconnect(undefined, 'Custom reason')
-
-      expect(connection.socket.close).toHaveBeenCalledWith(1000, 'Custom reason')
-    })
-
-    it('should provide getSubscriptions method', () => {
-      const connection = createMockConnection('client-1')
-      const client = registry.register(connection)
-
-      // Register a channel and subscribe the client
-      const channel = new MulticastTransport('test', registry.connections)
-      registry.registerChannel(channel)
-      channel.subscribe('client-1')
-
-      const subscriptions = client.getSubscriptions()
-
-      expect(subscriptions).toEqual(['test'])
-    })
-
-    it('should provide hasSubscription method', () => {
-      const connection = createMockConnection('client-1')
-      const client = registry.register(connection)
-
-      // Register a channel and subscribe the client
-      const channel = new MulticastTransport('test', registry.connections)
-      registry.registerChannel(channel)
-      channel.subscribe('client-1')
-
-      expect(client.hasSubscription('test')).toBe(true)
-      expect(client.hasSubscription('other')).toBe(false)
-    })
-  })
 
   describe('channel management', () => {
     it('should register a channel', () => {
@@ -493,12 +418,13 @@ describe('ClientRegistry', () => {
   })
 
   describe('shared connections map', () => {
-    it('should provide access to shared connections map', () => {
+    it('should provide access to shared connections map containing connections', () => {
       const connection = createMockConnection('client-1')
-      registry.register(connection)
+      const client = registry.register(connection)
 
       expect(registry.connections.has('client-1')).toBe(true)
       expect(registry.connections.get('client-1')).toBe(connection)
+      expect(client).toBe(connection)
     })
   })
 })

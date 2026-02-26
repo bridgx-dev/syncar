@@ -8,7 +8,7 @@
  * ```ts
  * import type {
  *   ISynnelServer,
- *   IServerClient,
+ *   IClientRegistry,
  *   IChannelTransport,
  *   IMiddleware,
  *   IClientWithMetadata
@@ -70,10 +70,7 @@ export type {
 // CLIENT TYPES
 // ============================================================
 export type {
-  IClientData,
-  IServerClient,
   IClientRegistry,
-  IClientWithMetadata,
   IDisconnectionEvent,
 } from './client'
 

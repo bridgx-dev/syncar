@@ -3,7 +3,7 @@
  * Types for the server event system including event types, handlers, and emission.
  */
 
-import type { IServerClient } from './client'
+import type { IClientConnection } from './base'
 import type { ChannelName, Message } from '@synnel/types'
 
 // ============================================================
@@ -48,10 +48,10 @@ export type IServerEventType =
  * @example
  * ```ts
  * type ConnectionHandler = IServerEventMap['connection']
- * // (client: IServerClient) => void
+ * // (client: IClientConnection) => void
  *
  * type MessageHandler = IServerEventMap['message']
- * // (client: IServerClient, message: Message) => void
+ * // (client: IClientConnection, message: Message) => void
  *
  * function on<E extends IServerEventType>(
  *   event: E,
@@ -67,14 +67,14 @@ export interface IServerEventMap {
    *
    * @param client - The connected client
    */
-  connection: (client: IServerClient) => void
+  connection: (client: IClientConnection) => void
 
   /**
    * Fired when a client disconnects
    *
    * @param client - The disconnected client
    */
-  disconnection: (client: IServerClient) => void
+  disconnection: (client: IClientConnection) => void
 
   /**
    * Fired when a message is received from a client
@@ -82,7 +82,7 @@ export interface IServerEventMap {
    * @param client - The client who sent the message
    * @param message - The received message
    */
-  message: (client: IServerClient, message: Message) => void
+  message: (client: IClientConnection, message: Message) => void
 
   /**
    * Fired when a client subscribes to a channel
@@ -90,7 +90,7 @@ export interface IServerEventMap {
    * @param client - The client
    * @param channel - The channel name
    */
-  subscribe: (client: IServerClient, channel: ChannelName) => void
+  subscribe: (client: IClientConnection, channel: ChannelName) => void
 
   /**
    * Fired when a client unsubscribes from a channel
@@ -98,7 +98,7 @@ export interface IServerEventMap {
    * @param client - The client
    * @param channel - The channel name
    */
-  unsubscribe: (client: IServerClient, channel: ChannelName) => void
+  unsubscribe: (client: IClientConnection, channel: ChannelName) => void
 
   /**
    * Fired when an error occurs
@@ -120,7 +120,7 @@ export interface IServerEventMap {
  * @example
  * ```ts
  * type ConnectionHandler = IEventHandler<'connection'>
- * // (client: IServerClient) => void
+ * // (client: IClientConnection) => void
  *
  * const handler: ConnectionHandler = (client) => {
  *   console.log('Connected:', client.id)
@@ -141,10 +141,10 @@ export type IEventHandler<E extends IServerEventType> = IServerEventMap[E]
  * @example
  * ```ts
  * type ConnectionParams = IEventDataType<'connection'>
- * // [IServerClient]
+ * // [IClientConnection]
  *
  * type MessageParams = IEventDataType<'message'>
- * // [IServerClient, Message]
+ * // [IClientConnection, Message]
  * ```
  */
 export type IEventDataType<E extends IServerEventType> =

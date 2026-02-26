@@ -11,7 +11,7 @@ import type {
   IMiddlewareManager,
   IMiddlewareContextFactory,
   IMiddlewareAction,
-  IServerClient,
+  IClientConnection,
   ChannelName,
   Message,
 } from '../types'
@@ -34,7 +34,7 @@ import { MiddlewareRejectionError, MiddlewareExecutionError } from '../errors'
  * ```
  */
 class MiddlewareContext implements IMiddlewareContext {
-  public readonly client?: IServerClient
+  public readonly client?: IClientConnection
   public readonly message?: Message
   public readonly channel?: ChannelName
   public readonly action: IMiddlewareAction
@@ -47,7 +47,7 @@ class MiddlewareContext implements IMiddlewareContext {
   public readonly getRejectionReason: () => string | undefined
 
   constructor(data: {
-    client?: IServerClient
+    client?: IClientConnection
     message?: Message
     channel?: ChannelName
     action: IMiddlewareAction
@@ -124,8 +124,7 @@ class MiddlewareContext implements IMiddlewareContext {
  * ```
  */
 export class MiddlewareManager
-  implements IMiddlewareManager, IMiddlewareContextFactory
-{
+  implements IMiddlewareManager, IMiddlewareContextFactory {
   /**
    * Registered middleware functions
    * Stored in an array to maintain execution order
@@ -210,7 +209,7 @@ export class MiddlewareManager
    * ```
    */
   async executeConnection(
-    client: IServerClient,
+    client: IClientConnection,
     action: 'connect' | 'disconnect',
   ): Promise<void> {
     const context = this.createConnectionContext(client, action)
@@ -236,7 +235,7 @@ export class MiddlewareManager
    * }
    * ```
    */
-  async executeMessage(client: IServerClient, message: Message): Promise<void> {
+  async executeMessage(client: IClientConnection, message: Message): Promise<void> {
     const context = this.createMessageContext(client, message)
     await this.executeMiddlewares(context, 'message')
   }
@@ -261,7 +260,7 @@ export class MiddlewareManager
    * ```
    */
   async executeSubscribe(
-    client: IServerClient,
+    client: IClientConnection,
     channel: ChannelName,
   ): Promise<void> {
     const context = this.createSubscribeContext(client, channel)
@@ -288,7 +287,7 @@ export class MiddlewareManager
    * ```
    */
   async executeUnsubscribe(
-    client: IServerClient,
+    client: IClientConnection,
     channel: ChannelName,
   ): Promise<void> {
     const context = this.createUnsubscribeContext(client, channel)
@@ -307,7 +306,7 @@ export class MiddlewareManager
    * @returns Middleware context
    */
   createConnectionContext(
-    client: IServerClient,
+    client: IClientConnection,
     action: 'connect' | 'disconnect',
   ): IMiddlewareContext {
     return new MiddlewareContext({
@@ -324,7 +323,7 @@ export class MiddlewareManager
    * @returns Middleware context
    */
   createMessageContext(
-    client: IServerClient,
+    client: IClientConnection,
     message: Message,
   ): IMiddlewareContext {
     return new MiddlewareContext({
@@ -342,7 +341,7 @@ export class MiddlewareManager
    * @returns Middleware context
    */
   createSubscribeContext(
-    client: IServerClient,
+    client: IClientConnection,
     channel: ChannelName,
   ): IMiddlewareContext {
     return new MiddlewareContext({
@@ -360,7 +359,7 @@ export class MiddlewareManager
    * @returns Middleware context
    */
   createUnsubscribeContext(
-    client: IServerClient,
+    client: IClientConnection,
     channel: ChannelName,
   ): IMiddlewareContext {
     return new MiddlewareContext({

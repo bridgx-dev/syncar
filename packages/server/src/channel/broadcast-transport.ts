@@ -20,8 +20,7 @@ import { BaseChannel } from './base-channel'
  */
 export class BroadcastTransport<T = unknown>
   extends BaseChannel<T>
-  implements IBroadcastTransport<T>
-{
+  implements IBroadcastTransport<T> {
   /**
    * Channel name (always '__broadcast__')
    */
@@ -107,7 +106,7 @@ export class BroadcastTransport<T = unknown>
   protected sendToAll(message: DataMessage<T>): void {
     for (const client of this.clients.values()) {
       try {
-        client.socket.send(JSON.stringify(message))
+        client.socket.send(JSON.stringify(message), () => { })
       } catch (error) {
         console.error(`Failed to publish broadcast to ${client.id}:`, error)
       }
@@ -127,7 +126,7 @@ export class BroadcastTransport<T = unknown>
       if (excludeSet.has(id)) continue
 
       try {
-        client.socket.send(JSON.stringify(message))
+        client.socket.send(JSON.stringify(message), () => { })
       } catch (error) {
         console.error(`Failed to publish broadcast to ${client.id}:`, error)
       }

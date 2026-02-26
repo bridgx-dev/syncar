@@ -5,54 +5,9 @@
 
 import type { IClientConnection } from './base'
 import type { IChannelTransport } from './channel'
-import type { ChannelName, ClientId, Message, MergeTypes } from '@synnel/types'
+import type { ChannelName, ClientId } from '@synnel/types'
 
-// ============================================================
-// CLIENT DATA (INTERNAL)
-// ============================================================
 
-/**
- * Internal client data structure - alias for IClientConnection
- * Used by ClientRegistry to track client connections.
- */
-export type IClientData = IClientConnection
-
-// ============================================================
-// SERVER CLIENT INTERFACE
-// ============================================================
-// ... (IServerClient stays same for now) ...
-export interface IServerClient extends IClientConnection {
-  /**
-   * Send a message to this client
-   *
-   * @param message - The message to send
-   * @throws Error if client is not connected
-   */
-  send(message: Message): Promise<void>
-
-  /**
-   * Disconnect this client
-   *
-   * @param code - WebSocket close code (default: 1000)
-   * @param reason - Close reason string
-   */
-  disconnect(code?: number, reason?: string): Promise<void>
-
-  /**
-   * Get all channels this client is subscribed to
-   *
-   * @returns Array of channel names
-   */
-  getSubscriptions(): ChannelName[]
-
-  /**
-   * Check if client is subscribed to a specific channel
-   *
-   * @param channel - The channel name to check
-   * @returns true if subscribed, false otherwise
-   */
-  hasSubscription(channel: ChannelName): boolean
-}
 
 // ============================================================
 // CLIENT REGISTRY INTERFACE
@@ -94,12 +49,9 @@ export interface IClientRegistry {
    * Register a new client
    *
    * @param connection - The connection object
-   * @param transport - Transport layer for communication
-   * @returns Server client wrapper
+   * @returns The registered connection
    */
-  register(
-    connection: IClientConnection,
-  ): IServerClient
+  register(connection: IClientConnection): IClientConnection
 
   /**
    * Unregister a client
@@ -113,16 +65,16 @@ export interface IClientRegistry {
    * Get a client by ID
    *
    * @param clientId - Client ID to look up
-   * @returns Server client or undefined if not found
+   * @returns The connection or undefined if not found
    */
-  get(clientId: ClientId): IServerClient | undefined
+  get(clientId: ClientId): IClientConnection | undefined
 
   /**
    * Get all registered clients
    *
-   * @returns Array of all server clients
+   * @returns Array of all connections
    */
-  getAll(): IServerClient[]
+  getAll(): IClientConnection[]
 
   /**
    * Get the number of registered clients
@@ -180,9 +132,9 @@ export interface IClientRegistry {
    * Get all subscribers for a channel
    *
    * @param channel - Channel name
-   * @returns Array of subscribed clients
+   * @returns Array of subscribed connections
    */
-  getSubscribers(channel: ChannelName): IServerClient[]
+  getSubscribers(channel: ChannelName): IClientConnection[]
 
   /**
    * Get subscriber count for a channel
@@ -221,32 +173,6 @@ export interface IClientRegistry {
   clear(): void
 }
 
-// ============================================================
-// CLIENT EXTENSION UTILITIES
-// ============================================================
-
-/**
- * Extend IServerClient with custom metadata
- *
- * @template T Custom metadata type
- *
- * @example
- * ```ts
- * interface UserMetadata {
- *   userId: string
- *   email: string
- *   role: 'admin' | 'user'
- * }
- *
- * type AuthenticatedClient = IClientWithMetadata<UserMetadata>
- *
- * function handleClient(client: AuthenticatedClient) {
- *   console.log(client.userId, client.email)  // Type-safe!
- *   await client.send({ type: 'data', data: 'Hello' })  // Inherited methods work
- * }
- * ```
- */
-export type IClientWithMetadata<T extends object> = MergeTypes<IServerClient, T>
 
 // ============================================================
 // DISCONNECTION EVENT

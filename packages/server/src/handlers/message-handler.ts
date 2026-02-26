@@ -8,7 +8,7 @@ import type {
   IMiddlewareManager,
   IEventEmitter,
   IServerEventMap,
-  IServerClient,
+  IClientConnection,
   IChannelTransport,
   DataMessage,
 } from '../types'
@@ -73,7 +73,7 @@ export class MessageHandler {
    * Handle a message from a client
    */
   async handleMessage<T = unknown>(
-    client: IServerClient,
+    client: IClientConnection,
     message: DataMessage<T>,
   ): Promise<void> {
     // Validate message is a DataMessage

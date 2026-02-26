@@ -5,12 +5,10 @@
 
 import type {
   IClientRegistry,
-  IServerClient,
   IClientConnection,
   IChannelTransport,
   ClientId,
   ChannelName,
-  Message,
 } from '../types'
 
 /**
@@ -23,10 +21,6 @@ export class ClientRegistry implements IClientRegistry {
    */
   public readonly connections: Map<ClientId, IClientConnection> = new Map()
 
-  /**
-   * Map of server client wrappers
-   */
-  protected readonly serverClients: Map<ClientId, IServerClient> = new Map()
 
   /**
    * Map of channel instances by name
@@ -45,19 +39,13 @@ export class ClientRegistry implements IClientRegistry {
    *
    * @param connection - The connection object
    * @param transport - Transport layer for communication
-   * @returns Server client wrapper
+   * @returns The registered connection
    */
-  register(
-    connection: IClientConnection,
-  ): IServerClient {
+  register(connection: IClientConnection): IClientConnection {
     // Add to shared connections map
     this.connections.set(connection.id, connection)
 
-    // Create and store server client wrapper
-    const client = this.createServerClient(connection)
-    this.serverClients.set(connection.id, client)
-
-    return client
+    return connection
   }
 
   /**
@@ -76,7 +64,6 @@ export class ClientRegistry implements IClientRegistry {
     }
 
     // Remove from registry
-    this.serverClients.delete(clientId)
     return this.connections.delete(clientId)
   }
 
@@ -84,19 +71,19 @@ export class ClientRegistry implements IClientRegistry {
    * Get a server client by ID
    *
    * @param clientId - Client ID to look up
-   * @returns Server client or undefined if not found
+   * @returns The connection or undefined if not found
    */
-  get(clientId: ClientId): IServerClient | undefined {
-    return this.serverClients.get(clientId)
+  get(clientId: ClientId): IClientConnection | undefined {
+    return this.connections.get(clientId)
   }
 
   /**
    * Get all registered clients
    *
-   * @returns Array of all server clients
+   * @returns Array of all connections
    */
-  getAll(): IServerClient[] {
-    return Array.from(this.serverClients.values())
+  getAll(): IClientConnection[] {
+    return Array.from(this.connections.values())
   }
 
   /**
@@ -173,14 +160,14 @@ export class ClientRegistry implements IClientRegistry {
    * Get all subscribers for a channel
    *
    * @param channel - Channel name
-   * @returns Array of subscribed clients
+   * @returns Array of subscribed connections
    */
-  getSubscribers(channel: ChannelName): IServerClient[] {
+  getSubscribers(channel: ChannelName): IClientConnection[] {
     const instance = this.getChannel(channel)
     if (!instance) return []
 
     const subscriberIds = instance.getSubscribers()
-    const subscribers: IServerClient[] = []
+    const subscribers: IClientConnection[] = []
 
     for (const id of subscriberIds) {
       const client = this.get(id)
@@ -247,65 +234,6 @@ export class ClientRegistry implements IClientRegistry {
     }
 
     this.connections.clear()
-    this.serverClients.clear()
     this.channelInstances.clear()
-  }
-
-  // ============================================================
-  // INTERNAL HELPERS
-  // ============================================================
-
-  /**
-   * Create a server client wrapper
-   *
-   * @param connection - The connection object
-   * @param transport - Transport layer for communication
-   * @returns Server client wrapper
-   */
-  protected createServerClient(
-    connection: IClientConnection,
-  ): IServerClient {
-    const registry = this
-
-    return {
-      id: connection.id,
-      connectedAt: connection.connectedAt,
-      lastPingAt: connection.lastPingAt,
-      socket: connection.socket,
-
-      send: async (message: Message): Promise<void> => {
-        return new Promise<void>((resolve, reject) => {
-          try {
-            connection.socket.send(JSON.stringify(message), (error) => {
-              if (error) reject(error)
-              else resolve()
-            })
-          } catch (error) {
-            reject(error)
-          }
-        })
-      },
-
-      disconnect: async (code?: number, reason?: string): Promise<void> => {
-        const socket = connection.socket as unknown as {
-          close: (code: number, reason?: string) => void
-        }
-        socket.close(code ?? 1000, reason ?? 'Disconnected')
-      },
-
-      getSubscriptions: (): ChannelName[] => {
-        const subscriptions: ChannelName[] = []
-        for (const [name, instance] of registry.channelInstances.entries()) {
-          if (instance.hasSubscriber(connection.id)) {
-            subscriptions.push(name)
-          }
-        }
-        return subscriptions
-      },
-
-      hasSubscription: (channel: ChannelName): boolean => {
-        return registry.isSubscribed(connection.id, channel)
-      },
-    }
   }
 }

@@ -7,7 +7,6 @@
 
 import type {
   IClientRegistry,
-  IServerClient,
   IClientConnection,
   IMiddlewareManager,
   IEventEmitter,
@@ -126,7 +125,7 @@ export class ConnectionHandler {
    * Handle a new client connection
    *
    * Process flow:
-   * 1. Register client in registry (creates IServerClient wrapper)
+   * 1. Register client in registry (creates IClientConnection)
    * 2. Execute connection middleware
    * 3. If middleware rejects, unregister and disconnect
    * 4. Emit connection event
@@ -147,8 +146,8 @@ export class ConnectionHandler {
    */
   async handleConnection(
     connection: IClientConnection,
-  ): Promise<IServerClient> {
-    // Register client in registry first (creates IServerClient wrapper)
+  ): Promise<IClientConnection> {
+    // Register client in registry first (creates IClientConnection)
     const client = this.registry.register(connection)
 
     // Execute connection middleware

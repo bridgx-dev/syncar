@@ -3,7 +3,7 @@
  * Types for the middleware system that processes connections, messages, and actions.
  */
 
-import type { IServerClient } from './client'
+import type { IClientConnection } from './base'
 import type { ChannelName, Message } from '@synnel/types'
 
 // ============================================================
@@ -71,7 +71,7 @@ export interface IMiddlewareContext {
    * The client involved in this action
    * Undefined for server-level middleware before connection
    */
-  client?: IServerClient
+  client?: IClientConnection
 
   /**
    * The message being processed
@@ -197,7 +197,7 @@ export interface IMiddlewareManager {
    * @throws MiddlewareRejectionError if any middleware rejects
    */
   executeConnection(
-    client: IServerClient,
+    client: IClientConnection,
     action: 'connect' | 'disconnect',
   ): Promise<void>
 
@@ -208,7 +208,7 @@ export interface IMiddlewareManager {
    * @param message - The message
    * @throws MiddlewareRejectionError if any middleware rejects
    */
-  executeMessage(client: IServerClient, message: Message): Promise<void>
+  executeMessage(client: IClientConnection, message: Message): Promise<void>
 
   /**
    * Execute middleware for a subscribe action
@@ -217,7 +217,7 @@ export interface IMiddlewareManager {
    * @param channel - The channel name
    * @throws MiddlewareRejectionError if any middleware rejects
    */
-  executeSubscribe(client: IServerClient, channel: ChannelName): Promise<void>
+  executeSubscribe(client: IClientConnection, channel: ChannelName): Promise<void>
 
   /**
    * Execute middleware for an unsubscribe action
@@ -226,7 +226,7 @@ export interface IMiddlewareManager {
    * @param channel - The channel name
    * @throws MiddlewareRejectionError if any middleware rejects
    */
-  executeUnsubscribe(client: IServerClient, channel: ChannelName): Promise<void>
+  executeUnsubscribe(client: IClientConnection, channel: ChannelName): Promise<void>
 }
 
 // ============================================================
@@ -280,7 +280,7 @@ export interface IMiddlewareContextFactory {
    * @returns Middleware context
    */
   createConnectionContext(
-    client: IServerClient,
+    client: IClientConnection,
     action: 'connect' | 'disconnect',
   ): IMiddlewareContext
 
@@ -292,7 +292,7 @@ export interface IMiddlewareContextFactory {
    * @returns Middleware context
    */
   createMessageContext(
-    client: IServerClient,
+    client: IClientConnection,
     message: Message,
   ): IMiddlewareContext
 
@@ -304,7 +304,7 @@ export interface IMiddlewareContextFactory {
    * @returns Middleware context
    */
   createSubscribeContext(
-    client: IServerClient,
+    client: IClientConnection,
     channel: ChannelName,
   ): IMiddlewareContext
 
@@ -316,7 +316,7 @@ export interface IMiddlewareContextFactory {
    * @returns Middleware context
    */
   createUnsubscribeContext(
-    client: IServerClient,
+    client: IClientConnection,
     channel: ChannelName,
   ): IMiddlewareContext
 }
