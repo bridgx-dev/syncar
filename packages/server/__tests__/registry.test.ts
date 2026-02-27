@@ -11,7 +11,7 @@ import type {
   IServerTransport,
   Message,
 } from '../src/types/index.js'
-import { MessageType } from '@synnel/types'
+import { MessageType } from '../src/types/index.js'
 
 // Mock connection
 function createMockConnection(id: string): IClientConnection {

@@ -10,8 +10,8 @@ import { createAuthMiddleware, createLoggingMiddleware, createRateLimitMiddlewar
 import { clearRateLimitStore as clearRateLimitStoreFromFactories } from '../../src/middleware/factories.js'
 import type { ISynnelServer, IServerTransport } from '../../src/types/index.js'
 import type { IClientConnection, IServerEventMap } from '../../src/types/index.js'
-import type { ClientId } from '@synnel/types'
-import { MessageType, SignalType } from '@synnel/types'
+import type { ClientId } from '../../src/types/index.js'
+import { MessageType, SignalType } from '../../src/types/index.js'
 
 // Mock transport implementation
 class MockTransport extends EventEmitter implements IServerTransport {

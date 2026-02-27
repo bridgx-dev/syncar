@@ -20,7 +20,7 @@ import type {
   SignalMessage,
   IServerEventMap,
 } from '../src/types/index.js'
-import { MessageType, SignalType } from '@synnel/types'
+import { MessageType, SignalType } from '../src/types/index.js'
 import { CLOSE_CODES } from '../src/config/index.js'
 import { ChannelError, MessageError } from '../src/errors/index.js'
 

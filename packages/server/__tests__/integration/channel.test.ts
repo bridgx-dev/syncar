@@ -8,8 +8,8 @@ import { SynnelServer } from '../../src/server/index.js'
 import { MulticastTransport, BroadcastTransport } from '../../src/channel/index.js'
 import type { ISynnelServer, IServerTransport } from '../../src/types/index.js'
 import type { IClientConnection } from '../../src/types/index.js'
-import type { ClientId, Message, SignalMessage } from '@synnel/types'
-import { MessageType, SignalType } from '@synnel/types'
+import type { ClientId, Message, SignalMessage } from '../../src/types/index.js'
+import { MessageType, SignalType } from '../../src/types/index.js'
 
 // Mock transport implementation
 class MockTransport implements IServerTransport {

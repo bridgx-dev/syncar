@@ -15,8 +15,8 @@ import {
   getRateLimitState,
 } from '../src/middleware/factories.js'
 import type { IClientConnection } from '../src/types/index.js'
-import type { Message, DataMessage } from '@synnel/types'
-import { MessageType } from '@synnel/types'
+import type { Message, DataMessage } from '../src/types/index.js'
+import { MessageType } from '../src/types/index.js'
 
 // Mock client
 const createMockClient = (id: string): IClientConnection => {

@@ -5,7 +5,7 @@
 
 import type { IClientConnection } from './base'
 import type { IChannelTransport } from './channel'
-import type { ChannelName, ClientId } from '@synnel/types'
+import type { ChannelName, ClientId } from './common'
 
 
 

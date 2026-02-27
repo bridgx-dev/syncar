@@ -11,11 +11,11 @@ import type {
   IServerEventMap,
   SignalMessage,
 } from '../types'
-import { createSignalMessage } from '@synnel/lib'
-import { SignalType } from '@synnel/types'
+import { createSignalMessage } from '../lib'
+import { SignalType } from '../types'
 import { ChannelError, MessageError } from '../errors'
 import { BROADCAST_CHANNEL } from '../config'
-import { isReservedChannelName } from '@synnel/lib'
+import { isReservedChannelName } from '../lib'
 
 /**
  * Signal handler options

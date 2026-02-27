@@ -13,7 +13,7 @@ import type {
 } from '../types'
 import { BaseChannel } from './base-channel'
 import type { IPublishOptions } from '../types'
-import { createDataMessage } from '@synnel/lib'
+import { createDataMessage } from '../lib'
 
 /**
  * Multicast Transport - sends messages only to subscribed clients

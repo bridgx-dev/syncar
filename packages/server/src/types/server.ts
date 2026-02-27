@@ -4,7 +4,9 @@
  */
 
 import type { Server as HttpServer } from 'node:http'
-import type { Message, DeepPartial, ClientId } from '@synnel/types'
+import type { DeepPartial } from './utilities'
+import type { ClientId } from './common'
+import type { Message } from './message'
 import type { IServerTransport } from './transport'
 import type { IMiddleware } from './middleware'
 import type {
@@ -284,7 +286,7 @@ export interface ISynnelServer {
    * ```
    */
   createMulticast<T = unknown>(
-    name: import('@synnel/types').ChannelName,
+    name: import('./common').ChannelName,
     options?: IChannelOptions,
   ): IMulticastTransport<T>
 
@@ -294,14 +296,14 @@ export interface ISynnelServer {
    * @param name - Channel name to check
    * @returns true if channel exists, false otherwise
    */
-  hasChannel(name: import('@synnel/types').ChannelName): boolean
+  hasChannel(name: import('./common').ChannelName): boolean
 
   /**
    * Get all active channel names
    *
    * @returns Array of channel names
    */
-  getChannels(): import('@synnel/types').ChannelName[]
+  getChannels(): import('./common').ChannelName[]
 
   // ============================================================
   // EVENT METHODS

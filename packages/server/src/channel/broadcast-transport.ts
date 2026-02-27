@@ -11,7 +11,7 @@ import type {
   DataMessage,
   SubscriberId,
 } from '../types'
-import { createDataMessage } from '@synnel/lib'
+import { createDataMessage } from '../lib'
 import { BROADCAST_CHANNEL } from '../config'
 import { BaseChannel } from './base-channel'
 

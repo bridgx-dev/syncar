@@ -13,7 +13,7 @@ import type {
   DataMessage,
 } from '../types'
 import { MessageError, ChannelError } from '../errors'
-import { isDataMessage } from '@synnel/lib'
+import { isDataMessage } from '../lib'
 
 /**
  * Message handler options

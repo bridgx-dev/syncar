@@ -4,7 +4,8 @@
  */
 
 import type { IClientConnection } from './base'
-import type { ChannelName, Message } from '@synnel/types'
+import type { ChannelName } from './common'
+import type { Message } from './message'
 
 // ============================================================
 // MIDDLEWARE ACTION TYPES

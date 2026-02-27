@@ -11,14 +11,14 @@
  *   IClientRegistry,
  *   IChannelTransport,
  *   IMiddleware
- * } from '@synnel/server/types'
+ * } from './types'
  * ```
  */
 
 // ============================================================
 // UTILITY TYPES
 // ============================================================
-// Re-exported from @synnel/types for convenience
+// Re-exported from utilities for convenience
 export type {
   MergeTypes,
   DeepPartial,
@@ -42,7 +42,7 @@ export type {
   UnionToIntersection,
   LastOfTuple,
   TupleToUnion,
-} from '@synnel/types'
+} from './utilities'
 
 // ============================================================
 // BASE TYPES (Single Source of Truth)
@@ -68,10 +68,7 @@ export type {
 // ============================================================
 // CLIENT TYPES
 // ============================================================
-export type {
-  IClientRegistry,
-  IDisconnectionEvent,
-} from './client'
+export type { IClientRegistry, IDisconnectionEvent } from './client'
 
 // ============================================================
 // CHANNEL TYPES
@@ -130,10 +127,10 @@ export type {
 } from './events'
 
 // ============================================================
-// RE-EXPORT SHARED TYPES FROM @synnel/types
+// RE-EXPORT SHARED TYPES
 // ============================================================
 /**
- * Common shared types from @synnel/types
+ * Common shared types
  * Re-exported here for convenience
  */
 export type {
@@ -143,16 +140,19 @@ export type {
   ChannelName,
   Timestamp,
   DataPayload,
+} from './common'
+export type {
   ConnectionStatus,
   TransportConfig,
   MessageQueueOptions,
+} from './connection'
+export type {
   Message,
   DataMessage,
   SignalMessage,
   ErrorMessage,
   AckMessage,
   ErrorData,
-  MessageType,
-  SignalType,
-  ErrorCode,
-} from '@synnel/types'
+  MessageHandler,
+} from './message'
+export { MessageType, SignalType, ErrorCode } from './message'

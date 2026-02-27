@@ -8,7 +8,7 @@
 
 import type { EventEmitter } from 'node:events'
 import type { IClientConnection } from './base'
-import type { ClientId } from '@synnel/types'
+import type { ClientId } from './common'
 
 // ============================================================
 // BASE TRANSPORT INTERFACE

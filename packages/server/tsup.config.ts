@@ -10,7 +10,7 @@ export default defineConfig({
   sourcemap: true,
   target: 'es2020',
   // Only externalize peer dependencies
-  // @synnel/types and @synnel/lib are BUNDLED, not external
+  // lib and types are BUNDLED, not external
   external: ['ws'],
   // Bundle everything (JS and types)
   bundle: true,

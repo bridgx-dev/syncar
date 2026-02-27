@@ -7,7 +7,7 @@
  */
 
 import type WebSocket from 'ws'
-import type { ClientId, Timestamp, ChannelName } from '@synnel/types'
+import type { ClientId, Timestamp, ChannelName } from './common'
 
 // ============================================================
 // BASE CLIENT CONNECTION
@@ -163,7 +163,7 @@ export interface IChannel<T> {
 export type IMessageHandler<T> = (
   data: T,
   client: IClientConnection,
-  message: import('@synnel/types').DataMessage<T>,
+  message: import('./message').DataMessage<T>,
 ) => void | Promise<void>
 
 // ============================================================

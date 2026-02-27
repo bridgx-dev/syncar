@@ -12,9 +12,9 @@ import type {
 import type {
   ChannelName,
   SubscriberId,
-  DataMessage,
   Timestamp,
-} from '@synnel/types'
+} from './common'
+import type { DataMessage } from './message'
 
 // ============================================================
 // CHANNEL STATE

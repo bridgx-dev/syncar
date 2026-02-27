@@ -6,13 +6,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { BaseTransport, WebSocketServerTransport } from '../src/transport/index.js'
 import type { IClientConnection, ClientId } from '../src/types/index.js'
-import type { ClientId as ClientIdType } from '@synnel/types'
-import { MessageType } from '@synnel/types'
+import type { ClientId } from '../src/types/index.js'
+import { MessageType } from '../src/types/index.js'
 
 // Mock client connection
 function createMockClient(id: string): IClientConnection {
   return {
-    id: id as ClientIdType,
+    id: id as ClientId,
     socket: {
       send: vi.fn(),
       close: vi.fn(),
@@ -54,11 +54,11 @@ describe('Transport', () => {
         const client1 = createMockClient('client-1')
         const client2 = createMockClient('client-2')
 
-        transport.connections.set('client-1' as ClientIdType, client1)
-        transport.connections.set('client-2' as ClientIdType, client2)
+        transport.connections.set('client-1' as ClientId, client1)
+        transport.connections.set('client-2' as ClientId, client2)
 
         expect(transport.connections.size).toBe(2)
-        expect(transport.connections.get('client-1' as ClientIdType)).toBe(client1)
+        expect(transport.connections.get('client-1' as ClientId)).toBe(client1)
       })
     })
 
@@ -181,8 +181,8 @@ describe('Transport', () => {
         })
 
         const mockSocket = createMockWebSocket('client-1')
-        transport.connections.set('client-1' as ClientIdType, {
-          id: 'client-1' as ClientIdType,
+        transport.connections.set('client-1' as ClientId, {
+          id: 'client-1' as ClientId,
           socket: mockSocket as any,
           connectedAt: Date.now(),
         })
@@ -208,8 +208,8 @@ describe('Transport', () => {
         })
 
         const mockSocket = createMockWebSocket('client-1')
-        transport.connections.set('client-1' as ClientIdType, {
-          id: 'client-1' as ClientIdType,
+        transport.connections.set('client-1' as ClientId, {
+          id: 'client-1' as ClientId,
           socket: mockSocket as any,
           connectedAt: Date.now(),
           lastPingAt: Date.now() - 100 // Timed out
@@ -227,8 +227,8 @@ describe('Transport', () => {
       it('should clear all connections', async () => {
         const connections = new Map<ClientId, IClientConnection>()
         const mockSocket = createMockWebSocket('client-1')
-        connections.set('client-1' as ClientIdType, {
-          id: 'client-1' as ClientIdType,
+        connections.set('client-1' as ClientId, {
+          id: 'client-1' as ClientId,
           socket: mockSocket as any,
           connectedAt: Date.now(),
         })

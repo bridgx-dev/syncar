@@ -114,8 +114,6 @@
       "name": "@synnel/server",
       "version": "1.0.0-alpha.1",
       "devDependencies": {
-        "@synnel/lib": "workspace:*",
-        "@synnel/types": "workspace:*",
         "@types/node": "^20.10.0",
         "@types/ws": "^8.18.1",
         "@vitest/coverage-v8": "^1.1.0",
