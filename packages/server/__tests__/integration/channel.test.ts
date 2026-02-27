@@ -4,47 +4,31 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { EventEmitter } from 'node:events'
 import { SynnelServer } from '../../src/server/index.js'
-import { MulticastTransport, BroadcastTransport } from '../../src/channel/index.js'
-import type { ISynnelServer, IServerTransport } from '../../src/types/index.js'
-import type { IClientConnection } from '../../src/types/index.js'
+import { ChannelRef, BroadcastChannel } from '../../src/channel/index.js'
+import type { ISynnelServer, IServerTransport, IClientConnection } from '../../src/types/index.js'
 import type { ClientId, Message, SignalMessage } from '../../src/types/index.js'
-import { MessageType, SignalType } from '../../src/types/index.js'
+import { MessageType, SignalType, DataMessage } from '../../src/types/index.js'
 
 // Mock transport implementation
-class MockTransport implements IServerTransport {
+class MockTransport extends EventEmitter implements IServerTransport {
   public connections: Map<ClientId, IClientConnection> = new Map()
 
-  private listeners: Map<string, Set<Function>> = new Map()
-  private messageQueue: Array<{ clientId: ClientId; message: Message }> = []
+  private messageQueue: Array<{ clientId: ClientId; message: any }> = []
 
-  on(event: string, handler: Function): () => void {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set())
-    }
-    this.listeners.get(event)!.add(handler)
-    return () => this.off(event, handler)
+  constructor() {
+    super()
   }
 
-  off(event: string, handler: Function): void {
-    const handlers = this.listeners.get(event)
-    if (handlers) {
-      handlers.delete(handler)
-    }
-  }
-
-  emit(event: string, ...args: any[]): void {
-    const handlers = this.listeners.get(event)
-    if (handlers) {
-      handlers.forEach((handler) => handler(...args))
-    }
-  }
+  // Helper to match IEventEmitter interface which on() now must return 'this' or similar
+  // Node's version returns 'this' which is fine
 
   async sendToClient(clientId: ClientId, message: Message): Promise<void> {
     this.messageQueue.push({ clientId, message })
     const client = this.connections.get(clientId)
     if (client && typeof (client.socket as any).send === 'function') {
-      ;(client.socket as any).send(JSON.stringify(message))
+      ; (client.socket as any).send(JSON.stringify(message))
     }
   }
 
@@ -70,7 +54,6 @@ class MockTransport implements IServerTransport {
         send: vi.fn(),
         close: vi.fn(),
       } as any,
-      status: 'connected',
       connectedAt: Date.now(),
     }
     this.connections.set(id, client)
@@ -218,54 +201,6 @@ describe('Channel Integration Tests', () => {
       expect((transport.connections.get('client-2')?.socket as any).send).toHaveBeenCalled()
     })
 
-    it('should respect max subscribers limit', () => {
-      const channel = server.createMulticast<string>('limited', {
-        maxSubscribers: 2,
-      })
-
-      transport.addMockClient('client-1' as ClientId)
-      transport.addMockClient('client-2' as ClientId)
-      transport.addMockClient('client-3' as ClientId)
-
-      // Subscribe up to limit
-      expect(channel.subscribe('client-1')).toBe(true)
-      expect(channel.subscribe('client-2')).toBe(true)
-
-      // Third subscription should fail
-      expect(channel.subscribe('client-3')).toBe(false)
-    })
-
-    it('should support reserved channels', () => {
-      const reservedChannel = server.createMulticast<string>('__admin__', {
-        reserved: true,
-      })
-
-      transport.addMockClient('client-1' as ClientId)
-
-      expect(reservedChannel.isReserved()).toBe(true)
-      expect(reservedChannel.name).toBe('__admin__')
-    })
-
-    it('should maintain message history when enabled', () => {
-      const channel = server.createMulticast<string>('history', {
-        historySize: 3,
-      })
-
-      transport.addMockClient('client-1' as ClientId)
-      channel.subscribe('client-1')
-
-      // Send multiple messages
-      channel.publish('Message 1')
-      channel.publish('Message 2')
-      channel.publish('Message 3')
-      channel.publish('Message 4') // Should remove Message 1 from history
-
-      const history = channel.getHistory()
-      expect(history.length).toBe(3)
-      expect(history[0].data).toBe('Message 2')
-      expect(history[1].data).toBe('Message 3')
-      expect(history[2].data).toBe('Message 4')
-    })
   })
 
   describe('multiple channels', () => {
@@ -465,62 +400,4 @@ describe('Channel Integration Tests', () => {
       expect((client3.socket as any).send).not.toHaveBeenCalled()
     })
   })
-
-  describe('channel state', () => {
-    it('should return correct channel state', () => {
-      const channel = server.createMulticast<string>('chat')
-
-      transport.addMockClient('client-1' as ClientId)
-      channel.subscribe('client-1')
-
-      const state = channel.getState()
-
-      expect(state.name).toBe('chat')
-      expect(state.subscriberCount).toBe(1)
-      expect(state.createdAt).toBeDefined()
-      expect(state.lastMessageAt).toBeUndefined()
     })
-
-    it('should update lastMessageAt after publish', () => {
-      const channel = server.createMulticast<string>('chat')
-
-      transport.addMockClient('client-1' as ClientId)
-      channel.subscribe('client-1')
-
-      channel.publish('First message')
-
-      const state = channel.getState()
-      expect(state.lastMessageAt).toBeDefined()
-      expect(state.lastMessageAt).toBeGreaterThan(0)
-    })
-
-    it('should check if channel is empty', () => {
-      const channel = server.createMulticast<string>('chat')
-
-      expect(channel.isEmpty()).toBe(true)
-
-      transport.addMockClient('client-1' as ClientId)
-      channel.subscribe('client-1')
-
-      expect(channel.isEmpty()).toBe(false)
-    })
-
-    it('should check if channel is full', () => {
-      const channel = server.createMulticast<string>('chat', {
-        maxSubscribers: 2,
-      })
-
-      expect(channel.isFull()).toBe(false)
-
-      transport.addMockClient('client-1' as ClientId)
-      channel.subscribe('client-1')
-
-      expect(channel.isFull()).toBe(false)
-
-      transport.addMockClient('client-2' as ClientId)
-      channel.subscribe('client-2')
-
-      expect(channel.isFull()).toBe(true)
-    })
-  })
-})

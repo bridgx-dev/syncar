@@ -1,10 +1,12 @@
 /**
  * Channel Module
- * Channel-based messaging implementations for broadcast and multicast transports.
+ * Channel-based messaging implementations.
  *
  * @module channel
  */
 
-export { BaseChannel } from './base-channel'
-export { BroadcastTransport } from './broadcast-transport'
-export { MulticastTransport } from './multicast-transport'
+// Lightweight channel reference
+export { ChannelRef } from './channel-ref'
+
+// Broadcast channel (special case - sends to all clients)
+export { BroadcastChannel } from './broadcast-channel'

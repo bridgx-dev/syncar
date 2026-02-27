@@ -26,23 +26,18 @@ import {
   MiddlewareRejectionError,
   MiddlewareExecutionError,
   WebSocketServerTransport,
-  BaseChannel,
-  BroadcastTransport,
-  MulticastTransport,
+  ChannelRef,
+  BroadcastChannel,
   DEFAULT_PORT,
   DEFAULT_HOST,
   DEFAULT_PATH,
-  DEFAULT_PING_INTERVAL,
   DEFAULT_PING_TIMEOUT,
   DEFAULT_MAX_PAYLOAD,
   DEFAULT_SERVER_CONFIG,
-  DEFAULT_CHANNEL_OPTIONS,
   DEFAULTS,
   BROADCAST_CHANNEL,
   CLOSE_CODES,
   ERROR_CODES,
-  DEFAULT_MAX_SUBSCRIBERS,
-  DEFAULT_HISTORY_SIZE,
   ClientRegistry,
   ConnectionHandler,
   MessageHandler,
@@ -102,30 +97,25 @@ describe('index.ts exports', () => {
   })
 
   it('should export channel classes', () => {
-    expect(BaseChannel).toBeDefined()
-    expect(BroadcastTransport).toBeDefined()
-    expect(MulticastTransport).toBeDefined()
+    expect(ChannelRef).toBeDefined()
+    expect(BroadcastChannel).toBeDefined()
   })
 
   it('should export default constants', () => {
     expect(DEFAULT_PORT).toBeDefined()
     expect(DEFAULT_HOST).toBeDefined()
     expect(DEFAULT_PATH).toBeDefined()
-    expect(DEFAULT_PING_INTERVAL).toBeDefined()
     expect(DEFAULT_PING_TIMEOUT).toBeDefined()
     expect(DEFAULT_MAX_PAYLOAD).toBeDefined()
   })
 
   it('should export default config objects', () => {
     expect(DEFAULT_SERVER_CONFIG).toBeDefined()
-    expect(DEFAULT_CHANNEL_OPTIONS).toBeDefined()
     expect(DEFAULTS).toBeDefined()
   })
 
   it('should export channel constants', () => {
     expect(BROADCAST_CHANNEL).toBeDefined()
-    expect(DEFAULT_MAX_SUBSCRIBERS).toBeDefined()
-    expect(DEFAULT_HISTORY_SIZE).toBeDefined()
   })
 
   it('should export close and error codes', () => {

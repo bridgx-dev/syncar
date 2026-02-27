@@ -9,8 +9,10 @@ import type {
   IEventEmitter,
   IServerEventMap,
   IClientConnection,
+  IChannel,
   IChannelTransport,
   DataMessage,
+  ChannelName,
 } from '../types'
 import { MessageError, ChannelError } from '../errors'
 import { isDataMessage } from '../lib'
@@ -36,6 +38,12 @@ export interface MessageHandlerOptions {
    * @default true
    */
   executeMiddleware?: boolean
+
+  /**
+   * Optional function to get a channel by name
+   * If provided, this will be used instead of registry.getChannel()
+   */
+  getChannel?<T = unknown>(name: ChannelName): IChannel<T> | undefined
 }
 
 /**
@@ -66,6 +74,7 @@ export class MessageHandler {
       emitMessageEvent: dependencies.options?.emitMessageEvent ?? true,
       requireChannel: dependencies.options?.requireChannel ?? true,
       executeMiddleware: dependencies.options?.executeMiddleware ?? true,
+      getChannel: dependencies.options?.getChannel ?? ((name: ChannelName) => this.registry.getChannel(name)),
     }
   }
 
@@ -81,7 +90,8 @@ export class MessageHandler {
       throw new MessageError('Invalid message type: expected DATA message')
     }
 
-    const channel = this.registry.getChannel<T>(message.channel)
+    // Get channel using the getChannel callback (or fallback to registry)
+    const channel = this.options.getChannel<T>(message.channel)
 
     // Validate channel exists
     if (this.options.requireChannel && !channel) {
@@ -93,9 +103,13 @@ export class MessageHandler {
       await this.middleware.executeMessage(client, message)
     }
 
-    // Route to channel for processing (if it exists)
+    // Route to channel for processing (triggers onMessage handlers)
     if (channel) {
-      await channel.receive(message.data, client, message)
+      await (channel as IChannelTransport<T>).receive(
+        message.data,
+        client,
+        message,
+      )
     }
 
     // Emit message event
@@ -113,7 +127,7 @@ export class MessageHandler {
     }
 
     if (this.options.requireChannel) {
-      return !!this.registry.getChannel(message.channel)
+      return !!this.options.getChannel<T>(message.channel)
     }
 
     return true
@@ -124,8 +138,8 @@ export class MessageHandler {
    */
   getChannelForMessage<T = unknown>(
     message: DataMessage<T>,
-  ): IChannelTransport<T> | undefined {
-    return this.registry.getChannel<T>(message.channel)
+  ): IChannel<T> | undefined {
+    return this.options.getChannel<T>(message.channel)
   }
 
   /**

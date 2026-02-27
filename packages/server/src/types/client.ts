@@ -3,8 +3,7 @@
  * Types for client management and server-side client representation.
  */
 
-import type { IClientConnection } from './base'
-import type { IChannelTransport } from './channel'
+import type { IClientConnection, IChannel } from './base'
 import type { ChannelName, ClientId } from './common'
 
 
@@ -92,7 +91,7 @@ export interface IClientRegistry {
    *
    * @param channel - Channel instance to register
    */
-  registerChannel(channel: IChannelTransport<unknown>): void
+  registerChannel(channel: IChannel<unknown>): void
 
   /**
    * Get a channel instance by name
@@ -100,7 +99,7 @@ export interface IClientRegistry {
    * @param name - Channel name
    * @returns Channel instance or undefined if not found
    */
-  getChannel<T = unknown>(name: ChannelName): IChannelTransport<T> | undefined
+  getChannel<T = unknown>(name: ChannelName): IChannel<T> | undefined
 
   /**
    * Remove a channel instance

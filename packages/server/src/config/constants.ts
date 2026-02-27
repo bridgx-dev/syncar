@@ -133,11 +133,6 @@ export const CLOSE_CODES = {
    */
   CHANNEL_NOT_FOUND: 4003,
 
-  /**
-   * Channel is full
-   * Channel reached max subscribers
-   */
-  CHANNEL_FULL: 4004,
 
   /**
    * Unauthorized
@@ -250,22 +245,3 @@ export const DEFAULT_PING_INTERVAL = 30000
  */
 export const DEFAULT_PING_TIMEOUT = 5000
 
-// ============================================================
-// CHANNEL OPTIONS DEFAULTS
-// ============================================================
-
-/**
- * Default maximum subscribers (0 = unlimited)
- */
-export const DEFAULT_MAX_SUBSCRIBERS = 0
-
-/**
- * Default message history size (0 = no history)
- */
-export const DEFAULT_HISTORY_SIZE = 0
-
-/**
- * Default empty channel grace period in milliseconds (5 seconds)
- * Time before auto-deleting empty channels
- */
-export const DEFAULT_EMPTY_CHANNEL_GRACE_PERIOD = 5000

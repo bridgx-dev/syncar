@@ -12,7 +12,7 @@ import {
 import { ClientRegistry } from '../src/registry/index.js'
 import { MiddlewareManager } from '../src/middleware/index.js'
 import { EventEmitter } from '../src/emitter/index.js'
-import { MulticastTransport } from '../src/channel/index.js'
+import { ChannelRef, BroadcastChannel } from '../src/channel/index.js'
 import type {
   IClientConnection,
   IServerTransport,
@@ -306,21 +306,29 @@ describe('Handlers', () => {
     let registry: ClientRegistry
     let middleware: MiddlewareManager
     let emitter: EventEmitter<IServerEventMap>
-    let channel: MulticastTransport<string>
+    let mockChannel: any
+    let channels: Map<string, any>
 
     beforeEach(() => {
       registry = new ClientRegistry()
       middleware = new MiddlewareManager()
       emitter = new EventEmitter<IServerEventMap>()
 
-      // Create a test channel
-      channel = new MulticastTransport<string>('test', registry.connections)
-      registry.registerChannel(channel)
+      mockChannel = {
+        name: 'test',
+        receive: vi.fn(),
+        handleSubscribe: vi.fn(),
+        handleUnsubscribe: vi.fn(),
+      }
+      channels = new Map([['test', mockChannel]])
 
       handler = new MessageHandler({
         registry,
         middleware,
         emitter,
+        options: {
+          getChannel: (name) => channels.get(name as string),
+        }
       })
     })
 
@@ -328,15 +336,13 @@ describe('Handlers', () => {
       it('should route message to channel', async () => {
         const connection = createMockConnection('client-1')
         const client = registry.register(connection)
-        registry.subscribe('client-1', 'test')
-
-        const channelSpy = vi.spyOn(channel, 'receive').mockResolvedValue()
+        registry.subscribe('client-1' as any, 'test' as any)
 
         const message: DataMessage<string> = createDataMessage('test', 'Hello')
 
         await handler.handleMessage(client, message)
 
-        expect(channelSpy).toHaveBeenCalledWith('Hello', client, message)
+        expect(mockChannel.receive).toHaveBeenCalledWith('Hello', client, message)
       })
 
       it('should execute message middleware', async () => {
@@ -468,7 +474,7 @@ describe('Handlers', () => {
 
         const found = handler.getChannelForMessage(message)
 
-        expect(found).toBe(channel)
+        expect(found).toBe(mockChannel)
       })
 
       it('should return undefined for non-existent channel', () => {
@@ -513,21 +519,30 @@ describe('Handlers', () => {
     let registry: ClientRegistry
     let middleware: MiddlewareManager
     let emitter: EventEmitter<IServerEventMap>
-    let channel: MulticastTransport<string>
+    let mockChannel: any
+    let channels: Map<string, any>
 
     beforeEach(() => {
       registry = new ClientRegistry()
       middleware = new MiddlewareManager()
       emitter = new EventEmitter<IServerEventMap>()
 
-      // Create a test channel
-      channel = new MulticastTransport<string>('chat', registry.connections)
-      registry.registerChannel(channel)
+      mockChannel = {
+        name: 'chat',
+        receive: vi.fn(),
+        handleSubscribe: vi.fn(),
+        handleUnsubscribe: vi.fn(),
+      }
+      channels = new Map([['chat', mockChannel]])
 
       handler = new SignalHandler({
         registry,
         middleware,
         emitter,
+        options: {
+          requireChannel: true,
+          getChannel: (name) => channels.get(name as string),
+        },
       })
     })
 
@@ -608,12 +623,12 @@ describe('Handlers', () => {
       it('should subscribe client to channel', async () => {
         const connection = createMockConnection('client-1')
         const client = registry.register(connection)
-
         const message: SignalMessage = createSignalMessage('chat', SignalType.SUBSCRIBE)
 
         await handler.handleSubscribe(client, message)
 
-        expect(channel.hasSubscriber('client-1')).toBe(true)
+        expect(registry.isSubscribed('client-1' as any, 'chat' as any)).toBe(true)
+        expect(mockChannel.handleSubscribe).toHaveBeenCalledWith(client)
       })
 
       it('should execute subscribe middleware', async () => {
@@ -661,13 +676,9 @@ describe('Handlers', () => {
       })
 
       it('should throw error for reserved channel', async () => {
-        // Create a reserved channel
-        const reservedChannel = new MulticastTransport<string>(
-          '__private__',
-          registry.connections,
-          { reserved: true },
-        )
-        registry.registerChannel(reservedChannel)
+        // Mock reserved channel logic via middleware or similar if needed, 
+        // but here we just test the handler's built-in check
+        registry.registerChannelByName('__private__' as any)
 
         const handlerStrict = new SignalHandler({
           registry,
@@ -720,29 +731,6 @@ describe('Handlers', () => {
         ).rejects.toThrow(ChannelError)
       })
 
-      it('should throw error when channel is full', async () => {
-        // Create a channel with max subscribers = 1
-        const fullChannel = new MulticastTransport<string>(
-          'full-channel',
-          registry.connections,
-          { maxSubscribers: 1 },
-        )
-        registry.registerChannel(fullChannel)
-
-        const conn1 = createMockConnection('client-1')
-        registry.register(conn1)
-        registry.subscribe('client-1', 'full-channel')
-
-        const conn2 = createMockConnection('client-2')
-        const client2 = registry.register(conn2)
-
-        const message: SignalMessage = createSignalMessage('full-channel', SignalType.SUBSCRIBE)
-
-        await expect(
-          handler.handleSubscribe(client2, message),
-        ).rejects.toThrow('Channel is full')
-      })
-
       it('should throw error when registry subscribe fails', async () => {
         const connection = createMockConnection('client-1')
         const client = registry.register(connection)
@@ -765,13 +753,13 @@ describe('Handlers', () => {
       it('should unsubscribe client from channel', async () => {
         const connection = createMockConnection('client-1')
         const client = registry.register(connection)
-        registry.subscribe('client-1', 'chat')
-
+        registry.subscribe('client-1' as any, 'chat' as any)
         const message: SignalMessage = createSignalMessage('chat', SignalType.UNSUBSCRIBE)
 
         await handler.handleUnsubscribe(client, message)
 
-        expect(channel.hasSubscriber('client-1')).toBe(false)
+        expect(registry.isSubscribed('client-1' as any, 'chat' as any)).toBe(false)
+        expect(mockChannel.handleUnsubscribe).toHaveBeenCalledWith(client)
       })
 
       it('should execute unsubscribe middleware', async () => {

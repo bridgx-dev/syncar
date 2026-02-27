@@ -11,7 +11,6 @@ import type { IServerTransport } from './transport'
 import type { IMiddleware } from './middleware'
 import type {
   IBroadcastTransport,
-  IChannelOptions,
   IMulticastTransport,
 } from './channel'
 import type { IServerEventMap, IServerEventType, IEventEmitter } from './events'
@@ -133,6 +132,13 @@ export interface IServerConfig {
    * ```
    */
   middleware?: IMiddleware[]
+
+  /**
+   * Maximum number of subscribers to process in a single synchronous chunk
+   * during broadcasting. Higher values process faster but may block the event loop.
+   * @default 500
+   */
+  broadcastChunkSize?: number
 }
 
 /**
@@ -145,6 +151,7 @@ export interface IDefaultServerConfig {
   enablePing: boolean
   pingInterval: number
   pingTimeout: number
+  broadcastChunkSize: number
 }
 
 /**
@@ -287,7 +294,6 @@ export interface ISynnelServer {
    */
   createMulticast<T = unknown>(
     name: import('./common').ChannelName,
-    options?: IChannelOptions,
   ): IMulticastTransport<T>
 
   /**
@@ -441,9 +447,3 @@ export interface ISynnelServer {
   getEmitter(): IEventEmitter<IServerEventMap>
 }
 
-// ============================================================
-// RE-EXPORT CHANNEL OPTIONS
-// ============================================================
-
-// Re-export IChannelOptions for convenience (defined in channel.ts)
-export type { IChannelOptions } from './channel'

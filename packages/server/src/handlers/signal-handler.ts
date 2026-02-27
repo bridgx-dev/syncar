@@ -6,10 +6,13 @@
 import type {
   IClientRegistry,
   IClientConnection,
+  IChannel,
   IMiddlewareManager,
   IEventEmitter,
   IServerEventMap,
+  IChannelTransport,
   SignalMessage,
+  ChannelName,
 } from '../types'
 import { createSignalMessage } from '../lib'
 import { SignalType } from '../types'
@@ -21,6 +24,12 @@ import { isReservedChannelName } from '../lib'
  * Signal handler options
  */
 export interface SignalHandlerOptions {
+  /**
+   * Whether to require a valid channel for subscription and unsubscription
+   * @default false
+   */
+  requireChannel?: boolean
+
   /**
    * Whether to emit subscribe events
    * @default true
@@ -50,6 +59,12 @@ export interface SignalHandlerOptions {
    * @default true
    */
   autoRespondToPing?: boolean
+
+  /**
+   * Optional function to get a channel by name
+   * If provided, this will be used to trigger channel handlers
+   */
+  getChannel?<T = unknown>(name: ChannelName): IChannel<T> | undefined
 }
 
 /**
@@ -77,12 +92,14 @@ export class SignalHandler {
 
     // Apply defaults
     this.options = {
+      requireChannel: dependencies.options?.requireChannel ?? false,
       emitSubscribeEvent: dependencies.options?.emitSubscribeEvent ?? true,
       emitUnsubscribeEvent: dependencies.options?.emitUnsubscribeEvent ?? true,
       allowReservedChannels:
         dependencies.options?.allowReservedChannels ?? false,
       sendAcknowledgments: dependencies.options?.sendAcknowledgments ?? true,
       autoRespondToPing: dependencies.options?.autoRespondToPing ?? true,
+      getChannel: dependencies.options?.getChannel ?? ((name: ChannelName) => this.registry.getChannel(name)),
     }
   }
 
@@ -137,23 +154,9 @@ export class SignalHandler {
     // Execute subscribe middleware
     await this.middleware.executeSubscribe(client, channel)
 
-    // Get channel instance from registry
-    const channelInstance = this.registry.getChannel(channel)
-    if (!channelInstance) {
-      throw new ChannelError(`Channel not found: ${channel}`)
-    }
-
-    // Check if channel is reserved (if not allowed)
-    if (channelInstance.isReserved() && !this.options.allowReservedChannels) {
-      throw new ChannelError(`Cannot subscribe to reserved channel: ${channel}`)
-    }
-
-    // Check if channel is full
-    if (channelInstance.isFull()) {
-      throw new ChannelError(`Channel is full: ${channel}`)
-    }
-
     // Subscribe to channel via registry
+    // Features like reserved channels, max subscribers, etc. are now
+    // handled via onSubscribe callbacks that can reject the subscription
     const success = this.registry.subscribe(client.id, channel)
     if (!success) {
       throw new ChannelError(
@@ -161,8 +164,25 @@ export class SignalHandler {
       )
     }
 
-    // Trigger channel subscribe handlers
-    await channelInstance.handleSubscribe(client)
+    // Trigger channel subscribe handlers (if channel exists)
+    const channelInstance = this.options.getChannel(channel)
+    if (channelInstance) {
+      try {
+        await (channelInstance as IChannelTransport<unknown>).handleSubscribe(
+          client,
+        )
+      } catch (error) {
+        // If handler throws, unsubscribe and rethrow
+        this.registry.unsubscribe(client.id, channel)
+        throw error
+      }
+    } else if (this.options.requireChannel) {
+      // If channel is required but not found, unsubscribe and throw
+      this.registry.unsubscribe(client.id, channel)
+      throw new ChannelError(
+        `Channel "${channel}" not found`,
+      )
+    }
 
     // Emit subscribe event
     if (this.options.emitSubscribeEvent) {
@@ -201,10 +221,12 @@ export class SignalHandler {
     // Unsubscribe from channel via registry
     this.registry.unsubscribe(client.id, channel)
 
-    // Trigger channel unsubscribe handlers
-    const channelInstance = this.registry.getChannel(channel)
+    // Trigger channel unsubscribe handlers (if channel exists)
+    const channelInstance = this.options.getChannel(channel)
     if (channelInstance) {
-      await channelInstance.handleUnsubscribe(client)
+      await (channelInstance as IChannelTransport<unknown>).handleUnsubscribe(
+        client,
+      )
     }
 
     // Emit unsubscribe event
@@ -231,6 +253,10 @@ export class SignalHandler {
     client: IClientConnection,
     message: SignalMessage,
   ): Promise<void> {
+    // Update client's last ping time
+    client.lastPingAt = Date.now()
+
+    // Auto-respond with PONG if enabled
     if (this.options.autoRespondToPing) {
       const pongMessage = createSignalMessage(
         message.channel,
@@ -246,10 +272,12 @@ export class SignalHandler {
    * Handle PONG signal
    */
   async handlePong(
-    _client: IClientConnection,
+    client: IClientConnection,
     _message: SignalMessage,
   ): Promise<void> {
-    // PONG is handled by transport layer for health monitoring
+    // PONG is received, connection is alive
+    // The timestamp is already updated by the transport layer
+    client.lastPingAt = Date.now()
   }
 
   /**

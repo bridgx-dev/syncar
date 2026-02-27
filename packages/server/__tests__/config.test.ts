@@ -8,8 +8,6 @@ import {
   BROADCAST_CHANNEL,
   CLOSE_CODES,
   ERROR_CODES,
-  DEFAULT_MAX_SUBSCRIBERS,
-  DEFAULT_HISTORY_SIZE,
   DEFAULT_PORT,
   DEFAULT_HOST,
   DEFAULT_PATH,
@@ -27,21 +25,11 @@ describe('Config', () => {
 
     it('should export CLOSE_CODES', () => {
       expect(CLOSE_CODES.NORMAL).toBe(1000)
-      expect(CLOSE_CODES.REJECTED).toBe(4001)
     })
 
     it('should export ERROR_CODES', () => {
       expect(ERROR_CODES.REJECTED).toBe('REJECTED')
       expect(ERROR_CODES.MISSING_CHANNEL).toBe('MISSING_CHANNEL')
-      expect(ERROR_CODES.RATE_LIMITED).toBe('RATE_LIMITED')
-    })
-
-    it('should export DEFAULT_MAX_SUBSCRIBERS as 0 (unlimited)', () => {
-      expect(DEFAULT_MAX_SUBSCRIBERS).toBe(0)
-    })
-
-    it('should export DEFAULT_HISTORY_SIZE as 0 (no history)', () => {
-      expect(DEFAULT_HISTORY_SIZE).toBe(0)
     })
   })
 

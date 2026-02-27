@@ -16,20 +16,21 @@ import type {
   IServerEventType,
   IBroadcastTransport,
   IMulticastTransport,
-  IChannelOptions,
   ChannelName,
+  ClientId,
   Message,
+  IPublishOptions,
 } from '../types'
 import { ClientRegistry } from '../registry'
+import { ChannelRef } from '../channel/channel-ref'
+import { BroadcastChannel } from '../channel'
 import { MiddlewareManager } from '../middleware'
 import { EventEmitter } from '../emitter'
-import { BroadcastTransport } from '../channel'
-import { MulticastTransport } from '../channel'
 import { ConnectionHandler } from '../handlers'
 import { MessageHandler } from '../handlers'
 import { SignalHandler } from '../handlers'
-import { DEFAULT_MAX_SUBSCRIBERS, DEFAULT_HISTORY_SIZE } from '../config'
 import { StateError, ConfigError } from '../errors'
+import { createDataMessage } from '../lib'
 
 /**
  * Internal server state
@@ -45,7 +46,7 @@ interface ServerState {
 export class SynnelServer implements ISynnelServer {
   private readonly config: IServerConfig
   private transport: IServerTransport | undefined
-  private readonly registry: IClientRegistry
+  public readonly registry: ClientRegistry // Changed to public for ChannelRef access
   private readonly middleware: IMiddlewareManager
   private readonly emitter: IEventEmitter<IServerEventMap>
   private connectionHandler: ConnectionHandler | undefined
@@ -65,6 +66,9 @@ export class SynnelServer implements ISynnelServer {
     ) => boolean | Promise<boolean>)
     | undefined
 
+  // Store created ChannelRef instances
+  private readonly channelRefs = new Map<ChannelName, IMulticastTransport<unknown>>()
+
   private readonly state: ServerState
 
   /**
@@ -76,7 +80,7 @@ export class SynnelServer implements ISynnelServer {
     this.state = { started: false, startedAt: undefined }
 
     // Create or use injected client registry
-    this.registry = config.registry ?? new ClientRegistry()
+    this.registry = (config.registry as ClientRegistry) ?? new ClientRegistry()
 
     // Create middleware manager
     this.middleware = new MiddlewareManager()
@@ -90,6 +94,11 @@ export class SynnelServer implements ISynnelServer {
 
     // Create event emitter
     this.emitter = new EventEmitter<IServerEventMap>()
+
+    // Set default broadcast chunk size
+    if (this.config.broadcastChunkSize === undefined) {
+      this.config.broadcastChunkSize = 500
+    }
   }
 
   /**
@@ -109,7 +118,7 @@ export class SynnelServer implements ISynnelServer {
       )
     }
 
-    // Create handlers
+    // Create handlers with getChannel callback
     this.connectionHandler = new ConnectionHandler({
       registry: this.registry,
       middleware: this.middleware,
@@ -120,19 +129,32 @@ export class SynnelServer implements ISynnelServer {
       registry: this.registry,
       middleware: this.middleware,
       emitter: this.emitter,
+      options: {
+        getChannel: <_T = unknown>(name: ChannelName) => {
+          return this.channelRefs.get(name) as any
+        },
+      },
     })
 
     this.signalHandler = new SignalHandler({
       registry: this.registry,
       middleware: this.middleware,
       emitter: this.emitter,
+      options: {
+        getChannel: <_T = unknown>(name: ChannelName) => {
+          return this.channelRefs.get(name) as any
+        },
+      },
     })
 
     // Set up transport event handlers
     this.setupTransportHandlers()
 
     // Create broadcast channel and register it
-    this.broadcastChannel = new BroadcastTransport(this.transport.connections)
+    this.broadcastChannel = new BroadcastChannel(
+      this.transport.connections,
+      this.config.broadcastChunkSize,
+    )
     this.registry.registerChannel(this.broadcastChannel)
 
     // Update state
@@ -159,6 +181,7 @@ export class SynnelServer implements ISynnelServer {
     // Clear channels from registry
     this.registry.clear()
     this.broadcastChannel = undefined
+    this.channelRefs.clear()
 
     // Update state
     this.state.started = false
@@ -181,35 +204,45 @@ export class SynnelServer implements ISynnelServer {
   }
 
   /**
-   * Create or get a multicast transport
+   * Create or get a multicast transport using ChannelRef
+   *
+   * Note: Channel options like maxSubscribers, reserved, and historySize
+   * are no longer supported. Use onSubscribe callbacks to implement
+   * custom logic like max subscribers or reserved channel checks.
    */
   createMulticast<T = unknown>(
     name: ChannelName,
-    options?: IChannelOptions,
   ): IMulticastTransport<T> {
     if (!this.state.started || !this.transport) {
       throw new StateError('Server must be started before creating channels')
     }
 
     // Check if channel already exists
-    const existing = this.registry.getChannel<T>(name)
+    const existing = this.channelRefs.get(name) as IMulticastTransport<T> | undefined
     if (existing) {
-      return existing as IMulticastTransport<T>
+      return existing
     }
 
-    // Create new multicast channel using the shared connections map
-    const channel = new MulticastTransport<T>(
+    // Register channel in registry
+    this.registry.registerChannelByName(name)
+
+    // Create ChannelRef with closures to registry state
+    const channel = new ChannelRef<T>(
       name,
-      this.transport.connections,
-      {
-        maxSubscribers: options?.maxSubscribers ?? DEFAULT_MAX_SUBSCRIBERS,
-        reserved: options?.reserved ?? false,
-        historySize: options?.historySize ?? DEFAULT_HISTORY_SIZE,
-      },
+      // Closure to get subscribers for this channel
+      () => this.registry.getChannelSubscribers(name),
+      // Handler registry
+      this.registry.handlers,
+      // Closure to subscribe a client
+      (clientId) => this.registry.subscribe(clientId, name),
+      // Closure to unsubscribe a client
+      (clientId) => this.registry.unsubscribe(clientId, name),
+      // Closure to publish to this channel
+      (data, options) => this.publishToChannel(name, data, options),
     )
 
-    // Register channel in registry
-    this.registry.registerChannel(channel)
+    // Store the channel ref for reuse
+    this.channelRefs.set(name, channel as IMulticastTransport<unknown>)
 
     return channel
   }
@@ -218,14 +251,96 @@ export class SynnelServer implements ISynnelServer {
    * Check if a channel exists
    */
   hasChannel(name: ChannelName): boolean {
-    return !!this.registry.getChannel(name)
+    return this.channelRefs.has(name)
   }
 
   /**
    * Get all active channel names
    */
   getChannels(): ChannelName[] {
-    return this.registry.getChannels()
+    return Array.from(this.channelRefs.keys())
+  }
+
+  /**
+   * Publish data to a specific channel
+   *
+   * @param channelName - Channel to publish to
+   * @param data - Data to publish
+   * @param options - Optional publish options (to, exclude)
+   */
+  private publishToChannel<T>(
+    channelName: ChannelName,
+    data: T,
+    options?: IPublishOptions,
+  ): void {
+    const subscribers = this.registry.getChannelSubscribers(channelName)
+    const chunkSize = this.config.broadcastChunkSize || 500
+
+    if (subscribers.size > chunkSize) {
+      // Use chunked publishing for large subscriber sets to avoid blocking event loop
+      this.publishInChunks(channelName, data, subscribers, options)
+    } else {
+      // Synchronous publish for small sets
+      this.publishToSubscribers(channelName, data, subscribers, options)
+    }
+  }
+
+  /**
+   * Internal helper to publish to a set of subscribers synchronously
+   */
+  private publishToSubscribers<T>(
+    channelName: ChannelName,
+    data: T,
+    subscribers: Set<ClientId> | ClientId[],
+    options?: IPublishOptions,
+  ): void {
+    // Create data message
+    const message = createDataMessage<T>(channelName, data)
+
+    // Publish to each subscriber
+    for (const clientId of subscribers) {
+      // Apply filters
+      if (options?.to && !options.to.includes(clientId)) continue
+      if (options?.exclude && options.exclude.includes(clientId)) continue
+
+      // Get client connection
+      const client = this.registry.connections.get(clientId)
+      if (client) {
+        try {
+          client.socket.send(JSON.stringify(message))
+        } catch (error) {
+          console.error(`Failed to send to ${clientId}:`, error)
+        }
+      }
+    }
+  }
+
+  /**
+   * Publish data to a channel in chunks using setImmediate to avoid blocking the event loop
+   */
+  private publishInChunks<T>(
+    channelName: ChannelName,
+    data: T,
+    subscribers: Set<ClientId>,
+    options?: IPublishOptions,
+  ): void {
+    const subscriberIds = Array.from(subscribers)
+    const chunkSize = this.config.broadcastChunkSize || 500
+    let index = 0
+
+    const nextChunk = () => {
+      const chunk = subscriberIds.slice(index, index + chunkSize)
+      if (chunk.length === 0) return
+
+      this.publishToSubscribers(channelName, data, chunk, options)
+      index += chunkSize
+
+      if (index < subscriberIds.length) {
+        setImmediate(nextChunk)
+      }
+    }
+
+    nextChunk()
   }
 
   // ============================================================
@@ -299,7 +414,7 @@ export class SynnelServer implements ISynnelServer {
     return {
       startedAt: this.state.startedAt,
       clientCount: this.registry.getCount(),
-      channelCount: this.registry.getChannels().length,
+      channelCount: this.channelRefs.size + (this.broadcastChannel ? 1 : 0),
       subscriptionCount: this.registry.getTotalSubscriptionCount(),
       messagesSent: 0,
       messagesReceived: 0,

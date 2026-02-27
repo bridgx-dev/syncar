@@ -5,7 +5,7 @@
  * @module config/defaults
  */
 
-import type { IDefaultServerConfig, IChannelOptions } from '../types'
+import type { IDefaultServerConfig } from '../types'
 import {
   DEFAULT_PING_INTERVAL,
   DEFAULT_PING_TIMEOUT,
@@ -68,47 +68,9 @@ export const DEFAULT_SERVER_CONFIG: IDefaultServerConfig = {
   enablePing: DEFAULT_ENABLE_PING,
   pingInterval: DEFAULT_PING_INTERVAL,
   pingTimeout: DEFAULT_PING_TIMEOUT,
+  broadcastChunkSize: 500,
 } as const
 
-// ============================================================
-// CHANNEL OPTIONS DEFAULTS
-// ============================================================
-
-/**
- * Default channel options
- * Default values for channel configuration
- *
- * @example
- * ```ts
- * import { DEFAULT_CHANNEL_OPTIONS } from '@synnel/server/config'
- *
- * const options: IChannelOptions = {
- *   ...DEFAULT_CHANNEL_OPTIONS,
- *   maxSubscribers: 100, // Override specific values
- * }
- * ```
- */
-export const DEFAULT_CHANNEL_OPTIONS: IChannelOptions = {
-  maxSubscribers: 0, // Unlimited
-  reserved: false,
-  historySize: 0, // No history
-} as const
-
-// ============================================================
-// MESSAGE BUS OPTIONS DEFAULTS
-// ============================================================
-
-/**
- * Default auto-create channels setting
- * Automatically create channels when clients subscribe
- */
-export const DEFAULT_AUTO_CREATE_CHANNELS = false
-
-/**
- * Default auto-delete empty channels setting
- * Automatically delete channels with no subscribers
- */
-export const DEFAULT_AUTO_DELETE_EMPTY_CHANNELS = false
 
 /**
  * Default rate limit settings
@@ -143,8 +105,5 @@ export const DEFAULT_RATE_LIMIT = {
  */
 export const DEFAULTS = {
   server: DEFAULT_SERVER_CONFIG,
-  channel: DEFAULT_CHANNEL_OPTIONS,
   rateLimit: DEFAULT_RATE_LIMIT,
-  autoCreateChannels: DEFAULT_AUTO_CREATE_CHANNELS,
-  autoDeleteEmptyChannels: DEFAULT_AUTO_DELETE_EMPTY_CHANNELS,
 } as const

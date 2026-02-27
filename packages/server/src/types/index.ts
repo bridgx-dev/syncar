@@ -75,13 +75,9 @@ export type { IClientRegistry, IDisconnectionEvent } from './client'
 // ============================================================
 export type {
   IChannelState,
-  IChannelOptions,
-  IMessageHistory,
   IChannelTransport,
   IBroadcastTransport,
   IMulticastTransport,
-  IInternalChannelState,
-  IMessageBusOptions,
 } from './channel'
 
 // ============================================================
@@ -142,17 +138,11 @@ export type {
   DataPayload,
 } from './common'
 export type {
-  ConnectionStatus,
-  TransportConfig,
-  MessageQueueOptions,
-} from './connection'
-export type {
   Message,
   DataMessage,
   SignalMessage,
   ErrorMessage,
   AckMessage,
   ErrorData,
-  MessageHandler,
 } from './message'
 export { MessageType, SignalType, ErrorCode } from './message'

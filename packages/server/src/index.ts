@@ -42,17 +42,15 @@ export {
   MiddlewareExecutionError,
 } from './errors'
 export { WebSocketServerTransport } from './transport'
-export { BaseChannel, BroadcastTransport, MulticastTransport } from './channel'
+export { ChannelRef, BroadcastChannel } from './channel'
 
 export {
   DEFAULT_PORT,
   DEFAULT_HOST,
   DEFAULT_PATH,
-  DEFAULT_PING_INTERVAL,
   DEFAULT_PING_TIMEOUT,
   DEFAULT_MAX_PAYLOAD,
   DEFAULT_SERVER_CONFIG,
-  DEFAULT_CHANNEL_OPTIONS,
   DEFAULTS,
 } from './config'
 
@@ -60,8 +58,6 @@ export {
   BROADCAST_CHANNEL,
   CLOSE_CODES,
   ERROR_CODES,
-  DEFAULT_MAX_SUBSCRIBERS,
-  DEFAULT_HISTORY_SIZE,
 } from './config'
 
 export { ClientRegistry } from './registry'
@@ -103,13 +99,9 @@ export type {
   IClientRegistry,
   IDisconnectionEvent,
   IChannelState,
-  IChannelOptions,
-  IMessageHistory,
   IChannelTransport,
   IBroadcastTransport,
   IMulticastTransport,
-  IInternalChannelState,
-  IMessageBusOptions,
   IMiddlewareAction,
   IMiddlewareContext,
   IMiddleware,
@@ -140,9 +132,6 @@ export type {
   ChannelName,
   Timestamp,
   DataPayload,
-  ConnectionStatus,
-  TransportConfig,
-  MessageQueueOptions,
   Message,
   DataMessage,
   SignalMessage,

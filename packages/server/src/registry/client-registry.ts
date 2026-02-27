@@ -1,15 +1,20 @@
 /**
  * Client Registry
  * Manages the lifecycle and subscriptions of connected clients.
+ *
+ * Uses bidirectional index for efficient lookups:
+ * - subscriptions: ClientId → Channels (for disconnect cleanup)
+ * - channels: ChannelName → Subscribers (for broadcasting)
  */
 
 import type {
   IClientRegistry,
   IClientConnection,
-  IChannelTransport,
+  IChannel,
   ClientId,
   ChannelName,
 } from '../types'
+import { HandlerRegistry } from './handler-registry'
 
 /**
  * Client Registry - manages connected clients and their subscriptions
@@ -17,18 +22,25 @@ import type {
 export class ClientRegistry implements IClientRegistry {
   /**
    * Shared map of all connected clients by ID
-   * This is shared with the transport layer for memory efficiency.
    */
   public readonly connections: Map<ClientId, IClientConnection> = new Map()
 
+  /**
+   * Client → Channels mapping (forward index)
+   * Used for efficient disconnect cleanup
+   */
+  private readonly subscriptions: Map<ClientId, Set<ChannelName>> = new Map()
 
   /**
-   * Map of channel instances by name
+   * Channel → Subscribers mapping (reverse index)
+   * Used for efficient broadcasting
    */
-  protected readonly channelInstances: Map<
-    ChannelName,
-    IChannelTransport<unknown>
-  > = new Map()
+  private readonly channels: Map<ChannelName, Set<ClientId>> = new Map()
+
+  /**
+   * Handler registry for channel event handlers
+   */
+  public readonly handlers: HandlerRegistry = new HandlerRegistry()
 
   // ============================================================
   // CLIENT REGISTRATION
@@ -38,18 +50,17 @@ export class ClientRegistry implements IClientRegistry {
    * Register a new client
    *
    * @param connection - The connection object
-   * @param transport - Transport layer for communication
    * @returns The registered connection
    */
   register(connection: IClientConnection): IClientConnection {
-    // Add to shared connections map
     this.connections.set(connection.id, connection)
-
     return connection
   }
 
   /**
    * Unregister a client and cleanup all subscriptions
+   *
+   * Uses subscriptions map for O(1) lookup of client's channels
    *
    * @param clientId - Client ID to unregister
    * @returns true if client was found and removed, false otherwise
@@ -58,9 +69,26 @@ export class ClientRegistry implements IClientRegistry {
     const exists = this.connections.has(clientId)
     if (!exists) return false
 
-    // Cleanup subscriptions from all channels
-    for (const channel of this.channelInstances.values()) {
-      channel.unsubscribe(clientId)
+    // Get all channels this client is subscribed to
+    const clientChannels = this.subscriptions.get(clientId)
+    if (clientChannels) {
+      // Remove client from each channel
+      for (const channelName of clientChannels) {
+        const subscribers = this.channels.get(channelName)
+        if (subscribers) {
+          subscribers.delete(clientId)
+          // Trigger unsubscribe handlers
+          for (const handler of this.handlers.getUnsubscribeHandlers(channelName)) {
+            try {
+              handler(this.connections.get(clientId)!)
+            } catch (error) {
+              console.error(`Error in unsubscribe handler for ${channelName}:`, error)
+            }
+          }
+        }
+      }
+      // Clear client's subscriptions
+      this.subscriptions.delete(clientId)
     }
 
     // Remove from registry
@@ -100,60 +128,161 @@ export class ClientRegistry implements IClientRegistry {
   // ============================================================
 
   /**
-   * Register a channel instance
+   * Register a channel instance (for backward compatibility)
+   *
+   * Note: This method is kept for compatibility but channels are now
+   * managed internally via the channels map.
    *
    * @param channel - Channel instance to register
    */
-  registerChannel(channel: IChannelTransport<unknown>): void {
-    this.channelInstances.set(channel.name, channel)
+  registerChannel(channel: IChannel<unknown>): void {
+    // Create channel in internal map if not exists
+    if (!this.channels.has(channel.name)) {
+      this.channels.set(channel.name, new Set())
+    }
   }
 
   /**
-   * Get a channel instance by name
+   * Register a channel by name
+   *
+   * @param name - Channel name to register
+   */
+  registerChannelByName(name: ChannelName): void {
+    if (!this.channels.has(name)) {
+      this.channels.set(name, new Set())
+    }
+  }
+
+  /**
+   * Get a channel instance by name (returns undefined in new architecture)
+   *
+   * In the new architecture, channels are managed internally.
+   * This method is kept for backward compatibility.
    *
    * @param name - Channel name
-   * @returns Channel instance or undefined if not found
+   * @returns undefined (channels are managed internally)
    */
-  getChannel<T = unknown>(name: ChannelName): IChannelTransport<T> | undefined {
-    return this.channelInstances.get(name) as IChannelTransport<T> | undefined
+  getChannel<T = unknown>(_name: ChannelName): IChannel<T> | undefined {
+    // Channels are now managed internally, return undefined
+    // This maintains interface compatibility
+    return undefined
   }
 
   /**
-   * Remove a channel instance
+   * Remove a channel and all its subscriptions
+   *
+   * Cleans up both the channels map and all client subscriptions
    *
    * @param name - Channel name to remove
    * @returns true if channel was found and removed, false otherwise
    */
   removeChannel(name: ChannelName): boolean {
-    return this.channelInstances.delete(name)
+    const subscribers = this.channels.get(name)
+    if (!subscribers) return false
+
+    // Remove channel from all subscribers' subscription sets
+    for (const clientId of subscribers) {
+      const clientChannels = this.subscriptions.get(clientId)
+      if (clientChannels) {
+        clientChannels.delete(name)
+      }
+    }
+
+    // Clear handlers for this channel
+    this.handlers.clearChannel(name)
+
+    // Remove the channel
+    return this.channels.delete(name)
   }
 
   /**
    * Subscribe a client to a channel
+   *
+   * Updates BOTH maps to maintain bidirectional index:
+   * - channels[channel].add(clientId)
+   * - subscriptions[clientId].add(channel)
    *
    * @param clientId - Client ID to subscribe
    * @param channel - Channel name
    * @returns true if subscribed, false otherwise
    */
   subscribe(clientId: ClientId, channel: ChannelName): boolean {
-    const instance = this.getChannel(channel)
-    if (!instance) return false
+    // Verify client exists
+    if (!this.connections.has(clientId)) return false
 
-    return instance.subscribe(clientId)
+    // Create channel if not exists
+    if (!this.channels.has(channel)) {
+      this.channels.set(channel, new Set())
+    }
+
+    const subscribers = this.channels.get(channel)!
+
+    // Check if already subscribed
+    if (subscribers.has(clientId)) return false
+
+    // Add to channels map (reverse index)
+    subscribers.add(clientId)
+
+    // Add to subscriptions map (forward index)
+    if (!this.subscriptions.has(clientId)) {
+      this.subscriptions.set(clientId, new Set())
+    }
+    this.subscriptions.get(clientId)!.add(channel)
+
+    // Trigger subscribe handlers
+    const client = this.connections.get(clientId)!
+    for (const handler of this.handlers.getSubscribeHandlers(channel)) {
+      try {
+        handler(client)
+      } catch (error) {
+        console.error(`Error in subscribe handler for ${channel}:`, error)
+      }
+    }
+
+    return true
   }
 
   /**
    * Unsubscribe a client from a channel
+   *
+   * Updates BOTH maps to maintain bidirectional index:
+   * - channels[channel].delete(clientId)
+   * - subscriptions[clientId].delete(channel)
    *
    * @param clientId - Client ID to unsubscribe
    * @param channel - Channel name
    * @returns true if unsubscribed, false otherwise
    */
   unsubscribe(clientId: ClientId, channel: ChannelName): boolean {
-    const instance = this.getChannel(channel)
-    if (!instance) return false
+    const subscribers = this.channels.get(channel)
+    if (!subscribers || !subscribers.has(clientId)) return false
 
-    return instance.unsubscribe(clientId)
+    // Remove from channels map (reverse index)
+    subscribers.delete(clientId)
+
+    // Remove from subscriptions map (forward index)
+    const clientChannels = this.subscriptions.get(clientId)
+    if (clientChannels) {
+      clientChannels.delete(channel)
+      // Clean up empty subscription sets
+      if (clientChannels.size === 0) {
+        this.subscriptions.delete(clientId)
+      }
+    }
+
+    // Trigger unsubscribe handlers
+    const client = this.connections.get(clientId)
+    if (client) {
+      for (const handler of this.handlers.getUnsubscribeHandlers(channel)) {
+        try {
+          handler(client)
+        } catch (error) {
+          console.error(`Error in unsubscribe handler for ${channel}:`, error)
+        }
+      }
+    }
+
+    return true
   }
 
   /**
@@ -163,14 +292,12 @@ export class ClientRegistry implements IClientRegistry {
    * @returns Array of subscribed connections
    */
   getSubscribers(channel: ChannelName): IClientConnection[] {
-    const instance = this.getChannel(channel)
-    if (!instance) return []
+    const subscriberIds = this.channels.get(channel)
+    if (!subscriberIds) return []
 
-    const subscriberIds = instance.getSubscribers()
     const subscribers: IClientConnection[] = []
-
     for (const id of subscriberIds) {
-      const client = this.get(id)
+      const client = this.connections.get(id)
       if (client) {
         subscribers.push(client)
       }
@@ -186,7 +313,7 @@ export class ClientRegistry implements IClientRegistry {
    * @returns Number of subscribers
    */
   getSubscriberCount(channel: ChannelName): number {
-    return this.getChannel(channel)?.subscriberCount ?? 0
+    return this.channels.get(channel)?.size ?? 0
   }
 
   /**
@@ -195,7 +322,7 @@ export class ClientRegistry implements IClientRegistry {
    * @returns Array of channel names
    */
   getChannels(): ChannelName[] {
-    return Array.from(this.channelInstances.keys())
+    return Array.from(this.channels.keys())
   }
 
   /**
@@ -205,8 +332,8 @@ export class ClientRegistry implements IClientRegistry {
    */
   getTotalSubscriptionCount(): number {
     let total = 0
-    for (const channel of this.channelInstances.values()) {
-      total += channel.subscriberCount
+    for (const subscribers of this.channels.values()) {
+      total += subscribers.size
     }
     return total
   }
@@ -219,21 +346,36 @@ export class ClientRegistry implements IClientRegistry {
    * @returns true if subscribed, false otherwise
    */
   isSubscribed(clientId: ClientId, channel: ChannelName): boolean {
-    return this.getChannel(channel)?.hasSubscriber(clientId) ?? false
+    return this.channels.get(channel)?.has(clientId) ?? false
+  }
+
+  /**
+   * Get all channels a client is subscribed to
+   *
+   * @param clientId - Client ID
+   * @returns Set of channel names
+   */
+  getClientChannels(clientId: ClientId): Set<ChannelName> {
+    return this.subscriptions.get(clientId) ?? new Set()
+  }
+
+  /**
+   * Get channel subscribers as a Set of client IDs
+   *
+   * @param channel - Channel name
+   * @returns Set of subscriber IDs
+   */
+  getChannelSubscribers(channel: ChannelName): Set<ClientId> {
+    return this.channels.get(channel) ?? new Set()
   }
 
   /**
    * Clear all clients and subscriptions
    */
   clear(): void {
-    // Cleanup subscriptions from channels
-    for (const channel of this.channelInstances.values()) {
-      for (const clientId of this.connections.keys()) {
-        channel.unsubscribe(clientId)
-      }
-    }
-
     this.connections.clear()
-    this.channelInstances.clear()
+    this.subscriptions.clear()
+    this.channels.clear()
+    this.handlers.clear()
   }
 }

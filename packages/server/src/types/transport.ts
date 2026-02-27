@@ -130,11 +130,4 @@ export interface IServerTransportConfig {
 
   /** Shared connection map (optional, can be provided by registry) */
   connections?: Map<ClientId, IClientConnection>
-
-  /** Custom WebSocket Server constructor (for testing) */
-  ServerConstructor?: new (config: {
-    server: unknown
-    path?: string
-    maxPayload?: number
-  }) => any
 }
