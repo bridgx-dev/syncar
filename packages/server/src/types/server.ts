@@ -192,12 +192,6 @@ export interface IServerStats {
   /** Total number of subscriptions across all channels */
   subscriptionCount: number
 
-  /** Total messages received from clients */
-  messagesReceived: number
-
-  /** Total messages sent to clients */
-  messagesSent: number
-
   /** Server start timestamp (undefined if not started) */
   startedAt?: number
 }

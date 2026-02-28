@@ -6,14 +6,13 @@
 import type {
   IClientRegistry,
   IClientConnection,
-  IChannel,
   IMiddlewareManager,
   IEventEmitter,
   IServerEventMap,
   IChannelTransport,
   SignalMessage,
-  ChannelName,
 } from '../types'
+
 import { createSignalMessage } from '../lib'
 import { SignalType } from '../types'
 import { ChannelError, MessageError } from '../errors'
@@ -59,13 +58,9 @@ export interface SignalHandlerOptions {
    * @default true
    */
   autoRespondToPing?: boolean
-
-  /**
-   * Optional function to get a channel by name
-   * If provided, this will be used to trigger channel handlers
-   */
-  getChannel?<T = unknown>(name: ChannelName): IChannel<T> | undefined
 }
+
+
 
 /**
  * Signal Handler
@@ -99,9 +94,9 @@ export class SignalHandler {
         dependencies.options?.allowReservedChannels ?? false,
       sendAcknowledgments: dependencies.options?.sendAcknowledgments ?? true,
       autoRespondToPing: dependencies.options?.autoRespondToPing ?? true,
-      getChannel: dependencies.options?.getChannel ?? ((name: ChannelName) => this.registry.getChannel(name)),
     }
   }
+
 
   /**
    * Handle a signal message from a client
@@ -165,7 +160,8 @@ export class SignalHandler {
     }
 
     // Trigger channel subscribe handlers (if channel exists)
-    const channelInstance = this.options.getChannel(channel)
+    const channelInstance = this.registry.getChannel(channel)
+
     if (channelInstance) {
       try {
         await (channelInstance as IChannelTransport<unknown>).handleSubscribe(
@@ -222,7 +218,8 @@ export class SignalHandler {
     this.registry.unsubscribe(client.id, channel)
 
     // Trigger channel unsubscribe handlers (if channel exists)
-    const channelInstance = this.options.getChannel(channel)
+    const channelInstance = this.registry.getChannel(channel)
+
     if (channelInstance) {
       await (channelInstance as IChannelTransport<unknown>).handleUnsubscribe(
         client,

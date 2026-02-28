@@ -496,8 +496,6 @@ describe('SynnelServer', () => {
       expect(stats).toHaveProperty('clientCount')
       expect(stats).toHaveProperty('channelCount')
       expect(stats).toHaveProperty('subscriptionCount')
-      expect(stats).toHaveProperty('messagesSent')
-      expect(stats).toHaveProperty('messagesReceived')
     })
 
     it('should track startedAt after start', () => {

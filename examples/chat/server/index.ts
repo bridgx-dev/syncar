@@ -245,8 +245,6 @@ async function main() {
       clients: stats.clientCount,
       channels: stats.channelCount,
       subscriptions: stats.subscriptionCount,
-      messagesReceived: stats.messagesReceived,
-      messagesSent: stats.messagesSent,
       uptime: stats.startedAt
         ? Math.floor((Date.now() - stats.startedAt) / 1000) + 's'
         : 'N/A',

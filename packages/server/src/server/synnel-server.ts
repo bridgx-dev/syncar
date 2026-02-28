@@ -66,10 +66,8 @@ export class SynnelServer implements ISynnelServer {
     ) => boolean | Promise<boolean>)
     | undefined
 
-  // Store created ChannelRef instances
-  private readonly channelRefs = new Map<ChannelName, IMulticastTransport<unknown>>()
-
   private readonly state: ServerState
+
 
   /**
    * Create a new SynnelServer instance
@@ -129,23 +127,17 @@ export class SynnelServer implements ISynnelServer {
       registry: this.registry,
       middleware: this.middleware,
       emitter: this.emitter,
-      options: {
-        getChannel: <_T = unknown>(name: ChannelName) => {
-          return this.channelRefs.get(name) as any
-        },
-      },
     })
+
+
 
     this.signalHandler = new SignalHandler({
       registry: this.registry,
       middleware: this.middleware,
       emitter: this.emitter,
-      options: {
-        getChannel: <_T = unknown>(name: ChannelName) => {
-          return this.channelRefs.get(name) as any
-        },
-      },
     })
+
+
 
     // Set up transport event handlers
     this.setupTransportHandlers()
@@ -156,6 +148,7 @@ export class SynnelServer implements ISynnelServer {
       this.config.broadcastChunkSize,
     )
     this.registry.registerChannel(this.broadcastChannel)
+
 
     // Update state
     this.state.started = true
@@ -181,9 +174,9 @@ export class SynnelServer implements ISynnelServer {
     // Clear channels from registry
     this.registry.clear()
     this.broadcastChannel = undefined
-    this.channelRefs.clear()
 
     // Update state
+
     this.state.started = false
     this.state.startedAt = undefined
   }
@@ -218,13 +211,11 @@ export class SynnelServer implements ISynnelServer {
     }
 
     // Check if channel already exists
-    const existing = this.channelRefs.get(name) as IMulticastTransport<T> | undefined
+    const existing = this.registry.getChannel<T>(name) as IMulticastTransport<T> | undefined
     if (existing) {
       return existing
     }
 
-    // Register channel in registry
-    this.registry.registerChannelByName(name)
 
     // Create ChannelRef with closures to registry state
     const channel = new ChannelRef<T>(
@@ -241,24 +232,26 @@ export class SynnelServer implements ISynnelServer {
       (data, options) => this.publishToChannel(name, data, options),
     )
 
-    // Store the channel ref for reuse
-    this.channelRefs.set(name, channel as IMulticastTransport<unknown>)
+    // Register instance in registry
+    this.registry.registerChannel(channel as any)
 
     return channel
+
   }
 
   /**
    * Check if a channel exists
    */
   hasChannel(name: ChannelName): boolean {
-    return this.channelRefs.has(name)
+    return !!this.registry.getChannel(name)
   }
+
 
   /**
    * Get all active channel names
    */
   getChannels(): ChannelName[] {
-    return Array.from(this.channelRefs.keys())
+    return this.registry.getChannels()
   }
 
   /**
@@ -414,10 +407,8 @@ export class SynnelServer implements ISynnelServer {
     return {
       startedAt: this.state.startedAt,
       clientCount: this.registry.getCount(),
-      channelCount: this.channelRefs.size + (this.broadcastChannel ? 1 : 0),
+      channelCount: this.registry.getChannels().length,
       subscriptionCount: this.registry.getTotalSubscriptionCount(),
-      messagesSent: 0,
-      messagesReceived: 0,
     }
   }
 

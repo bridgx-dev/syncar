@@ -42,6 +42,12 @@ export class ClientRegistry implements IClientRegistry {
    */
   public readonly handlers: HandlerRegistry = new HandlerRegistry()
 
+  /**
+   * Internal map of channel instances
+   */
+  private readonly channelInstances: Map<ChannelName, IChannel<any>> = new Map()
+
+
   // ============================================================
   // CLIENT REGISTRATION
   // ============================================================
@@ -128,10 +134,7 @@ export class ClientRegistry implements IClientRegistry {
   // ============================================================
 
   /**
-   * Register a channel instance (for backward compatibility)
-   *
-   * Note: This method is kept for compatibility but channels are now
-   * managed internally via the channels map.
+   * Register a channel instance
    *
    * @param channel - Channel instance to register
    */
@@ -140,17 +143,8 @@ export class ClientRegistry implements IClientRegistry {
     if (!this.channels.has(channel.name)) {
       this.channels.set(channel.name, new Set())
     }
-  }
-
-  /**
-   * Register a channel by name
-   *
-   * @param name - Channel name to register
-   */
-  registerChannelByName(name: ChannelName): void {
-    if (!this.channels.has(name)) {
-      this.channels.set(name, new Set())
-    }
+    // Store the channel instance
+    this.channelInstances.set(channel.name, channel)
   }
 
   /**
@@ -162,10 +156,8 @@ export class ClientRegistry implements IClientRegistry {
    * @param name - Channel name
    * @returns undefined (channels are managed internally)
    */
-  getChannel<T = unknown>(_name: ChannelName): IChannel<T> | undefined {
-    // Channels are now managed internally, return undefined
-    // This maintains interface compatibility
-    return undefined
+  getChannel<T = unknown>(name: ChannelName): IChannel<T> | undefined {
+    return this.channelInstances.get(name) as IChannel<T> | undefined
   }
 
   /**
@@ -190,6 +182,9 @@ export class ClientRegistry implements IClientRegistry {
 
     // Clear handlers for this channel
     this.handlers.clearChannel(name)
+
+    // Remove the channel instance
+    this.channelInstances.delete(name)
 
     // Remove the channel
     return this.channels.delete(name)

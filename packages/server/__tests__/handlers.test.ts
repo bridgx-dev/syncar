@@ -320,17 +320,15 @@ describe('Handlers', () => {
         handleSubscribe: vi.fn(),
         handleUnsubscribe: vi.fn(),
       }
-      channels = new Map([['test', mockChannel]])
+      registry.registerChannel(mockChannel)
 
       handler = new MessageHandler({
         registry,
         middleware,
         emitter,
-        options: {
-          getChannel: (name) => channels.get(name as string),
-        }
       })
     })
+
 
     describe('handleMessage', () => {
       it('should route message to channel', async () => {
@@ -477,6 +475,7 @@ describe('Handlers', () => {
         expect(found).toBe(mockChannel)
       })
 
+
       it('should return undefined for non-existent channel', () => {
         const message: DataMessage<string> = createDataMessage('nonexistent', 'Hello')
 
@@ -533,7 +532,7 @@ describe('Handlers', () => {
         handleSubscribe: vi.fn(),
         handleUnsubscribe: vi.fn(),
       }
-      channels = new Map([['chat', mockChannel]])
+      registry.registerChannel(mockChannel)
 
       handler = new SignalHandler({
         registry,
@@ -541,10 +540,10 @@ describe('Handlers', () => {
         emitter,
         options: {
           requireChannel: true,
-          getChannel: (name) => channels.get(name as string),
         },
       })
     })
+
 
     describe('handleSignal', () => {
       it('should route subscribe signal to handleSubscribe', async () => {
@@ -678,7 +677,8 @@ describe('Handlers', () => {
       it('should throw error for reserved channel', async () => {
         // Mock reserved channel logic via middleware or similar if needed, 
         // but here we just test the handler's built-in check
-        registry.registerChannelByName('__private__' as any)
+        // Channel created implicitly by subscribe
+
 
         const handlerStrict = new SignalHandler({
           registry,
