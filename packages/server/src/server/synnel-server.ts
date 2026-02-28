@@ -1,6 +1,31 @@
 /**
  * Synnel Server
  * Main server class for real-time WebSocket communication.
+ *
+ * @remarks
+ * This class provides the core server functionality including:
+ * - Client connection lifecycle management
+ * - Channel-based messaging (broadcast and multicast)
+ * - Event-driven architecture with emitter
+ * - Middleware support for authentication, logging, rate limiting
+ * - Authorization hooks for channel access control
+ *
+ * @example
+ * ```typescript
+ * import { createSynnelServer } from '@synnel/server'
+ *
+ * const server = createSynnelServer({ port: 3000 })
+ * await server.start()
+ *
+ * // Create channels
+ * const broadcast = server.createBroadcast<string>()
+ * const chat = server.createMulticast<{ text: string }>('chat')
+ *
+ * // Handle events
+ * server.on('connection', (client) => {
+ *   console.log(`Client connected: ${client.id}`)
+ * })
+ * ```
  */
 
 import type {
@@ -34,6 +59,7 @@ import { createDataMessage } from '../lib'
 
 /**
  * Internal server state
+ * @internal
  */
 interface ServerState {
   started: boolean
@@ -42,6 +68,10 @@ interface ServerState {
 
 /**
  * Synnel Server - Main server class for real-time WebSocket communication
+ *
+ * @remarks
+ * The server manages client connections, channels, and message routing.
+ * It provides a comprehensive API for building real-time applications.
  */
 export class SynnelServer implements ISynnelServer {
   private readonly config: IServerConfig
@@ -71,6 +101,21 @@ export class SynnelServer implements ISynnelServer {
 
   /**
    * Create a new SynnelServer instance
+   *
+   * @param config - Server configuration options
+   * @param config.transport - Optional transport layer (required if not using factory)
+   * @param config.registry - Optional custom client registry
+   * @param config.middleware - Optional middleware functions to register
+   * @param config.broadcastChunkSize - Chunk size for broadcast operations (default: 500)
+   *
+   * @example
+   * ```typescript
+   * const server = new SynnelServer({
+   *   transport: new WebSocketServerTransport({ server: httpServer }),
+   *   broadcastChunkSize: 1000
+   * })
+   * await server.start()
+   * ```
    */
   constructor(config: IServerConfig = {}) {
     this.config = config
@@ -101,6 +146,18 @@ export class SynnelServer implements ISynnelServer {
 
   /**
    * Start the server
+   *
+   * Initializes the transport layer, creates handlers, and sets up the broadcast channel.
+   * The server must be started before creating channels or handling connections.
+   *
+   * @throws {StateError} If server is already started
+   * @throws {ConfigError} If transport is not configured
+   *
+   * @example
+   * ```typescript
+   * await server.start()
+   * console.log('Server started')
+   * ```
    */
   async start(): Promise<void> {
     if (this.state.started) {
@@ -157,6 +214,19 @@ export class SynnelServer implements ISynnelServer {
 
   /**
    * Stop the server
+   *
+   * Gracefully shuts down the transport, closes all connections,
+   * and clears all channels and handlers.
+   *
+   * @remarks
+   * This method is idempotent - calling it multiple times has no additional effect.
+   * All client connections will be closed, and the registry will be cleared.
+   *
+   * @example
+   * ```typescript
+   * await server.stop()
+   * console.log('Server stopped')
+   * ```
    */
   async stop(): Promise<void> {
     if (!this.state.started || !this.transport) {
@@ -187,6 +257,27 @@ export class SynnelServer implements ISynnelServer {
 
   /**
    * Create a broadcast transport
+   *
+   * Broadcast channels send messages to all connected clients.
+   * No subscription is required - all clients receive broadcast messages.
+   *
+   * @template T - Type of data to be published
+   * @returns Broadcast transport for publishing to all clients
+   * @throws {StateError} If server is not started
+   *
+   * @example
+   * ```typescript
+   * const broadcast = server.createBroadcast<string>()
+   *
+   * // Send to all clients
+   * broadcast.publish('Hello everyone!')
+   *
+   * // Send excluding specific clients
+   * broadcast.publish('Private message', { exclude: ['client-123'] })
+   *
+   * // Send to specific clients only
+   * broadcast.publish('Secret', { to: ['client-1', 'client-2'] })
+   * ```
    */
   createBroadcast<T = unknown>(): IBroadcastTransport<T> {
     if (!this.state.started || !this.broadcastChannel) {
@@ -199,9 +290,40 @@ export class SynnelServer implements ISynnelServer {
   /**
    * Create or get a multicast transport using ChannelRef
    *
-   * Note: Channel options like maxSubscribers, reserved, and historySize
+   * Multicast channels send messages only to subscribed clients.
+   * Clients must explicitly subscribe to receive messages.
+   *
+   * @template T - Type of data to be published
+   * @param name - Unique channel name
+   * @returns Multicast transport for the channel
+   * @throws {StateError} If server is not started
+   *
+   * @remarks
+   * If a channel with the given name already exists, it will be returned
+   * instead of creating a new one. Use {@link hasChannel} to check existence first.
+   *
+   * Channel options like maxSubscribers, reserved, and historySize
    * are no longer supported. Use onSubscribe callbacks to implement
    * custom logic like max subscribers or reserved channel checks.
+   *
+   * @example
+   * ```typescript
+   * const chat = server.createMulticast<{ text: string }>('chat')
+   *
+   * // Handle incoming messages
+   * chat.receive((data, client) => {
+   *   console.log(`${client.id}: ${data.text}`)
+   *   chat.publish(data) // Echo to all subscribers
+   * })
+   *
+   * // Listen for subscriptions
+   * chat.onSubscribe((client) => {
+   *   chat.publish({ text: `Welcome ${client.id}!` })
+   * })
+   *
+   * // Publish to subscribers
+   * chat.publish({ text: 'Hello chat!' })
+   * ```
    */
   createMulticast<T = unknown>(
     name: ChannelName,
@@ -241,6 +363,16 @@ export class SynnelServer implements ISynnelServer {
 
   /**
    * Check if a channel exists
+   *
+   * @param name - Channel name to check
+   * @returns true if the channel exists, false otherwise
+   *
+   * @example
+   * ```typescript
+   * if (!server.hasChannel('chat')) {
+   *   server.createMulticast('chat')
+   * }
+   * ```
    */
   hasChannel(name: ChannelName): boolean {
     return !!this.registry.getChannel(name)
@@ -249,6 +381,14 @@ export class SynnelServer implements ISynnelServer {
 
   /**
    * Get all active channel names
+   *
+   * @returns Array of channel names that have been created
+   *
+   * @example
+   * ```typescript
+   * const channels = server.getChannels()
+   * console.log('Active channels:', channels) // ['chat', 'notifications']
+   * ```
    */
   getChannels(): ChannelName[] {
     return this.registry.getChannels()
@@ -340,6 +480,23 @@ export class SynnelServer implements ISynnelServer {
   // EVENT METHODS
   // ============================================================
 
+  /**
+   * Register an event handler
+   *
+   * @template E - Event type
+   * @param event - Event name to listen for
+   * @param handler - Event handler function
+   * @returns Unsubscribe function to remove the handler
+   *
+   * @example
+   * ```typescript
+   * const unsubscribe = server.on('connection', (client) => {
+   *   console.log(`Client connected: ${client.id}`)
+   * })
+   *
+   * // Later: unsubscribe()
+   * ```
+   */
   on<E extends IServerEventType>(
     event: E,
     handler: IServerEventMap[E],
@@ -347,6 +504,23 @@ export class SynnelServer implements ISynnelServer {
     return this.emitter.on(event, handler as any)
   }
 
+  /**
+   * Register a one-time event handler
+   *
+   * The handler will be automatically removed after being called once.
+   *
+   * @template E - Event type
+   * @param event - Event name to listen for
+   * @param handler - Event handler function
+   * @returns Unsubscribe function to remove the handler
+   *
+   * @example
+   * ```typescript
+   * server.once('connection', (client) => {
+   *   console.log('First client connected!')
+   * })
+   * ```
+   */
   once<E extends IServerEventType>(
     event: E,
     handler: IServerEventMap[E],
@@ -354,6 +528,20 @@ export class SynnelServer implements ISynnelServer {
     return this.emitter.once(event, handler as any)
   }
 
+  /**
+   * Emit an event locally
+   *
+   * Emits an event on the server without sending to clients.
+   *
+   * @template E - Event type
+   * @param event - Event name to emit
+   * @param args - Event arguments
+   *
+   * @example
+   * ```typescript
+   * server.emit('customEvent', { data: 'value' })
+   * ```
+   */
   emit<E extends IServerEventType>(
     event: E,
     ...args: IServerEventMap[E] extends (...args: infer P) => any ? P : never
@@ -361,6 +549,20 @@ export class SynnelServer implements ISynnelServer {
     this.emitter.emit(event, ...(args as any))
   }
 
+  /**
+   * Remove an event handler
+   *
+   * @template E - Event type
+   * @param event - Event name
+   * @param handler - Handler function to remove
+   *
+   * @example
+   * ```typescript
+   * const handler = (client) => console.log('Connected')
+   * server.on('connection', handler)
+   * server.off('connection', handler)
+   * ```
+   */
   off<E extends IServerEventType>(event: E, handler: IServerEventMap[E]): void {
     this.emitter.off(event, handler as any)
   }
@@ -369,6 +571,21 @@ export class SynnelServer implements ISynnelServer {
   // MIDDLEWARE METHODS
   // ============================================================
 
+  /**
+   * Register a middleware function
+   *
+   * Middleware functions are executed in order for each action
+   * (connect, disconnect, message, subscribe, unsubscribe).
+   *
+   * @param middleware - Middleware function to register
+   *
+   * @example
+   * ```typescript
+   * server.use(async ({ client, action }) => {
+   *   console.log(`[${action}] ${client.id}`)
+   * })
+   * ```
+   */
   use(middleware: any): void {
     this.middleware.use(middleware)
   }
@@ -377,6 +594,21 @@ export class SynnelServer implements ISynnelServer {
   // HANDLER METHODS
   // ============================================================
 
+  /**
+   * Register a global message handler
+   *
+   * The handler is called for every message received from any client.
+   *
+   * @param handler - Message handler function
+   * @returns Unsubscribe function to remove the handler
+   *
+   * @example
+   * ```typescript
+   * const unsubscribe = server.onMessage((client, message) => {
+   *   console.log(`From ${client.id}:`, message)
+   * })
+   * ```
+   */
   onMessage(
     handler: (client: IClientConnection, message: Message) => void,
   ): () => void {
@@ -384,6 +616,25 @@ export class SynnelServer implements ISynnelServer {
     return () => this.globalMessageHandlers.delete(handler)
   }
 
+  /**
+   * Register an authorization handler
+   *
+   * The handler is called before actions to check permissions.
+   * Return false to reject the action.
+   *
+   * @param handler - Authorization function
+   * @returns Unsubscribe function to remove the handler
+   *
+   * @example
+   * ```typescript
+   * server.authorize(async (clientId, channel, action) => {
+   *   if (channel === 'admin') {
+   *     return await isAdmin(clientId)
+   *   }
+   *   return true
+   * })
+   * ```
+   */
   authorize(
     handler: (
       clientId: string,
@@ -403,6 +654,19 @@ export class SynnelServer implements ISynnelServer {
   // STATS AND UTILITIES
   // ============================================================
 
+  /**
+   * Get server statistics
+   *
+   * @returns Server stats including client count, channel count, and subscription count
+   *
+   * @example
+   * ```typescript
+   * const stats = server.getStats()
+   * console.log(`Clients: ${stats.clientCount}`)
+   * console.log(`Channels: ${stats.channelCount}`)
+   * console.log(`Subscriptions: ${stats.subscriptionCount}`)
+   * ```
+   */
   getStats(): IServerStats {
     return {
       startedAt: this.state.startedAt,
@@ -412,14 +676,37 @@ export class SynnelServer implements ISynnelServer {
     }
   }
 
+  /**
+   * Get the server configuration (read-only)
+   *
+   * @returns Readonly server configuration
+   */
   getConfig(): Readonly<IServerConfig> {
     return this.config
   }
 
+  /**
+   * Get the client registry
+   *
+   * @returns The client registry instance
+   *
+   * @remarks
+   * This provides direct access to the registry for advanced use cases
+   * like managing clients or channels directly.
+   */
   getRegistry(): IClientRegistry {
     return this.registry
   }
 
+  /**
+   * Get the event emitter
+   *
+   * @returns The event emitter instance
+   *
+   * @remarks
+   * This provides direct access to the emitter for advanced use cases
+   * like emitting custom events or managing listeners.
+   */
   getEmitter(): IEventEmitter<IServerEventMap> {
     return this.emitter
   }

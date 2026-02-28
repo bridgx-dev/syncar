@@ -2,6 +2,13 @@
  * WebSocket Transport
  * WebSocket-based transport implementation using the `ws` library.
  *
+ * @remarks
+ * This transport provides WebSocket server functionality including:
+ * - Automatic connection management
+ * - Ping/pong keepalive for connection health monitoring
+ * - Message parsing and routing
+ * - Graceful connection cleanup
+ *
  * @module transport/websocket-transport
  */
 
@@ -28,6 +35,7 @@ type ServerInstance = WsServer
 /**
  * WebSocket server transport configuration
  * Internal type that merges IServerTransportConfig with ws-specific options
+ * @internal
  */
 interface WebSocketServerTransportConfig extends IServerTransportConfig {
   server: unknown
@@ -48,6 +56,24 @@ interface WebSocketServerTransportConfig extends IServerTransportConfig {
  * WebSocket server transport
  * Implements IServerTransport using the `ws` library.
  * Extends BaseTransport which inherits from EventEmitter.
+ *
+ * @remarks
+ * The transport manages WebSocket connections, handles incoming messages,
+ * and provides connection lifecycle events.
+ *
+ * @example
+ * ```typescript
+ * import { WebSocketServerTransport } from '@synnel/server/transport'
+ * import { createServer } from 'http'
+ *
+ * const httpServer = createServer()
+ * const transport = new WebSocketServerTransport({
+ *   server: httpServer,
+ *   path: '/ws',
+ *   enablePing: true,
+ *   pingInterval: 5000
+ * })
+ * ```
  */
 export class WebSocketServerTransport
   extends BaseTransport
@@ -60,6 +86,29 @@ export class WebSocketServerTransport
   private pingTimer?: ReturnType<typeof setInterval>
   private nextId = 0
 
+  /**
+   * Create a new WebSocket server transport
+   *
+   * @param config - Transport configuration
+   * @param config.server - HTTP server to attach to
+   * @param config.path - WebSocket path (default: '/synnel')
+   * @param config.maxPayload - Maximum message size in bytes (default: 1048576)
+   * @param config.enablePing - Enable ping/pong keepalive (default: true)
+   * @param config.pingInterval - Ping interval in ms (default: 30000)
+   * @param config.pingTimeout - Ping timeout in ms (default: 5000)
+   * @param config.connections - Optional existing connections map
+   * @param config.ServerConstructor - Custom WebSocket server constructor
+   *
+   * @example
+   * ```typescript
+   * const transport = new WebSocketServerTransport({
+   *   server: httpServer,
+   *   path: '/ws',
+   *   enablePing: true,
+   *   pingInterval: 10000
+   * })
+   * ```
+   */
   constructor(config: WebSocketServerTransportConfig) {
     super(config.connections)
 
@@ -87,12 +136,28 @@ export class WebSocketServerTransport
     }
   }
 
+  /**
+   * Start the transport
+   *
+   * The WebSocket server is already started in the constructor.
+   * This method exists for compatibility with the transport interface.
+   *
+   * @example
+   * ```typescript
+   * await transport.start()
+   * ```
+   */
   async start(): Promise<void> {
     // WebSocket server is already started in constructor
     // This method exists for compatibility with the transport interface
   }
 
 
+  /**
+   * Set up event handlers for the WebSocket server
+   *
+   * @internal
+   */
   private setupEventHandlers(): void {
     this.wsServer.on('connection', (socket: WebSocketInstance) => {
       this.handleConnection(socket)
@@ -103,6 +168,14 @@ export class WebSocketServerTransport
     })
   }
 
+  /**
+   * Handle a new WebSocket connection
+   *
+   * Creates a client connection, registers it, and sets up event handlers.
+   *
+   * @internal
+   * @param socket - The WebSocket instance
+   */
   private handleConnection(socket: WebSocketInstance): void {
     const clientId = `client-${this.nextId++}` as ClientId
     const connectedAt = Date.now()
@@ -136,6 +209,16 @@ export class WebSocketServerTransport
     this.emit('connection', connection)
   }
 
+  /**
+   * Handle a message from a client
+   *
+   * Parses the message and emits it as a message event.
+   * Updates lastPingAt for PONG signals.
+   *
+   * @internal
+   * @param clientId - The client ID
+   * @param data - Raw message data
+   */
   private handleMessage(clientId: ClientId, data: Buffer): void {
     try {
       const message = JSON.parse(data.toString())
@@ -155,11 +238,26 @@ export class WebSocketServerTransport
     }
   }
 
+  /**
+   * Handle a client disconnection
+   *
+   * Emits the disconnection event and removes the client from connections.
+   *
+   * @internal
+   * @param clientId - The client ID
+   */
   private handleDisconnection(clientId: ClientId): void {
     this.emit('disconnection', clientId)
     this.connections.delete(clientId)
   }
 
+  /**
+   * Set up ping/pong handlers for a connection
+   *
+   * @internal
+   * @param clientId - The client ID
+   * @param socket - The WebSocket instance
+   */
   private setupPingPong(clientId: ClientId, socket: WebSocketInstance): void {
     socket.on('pong', () => {
       const connection = this.connections.get(clientId)
@@ -169,6 +267,11 @@ export class WebSocketServerTransport
     })
   }
 
+  /**
+   * Start the ping timer for connection health monitoring
+   *
+   * @internal
+   */
   private startPingTimer(): void {
     if (this.pingTimer) {
       clearInterval(this.pingTimer)
@@ -179,6 +282,14 @@ export class WebSocketServerTransport
     }, this.config.pingInterval)
   }
 
+  /**
+   * Check all connections for timeout and send pings
+   *
+   * Closes connections that haven't responded within the timeout period.
+   * Sends pings to active connections.
+   *
+   * @internal
+   */
   private checkConnections(): void {
     const now = Date.now()
     const connections = Array.from(this.connections.values())
@@ -200,6 +311,18 @@ export class WebSocketServerTransport
     }
   }
 
+  /**
+   * Stop the transport and close all connections
+   *
+   * Stops the ping timer, closes all client connections,
+   * clears the connections map, and closes the WebSocket server.
+   *
+   * @example
+   * ```typescript
+   * await server.stop()
+   * transport.stop() // Close all connections
+   * ```
+   */
   stop(): void {
     if (this.pingTimer) {
       clearInterval(this.pingTimer)
