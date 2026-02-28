@@ -177,8 +177,6 @@ export type IPartialServerConfig = DeepPartial<IServerConfig>
  * const stats: IServerStats = server.getStats()
  * console.log(`Connected clients: ${stats.clientCount}`)
  * console.log(`Active channels: ${stats.channelCount}`)
- * console.log(`Messages received: ${stats.messagesReceived}`)
- * console.log(`Messages sent: ${stats.messagesSent}`)
  * console.log(`Server uptime: ${Date.now() - stats.startedAt!}ms`)
  * ```
  */
