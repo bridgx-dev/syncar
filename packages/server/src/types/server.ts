@@ -6,7 +6,6 @@
 import type { Server as HttpServer } from 'node:http'
 import type { DeepPartial } from './utilities'
 import type { ClientId } from './common'
-import type { Message } from './message'
 import type { IServerTransport } from './transport'
 import type { IMiddleware } from './middleware'
 import type {
@@ -381,47 +380,7 @@ export interface ISynnelServer {
    */
   use(middleware: IMiddleware): void
 
-  /**
-   * Set authorization handler for connection/subscription/message actions
-   *
-   * @param handler - Authorization handler (return false to reject, true to allow)
-   * @returns Unsubscribe function
-   *
-   * @example
-   * ```ts
-   * server.authorize(async (clientId, channel, action) => {
-   *   if (channel === 'admin') {
-   *     return await isAdmin(clientId)
-   *   }
-   *   return true
-   * })
-   * ```
-   */
-  authorize(
-    handler: (
-      clientId: string,
-      channel: string,
-      action: string,
-    ) => boolean | Promise<boolean>,
-  ): () => void
 
-  /**
-   * Register a global message handler
-   * Called for every message received from any client.
-   *
-   * @param handler - Message handler function
-   * @returns Unsubscribe function
-   *
-   * @example
-   * ```ts
-   * server.onMessage((client, message) => {
-   *   console.log(`Client ${client.id} sent:`, message)
-   * })
-   * ```
-   */
-  onMessage(
-    handler: (client: IClientConnection, message: Message) => void,
-  ): () => void
 
   /**
    * Get the client registry

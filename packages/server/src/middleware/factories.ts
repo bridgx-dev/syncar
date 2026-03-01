@@ -105,14 +105,14 @@ export function createAuthMiddleware(
     actions,
   } = options
 
-  return async (context) => {
+  return async (context, next) => {
     // Check if this action requires auth
     if (actions && !actions.includes(context.action)) {
-      return
+      return next()
     }
 
     // Extract token
-    const token = getToken(context)
+    const token = getToken(context as any)
     if (!token) {
       context.reject('Authentication token required')
       return
@@ -122,12 +122,18 @@ export function createAuthMiddleware(
     try {
       const userData = await verifyToken(token)
 
-      // Attach user data to client
+      // Attach user data to client (LEGACY - for compatibility)
       if (context.client) {
         ; (context.client as unknown as Record<string, unknown>)[
           attachProperty
         ] = userData
       }
+
+      // Attach to STATE (New Onion Pattern)
+      context.state[attachProperty] = userData
+
+      // PASS TO NEXT LAYER
+      await next()
     } catch (error) {
       context.reject('Authentication failed: Invalid token')
     }
@@ -221,22 +227,32 @@ export function createLoggingMiddleware(
     actions,
   } = options
 
-  return async (context) => {
+  return async (context, next) => {
     // Check if this action should be logged
     if (actions && !actions.includes(context.action)) {
-      return
+      return next()
     }
+
+    const start = Date.now()
+
+    // PRE-EXECUTION LOG (Optional or combined with post)
+    // For Onion, we usually want to log the RESULT or DURATION
+
+    await next() // Wait for downstream layers
+
+    const duration = Date.now() - start
 
     const logData = {
       action: context.action,
       clientId: context.client?.id,
       channel: context.channel,
       message: includeMessageData ? context.message : undefined,
+      duration,
     }
 
     const logMessage = format
-      ? format(logData)
-      : `[${logData.action}] Client: ${logData.clientId ?? 'unknown'}${logData.channel ? ` Channel: ${logData.channel}` : ''}`
+      ? format(logData as any)
+      : `[${logData.action}] Client: ${logData.clientId ?? 'unknown'}${logData.channel ? ` Channel: ${logData.channel}` : ''} (${duration}ms)`
 
     logger[logLevel](logMessage)
   }
@@ -342,15 +358,15 @@ export function createRateLimitMiddleware(
   }, windowMs * 10)
 
   // Return middleware with cleanup
-  const middleware: IMiddleware = async (context) => {
+  const middleware: IMiddleware = async (context, next) => {
     // Check if this action should be rate limited
     if (!actions.includes(context.action)) {
-      return
+      return next()
     }
 
-    const id = getMessageId(context)
+    const id = getMessageId(context as any)
     if (!id) {
-      return // No ID to rate limit
+      return next() // No ID to rate limit
     }
 
     const now = Date.now()
@@ -381,6 +397,9 @@ export function createRateLimitMiddleware(
 
     // Increment counter
     currentState.count++
+
+    // CONTINUE
+    await next()
   }
 
     // Attach cleanup method
@@ -500,32 +519,36 @@ export function createChannelWhitelistMiddleware(
     restrictUnsubscribe = false,
   } = options
 
-  return async (context) => {
+  return async (context, next) => {
     // Only check subscribe/unsubscribe actions
     if (context.action !== 'subscribe' && context.action !== 'unsubscribe') {
-      return
+      return next()
     }
 
     // Skip unsubscribe if not restricted
     if (context.action === 'unsubscribe' && !restrictUnsubscribe) {
-      return
+      return next()
     }
 
     if (!context.channel) {
-      return // No channel to check
+      return next() // No channel to check
     }
 
     // Check dynamic function first
     if (isDynamic) {
       if (!isDynamic(context.channel, context.client)) {
         context.reject(`Channel '${context.channel}' is not allowed`)
+        return
       }
-      return
+      return next()
     }
 
     // Check static whitelist
     if (!allowedChannels.includes(context.channel)) {
       context.reject(`Channel '${context.channel}' is not allowed`)
+      return
     }
+
+    await next()
   }
 }

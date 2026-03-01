@@ -34,7 +34,6 @@ import type {
   IServerStats,
   IServerTransport,
   IClientRegistry,
-  IClientConnection,
   IMiddlewareManager,
   IEventEmitter,
   IServerEventMap,
@@ -43,7 +42,6 @@ import type {
   IMulticastTransport,
   ChannelName,
   ClientId,
-  Message,
   IPublishOptions,
 } from '../types'
 import { ClientRegistry } from '../registry'
@@ -84,18 +82,6 @@ export class SynnelServer implements ISynnelServer {
   private signalHandler: SignalHandler | undefined
 
   private broadcastChannel: IBroadcastTransport<unknown> | undefined
-  private readonly globalMessageHandlers: Set<
-    (client: IClientConnection, message: Message) => void
-  >
-
-  private authorizationHandler:
-    | ((
-      clientId: string,
-      channel: string,
-      action: string,
-    ) => boolean | Promise<boolean>)
-    | undefined
-
   private readonly state: ServerState
 
 
@@ -119,7 +105,6 @@ export class SynnelServer implements ISynnelServer {
    */
   constructor(config: IServerConfig = {}) {
     this.config = config
-    this.globalMessageHandlers = new Set()
     this.state = { started: false, startedAt: undefined }
 
     // Create or use injected client registry
@@ -176,13 +161,11 @@ export class SynnelServer implements ISynnelServer {
     // Create handlers with getChannel callback
     this.connectionHandler = new ConnectionHandler({
       registry: this.registry,
-      middleware: this.middleware,
       emitter: this.emitter,
     })
 
     this.messageHandler = new MessageHandler({
       registry: this.registry,
-      middleware: this.middleware,
       emitter: this.emitter,
     })
 
@@ -190,7 +173,6 @@ export class SynnelServer implements ISynnelServer {
 
     this.signalHandler = new SignalHandler({
       registry: this.registry,
-      middleware: this.middleware,
       emitter: this.emitter,
     })
 
@@ -594,61 +576,7 @@ export class SynnelServer implements ISynnelServer {
   // HANDLER METHODS
   // ============================================================
 
-  /**
-   * Register a global message handler
-   *
-   * The handler is called for every message received from any client.
-   *
-   * @param handler - Message handler function
-   * @returns Unsubscribe function to remove the handler
-   *
-   * @example
-   * ```typescript
-   * const unsubscribe = server.onMessage((client, message) => {
-   *   console.log(`From ${client.id}:`, message)
-   * })
-   * ```
-   */
-  onMessage(
-    handler: (client: IClientConnection, message: Message) => void,
-  ): () => void {
-    this.globalMessageHandlers.add(handler)
-    return () => this.globalMessageHandlers.delete(handler)
-  }
 
-  /**
-   * Register an authorization handler
-   *
-   * The handler is called before actions to check permissions.
-   * Return false to reject the action.
-   *
-   * @param handler - Authorization function
-   * @returns Unsubscribe function to remove the handler
-   *
-   * @example
-   * ```typescript
-   * server.authorize(async (clientId, channel, action) => {
-   *   if (channel === 'admin') {
-   *     return await isAdmin(clientId)
-   *   }
-   *   return true
-   * })
-   * ```
-   */
-  authorize(
-    handler: (
-      clientId: string,
-      channel: string,
-      action: string,
-    ) => boolean | Promise<boolean>,
-  ): () => void {
-    this.authorizationHandler = handler
-    return () => {
-      if (this.authorizationHandler === handler) {
-        this.authorizationHandler = undefined
-      }
-    }
-  }
 
   // ============================================================
   // STATS AND UTILITIES
@@ -721,9 +649,9 @@ export class SynnelServer implements ISynnelServer {
     // Handle new connections
     transport.on('connection', async (connection) => {
       try {
+        await this.middleware.executeConnection(connection, 'connect')
         await this.connectionHandler!.handleConnection(connection)
       } catch (error) {
-        // Connection error - emit error event
         this.emitter.emit('error', error as Error)
       }
     })
@@ -731,9 +659,12 @@ export class SynnelServer implements ISynnelServer {
     // Handle disconnections
     transport.on('disconnection', async (clientId) => {
       try {
-        await this.connectionHandler!.handleDisconnection(clientId)
+        const client = this.registry.get(clientId)
+        if (client) {
+          await this.middleware.executeConnection(client, 'disconnect')
+          await this.connectionHandler!.handleDisconnection(clientId)
+        }
       } catch (error) {
-        // Disconnection error - emit error event
         this.emitter.emit('error', error as Error)
       }
     })
@@ -744,31 +675,46 @@ export class SynnelServer implements ISynnelServer {
         const client = this.registry.get(clientId as string)
         if (!client) return
 
-        // Check authorization
-        if (this.authorizationHandler) {
-          const authorized = await this.authorizationHandler(
-            client.id,
-            message.channel ?? '',
-            'message',
-          )
-          if (!authorized) return
-        }
+        // 1. Identify all applicable middlewares
+        const globalMiddlewares = (this.middleware as MiddlewareManager).getMiddlewares()
+        let pipeline = [...globalMiddlewares]
 
-        // Call global message handlers
-        for (const handler of this.globalMessageHandlers) {
-          try {
-            handler(client, message)
-          } catch {
-            // Ignore handler errors
+        if (message.channel) {
+          const channelRef = this.registry.getChannel(message.channel) as ChannelRef
+          if (channelRef && typeof channelRef.getMiddlewares === 'function') {
+            pipeline = [...pipeline, ...channelRef.getMiddlewares()]
           }
         }
 
-        // ROUTE TO APPROPRIATE HANDLER
-        if (message.type === 'data') {
-          await this.messageHandler!.handleMessage(client, message as any)
-        } else if (message.type === 'signal') {
-          await this.signalHandler!.handleSignal(client, message as any)
+        // 2. Define the Kernel (Final Handler)
+        const kernel = async () => {
+          if (message.type === 'data') {
+            await this.messageHandler!.handleMessage(client, message as any)
+          } else if (message.type === 'signal') {
+            // Special handling for subscribe/unsubscribe to include their specific hooks
+            if (message.signal === 'SUBSCRIBE' || message.signal === 'UNSUBSCRIBE') {
+              // SignalHandler will handle internal hooks and registry updates
+              await this.signalHandler!.handleSignal(client, message as any)
+            } else {
+              await this.signalHandler!.handleSignal(client, message as any)
+            }
+          }
         }
+
+        // 3. Execute the Onion
+        const ctxFactory = this.middleware as unknown as MiddlewareManager
+        const action = message.type === 'signal' && (message.signal === 'SUBSCRIBE' || message.signal === 'UNSUBSCRIBE')
+          ? (message.signal.toLowerCase() as any)
+          : 'message'
+
+        const context = action === 'subscribe'
+          ? ctxFactory.createSubscribeContext(client, message.channel!)
+          : action === 'unsubscribe'
+            ? ctxFactory.createUnsubscribeContext(client, message.channel!)
+            : ctxFactory.createMessageContext(client, message)
+
+        await (this.middleware as MiddlewareManager).execute(context, pipeline, kernel)
+
       } catch (error) {
         this.emitter.emit('error', error as Error)
       }

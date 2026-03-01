@@ -15,6 +15,7 @@ import type {
   ILifecycleHandler,
   IClientConnection,
   IPublishOptions,
+  IMiddleware,
 } from '../types'
 import type { ChannelName, SubscriberId } from '../types'
 import type { HandlerRegistry } from '../registry/handler-registry'
@@ -29,6 +30,11 @@ import type { DataMessage } from '../types/message'
  * @template T The type of data published on this channel
  */
 export class ChannelRef<T = unknown> implements IChannelTransport<T> {
+  /**
+   * Channel-specific middleware functions
+   */
+  private readonly middlewares: IMiddleware[] = []
+
   /**
    * Create a new ChannelRef
    *
@@ -46,7 +52,25 @@ export class ChannelRef<T = unknown> implements IChannelTransport<T> {
     private readonly subscribeFn: (clientId: SubscriberId) => boolean,
     private readonly unsubscribeFn: (clientId: SubscriberId) => boolean,
     private readonly publishFn: (data: T, options?: IPublishOptions) => void,
-  ) {}
+  ) { }
+
+  /**
+   * Register a channel-specific middleware function
+   *
+   * @param middleware - The middleware to register
+   */
+  use(middleware: IMiddleware): void {
+    this.middlewares.push(middleware)
+  }
+
+  /**
+   * Get all channel-specific middleware
+   *
+   * @returns Array of middleware functions
+   */
+  getMiddlewares(): IMiddleware[] {
+    return [...this.middlewares]
+  }
 
   // ============================================================
   // IChannel implementation

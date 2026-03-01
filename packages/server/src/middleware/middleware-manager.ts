@@ -33,7 +33,15 @@ import { MiddlewareRejectionError, MiddlewareExecutionError } from '../errors'
  * })
  * ```
  */
-class MiddlewareContext implements IMiddlewareContext {
+/**
+ * Middleware Context implementation
+ * Provides context and control to middleware functions.
+ *
+ * @template S - Type of the shared state object
+ */
+class MiddlewareContext<S = Record<string, any>>
+  implements IMiddlewareContext<S> {
+  public readonly state: S = {} as S
   public readonly client?: IClientConnection
   public readonly message?: Message
   public readonly channel?: ChannelName
@@ -69,11 +77,6 @@ class MiddlewareContext implements IMiddlewareContext {
    *
    * @param reason - Human-readable reason for rejection
    * @throws MiddlewareRejectionError
-   *
-   * @example
-   * ```ts
-   * context.reject('User not authorized')
-   * ```
    */
   private _reject(reason: string): void {
     this._rejected = true
@@ -105,29 +108,13 @@ class MiddlewareContext implements IMiddlewareContext {
 /**
  * Middleware Manager - manages and executes middleware functions
  *
- * Middleware functions are executed in sequence for each action.
- * They can inspect the context and reject actions if needed.
- *
- * @example
- * ```ts
- * import { MiddlewareManager } from '@synnel/server/middleware'
- *
- * const manager = new MiddlewareManager()
- *
- * // Add middleware
- * manager.use(async ({ client, action }) => {
- *   console.log(`[${action}] Client: ${client.id}`)
- * })
- *
- * // Execute middleware
- * await manager.executeConnection(client, 'connect')
- * ```
+ * Middleware functions are executed in an onion pattern (recursive composition).
+ * Each middleware calls next() to pass control to the next layer.
  */
 export class MiddlewareManager
   implements IMiddlewareManager, IMiddlewareContextFactory {
   /**
    * Registered middleware functions
-   * Stored in an array to maintain execution order
    */
   protected readonly middlewares: IMiddleware[] = []
 
@@ -137,17 +124,6 @@ export class MiddlewareManager
 
   /**
    * Register a middleware function
-   *
-   * Middleware are executed in the order they are registered.
-   *
-   * @param middleware - The middleware to register
-   *
-   * @example
-   * ```ts
-   * manager.use(async ({ client, action }) => {
-   *   console.log(`[${action}] Client: ${client.id}`)
-   * })
-   * ```
    */
   use(middleware: IMiddleware): void {
     this.middlewares.push(middleware)
@@ -155,14 +131,6 @@ export class MiddlewareManager
 
   /**
    * Remove a middleware function
-   *
-   * @param middleware - The middleware to remove
-   * @returns true if removed, false if not found
-   *
-   * @example
-   * ```ts
-   * const removed = manager.remove(loggingMiddleware)
-   * ```
    */
   remove(middleware: IMiddleware): boolean {
     const index = this.middlewares.indexOf(middleware)
@@ -175,123 +143,118 @@ export class MiddlewareManager
 
   /**
    * Clear all middleware
-   *
-   * @example
-   * ```ts
-   * manager.clear()
-   * ```
    */
   clear(): void {
     this.middlewares.length = 0
   }
 
+  /**
+   * Get all registered middleware
+   */
+  getMiddlewares(): IMiddleware[] {
+    return [...this.middlewares]
+  }
+
   // ============================================================
-  // MIDDLEWARE EXECUTION (implements IMiddlewareManager)
+  // MIDDLEWARE EXECUTION
   // ============================================================
 
   /**
+   * Compose multiple middleware functions into a single execution function
+   *
+   * @param middlewares - Array of middleware functions
+   * @returns A composed function that runs the onion
+   */
+  public compose(middlewares: IMiddleware[]): (context: IMiddlewareContext, next?: () => Promise<void>) => Promise<void> {
+    return async (context, next) => {
+      let index = -1
+
+      const dispatch = async (i: number): Promise<void> => {
+        if (i <= index) {
+          throw new Error('next() called multiple times')
+        }
+        index = i
+        let fn = middlewares[i]
+        if (i === middlewares.length) {
+          fn = next as any
+        }
+        if (!fn) return
+
+        try {
+          await fn(context, dispatch.bind(null, i + 1))
+        } catch (error) {
+          // If it's a rejection or already an execution error, re-throw
+          if (error instanceof MiddlewareRejectionError || error instanceof MiddlewareExecutionError) {
+            throw error
+          }
+
+          // Wrap unexpected errors
+          const middlewareName = (fn as any).name || `middleware[${i}]`
+          throw new MiddlewareExecutionError(
+            context.action,
+            middlewareName,
+            error instanceof Error ? error : new Error(String(error))
+          )
+        }
+      }
+
+      return dispatch(0)
+    }
+  }
+
+  /**
    * Execute middleware for a connection action
-   *
-   * @param client - The client
-   * @param action - The action type ('connect' | 'disconnect')
-   * @throws MiddlewareRejectionError if any middleware rejects
-   * @throws MiddlewareExecutionError if any middleware throws unexpectedly
-   *
-   * @example
-   * ```ts
-   * try {
-   *   await manager.executeConnection(client, 'connect')
-   * } catch (error) {
-   *   if (error instanceof MiddlewareRejectionError) {
-   *     console.log(`Connection rejected: ${error.reason}`)
-   *   }
-   * }
-   * ```
    */
   async executeConnection(
     client: IClientConnection,
     action: 'connect' | 'disconnect',
   ): Promise<void> {
     const context = this.createConnectionContext(client, action)
-    await this.executeMiddlewares(context, action)
+    await this.compose(this.middlewares)(context)
   }
 
   /**
    * Execute middleware for a message action
-   *
-   * @param client - The client who sent the message
-   * @param message - The message
-   * @throws MiddlewareRejectionError if any middleware rejects
-   * @throws MiddlewareExecutionError if any middleware throws unexpectedly
-   *
-   * @example
-   * ```ts
-   * try {
-   *   await manager.executeMessage(client, message)
-   * } catch (error) {
-   *   if (error instanceof MiddlewareRejectionError) {
-   *     console.log(`Message rejected: ${error.reason}`)
-   *   }
-   * }
-   * ```
    */
   async executeMessage(client: IClientConnection, message: Message): Promise<void> {
     const context = this.createMessageContext(client, message)
-    await this.executeMiddlewares(context, 'message')
+    await this.compose(this.middlewares)(context)
   }
 
   /**
    * Execute middleware for a subscribe action
-   *
-   * @param client - The client
-   * @param channel - The channel name
-   * @throws MiddlewareRejectionError if any middleware rejects
-   * @throws MiddlewareExecutionError if any middleware throws unexpectedly
-   *
-   * @example
-   * ```ts
-   * try {
-   *   await manager.executeSubscribe(client, 'chat')
-   * } catch (error) {
-   *   if (error instanceof MiddlewareRejectionError) {
-   *     console.log(`Subscription rejected: ${error.reason}`)
-   *   }
-   * }
-   * ```
    */
   async executeSubscribe(
     client: IClientConnection,
     channel: ChannelName,
+    finalHandler?: () => Promise<void>
   ): Promise<void> {
     const context = this.createSubscribeContext(client, channel)
-    await this.executeMiddlewares(context, 'subscribe')
+    await this.compose(this.middlewares)(context, finalHandler)
   }
 
   /**
    * Execute middleware for an unsubscribe action
-   *
-   * @param client - The client
-   * @param channel - The channel name
-   * @throws MiddlewareRejectionError if any middleware rejects
-   * @throws MiddlewareExecutionError if any middleware throws unexpectedly
-   *
-   * @example
-   * ```ts
-   * try {
-   *   await manager.executeUnsubscribe(client, 'chat')
-   * } catch (error) {
-   *   if (error instanceof MiddlewareRejectionError) {
-   *     console.log(`Unsubscribe rejected: ${error.reason}`)
-   *   }
-   * }
-   * ```
    */
   async executeUnsubscribe(
     client: IClientConnection,
     channel: ChannelName,
+    finalHandler?: () => Promise<void>
   ): Promise<void> {
     const context = this.createUnsubscribeContext(client, channel)
-    await this.executeMiddlewares(context, 'unsubscribe')
+    await this.compose(this.middlewares)(context, finalHandler)
+  }
+
+  /**
+   * Execute a chain of middlewares with a context
+   * Useful for internal manual triggers
+   */
+  async execute(
+    context: IMiddlewareContext,
+    middlewares: IMiddleware[] = this.middlewares,
+    finalHandler?: () => Promise<void>
+  ): Promise<void> {
+    await this.compose(middlewares)(context, finalHandler)
   }
 
   // ============================================================
@@ -300,10 +263,6 @@ export class MiddlewareManager
 
   /**
    * Create context for a connection action
-   *
-   * @param client - The client
-   * @param action - The action type
-   * @returns Middleware context
    */
   createConnectionContext(
     client: IClientConnection,
@@ -317,10 +276,6 @@ export class MiddlewareManager
 
   /**
    * Create context for a message action
-   *
-   * @param client - The client
-   * @param message - The message
-   * @returns Middleware context
    */
   createMessageContext(
     client: IClientConnection,
@@ -335,10 +290,6 @@ export class MiddlewareManager
 
   /**
    * Create context for a subscribe action
-   *
-   * @param client - The client
-   * @param channel - The channel name
-   * @returns Middleware context
    */
   createSubscribeContext(
     client: IClientConnection,
@@ -353,10 +304,6 @@ export class MiddlewareManager
 
   /**
    * Create context for an unsubscribe action
-   *
-   * @param client - The client
-   * @param channel - The channel name
-   * @returns Middleware context
    */
   createUnsubscribeContext(
     client: IClientConnection,
@@ -369,59 +316,8 @@ export class MiddlewareManager
     })
   }
 
-  // ============================================================
-  // INTERNAL EXECUTION METHOD
-  // ============================================================
-
-  /**
-   * Execute all middleware functions in sequence
-   *
-   * @param context - The middleware context
-   * @param action - The action being processed
-   * @throws MiddlewareRejectionError if any middleware rejects
-   * @throws MiddlewareExecutionError if any middleware throws unexpectedly
-   */
-  protected async executeMiddlewares(
-    context: IMiddlewareContext,
-    action: string,
-  ): Promise<void> {
-    for (let i = 0; i < this.middlewares.length; i++) {
-      const middleware = this.middlewares[i]!
-      const middlewareName =
-        (middleware as { name?: string }).name || `middleware[${i}]`
-
-      try {
-        await middleware(context)
-      } catch (error) {
-        // If it's a MiddlewareRejectionError, re-throw it
-        if (error instanceof MiddlewareRejectionError) {
-          throw error
-        }
-
-        // Wrap other errors in MiddlewareExecutionError
-        if (error instanceof Error) {
-          throw new MiddlewareExecutionError(action, middlewareName, error)
-        }
-
-        // Wrap non-Error thrown values
-        throw new MiddlewareExecutionError(
-          action,
-          middlewareName,
-          new Error(String(error)),
-        )
-      }
-    }
-  }
-
   /**
    * Get the number of registered middleware
-   *
-   * @returns Middleware count
-   *
-   * @example
-   * ```ts
-   * console.log(`Registered middleware: ${manager.getCount()}`)
-   * ```
    */
   getCount(): number {
     return this.middlewares.length
@@ -429,15 +325,6 @@ export class MiddlewareManager
 
   /**
    * Check if any middleware is registered
-   *
-   * @returns true if at least one middleware is registered
-   *
-   * @example
-   * ```ts
-   * if (manager.hasMiddleware()) {
-   *   console.log('Middleware is active')
-   * }
-   * ```
    */
   hasMiddleware(): boolean {
     return this.middlewares.length > 0

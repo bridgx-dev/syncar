@@ -8,7 +8,6 @@
 import type {
   IClientRegistry,
   IClientConnection,
-  IMiddlewareManager,
   IEventEmitter,
   IServerEventMap,
 } from '../types'
@@ -82,7 +81,6 @@ export interface ConnectionHandlerOptions {
  */
 export class ConnectionHandler {
   private readonly registry: IClientRegistry
-  private readonly middleware: IMiddlewareManager
   private readonly emitter: IEventEmitter<IServerEventMap>
   private readonly options: Required<ConnectionHandlerOptions>
 
@@ -103,12 +101,10 @@ export class ConnectionHandler {
    */
   constructor(dependencies: {
     registry: IClientRegistry
-    middleware: IMiddlewareManager
     emitter: IEventEmitter<IServerEventMap>
     options?: ConnectionHandlerOptions
   }) {
     this.registry = dependencies.registry
-    this.middleware = dependencies.middleware
     this.emitter = dependencies.emitter
 
     // Apply defaults
@@ -147,21 +143,8 @@ export class ConnectionHandler {
   async handleConnection(
     connection: IClientConnection,
   ): Promise<IClientConnection> {
-    // Register client in registry first (creates IClientConnection)
+    // Register client in registry
     const client = this.registry.register(connection)
-
-    // Execute connection middleware
-    try {
-      await this.middleware.executeConnection(client, 'connect')
-    } catch {
-      // Middleware rejected - unregister and disconnect
-      this.registry.unregister(connection.id)
-      connection.socket.close(
-        this.options.rejectionCloseCode,
-        'Connection rejected',
-      )
-      throw new Error('Connection rejected by middleware')
-    }
 
     // Emit connection event
     if (this.options.emitConnectionEvent) {
@@ -192,13 +175,6 @@ export class ConnectionHandler {
 
     if (!client) {
       return // Client already unregistered
-    }
-
-    // Execute disconnect middleware
-    try {
-      await this.middleware.executeConnection(client, 'disconnect')
-    } catch {
-      // Ignore middleware errors during disconnection
     }
 
     // Unregister client from registry FIRST

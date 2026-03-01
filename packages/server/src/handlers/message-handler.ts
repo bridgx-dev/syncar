@@ -5,7 +5,6 @@
 
 import type {
   IClientRegistry,
-  IMiddlewareManager,
   IEventEmitter,
   IServerEventMap,
   IClientConnection,
@@ -32,12 +31,6 @@ export interface MessageHandlerOptions {
    * @default true
    */
   requireChannel?: boolean
-
-  /**
-   * Whether to execute message middleware
-   * @default true
-   */
-  executeMiddleware?: boolean
 }
 
 
@@ -48,7 +41,6 @@ export interface MessageHandlerOptions {
  */
 export class MessageHandler {
   private readonly registry: IClientRegistry
-  private readonly middleware: IMiddlewareManager
   private readonly emitter: IEventEmitter<IServerEventMap>
   private readonly options: Required<MessageHandlerOptions>
 
@@ -57,19 +49,16 @@ export class MessageHandler {
    */
   constructor(dependencies: {
     registry: IClientRegistry
-    middleware: IMiddlewareManager
     emitter: IEventEmitter<IServerEventMap>
     options?: MessageHandlerOptions
   }) {
     this.registry = dependencies.registry
-    this.middleware = dependencies.middleware
     this.emitter = dependencies.emitter
 
     // Apply defaults
     this.options = {
       emitMessageEvent: dependencies.options?.emitMessageEvent ?? true,
       requireChannel: dependencies.options?.requireChannel ?? true,
-      executeMiddleware: dependencies.options?.executeMiddleware ?? true,
     }
   }
 
@@ -93,11 +82,6 @@ export class MessageHandler {
     // Validate channel exists
     if (this.options.requireChannel && !channel) {
       throw new ChannelError(`Channel not found: ${message.channel}`)
-    }
-
-    // Execute message middleware
-    if (this.options.executeMiddleware) {
-      await this.middleware.executeMessage(client, message)
     }
 
     // Route to channel for processing (triggers onMessage handlers)

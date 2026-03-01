@@ -191,26 +191,6 @@ async function main() {
   // AUTHORIZATION MIDDLEWARE
   // ============================================================
 
-  // Add authorization middleware (optional)
-  server.authorize(async (clientId, channel, action) => {
-    // Log authorization checks
-    console.log(`[Auth] ${clientId} wants to ${action} on ${channel}`)
-    // Allow all actions for this example
-    // In production, you would check authentication tokens, database, etc.
-    return true
-  })
-
-  // ============================================================
-  // GLOBAL MESSAGE INTERCEPTOR
-  // ============================================================
-
-  // Global message interceptor (optional)
-  server.onMessage((client, message) => {
-    console.log(
-      `[Message] Client ${client.id} sent message type: ${message.type}`,
-    )
-  })
-
   // ============================================================
   // START HTTP SERVER
   // ============================================================

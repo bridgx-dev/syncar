@@ -44,6 +44,13 @@ export type IMiddlewareAction =
 // ============================================================
 
 /**
+ * Next function type
+ * Called by middleware to pass control to the next layer in the onion.
+ * Returns a promise that resolves when all downstream layers have finished.
+ */
+export type NextFunction = () => Promise<void>
+
+/**
  * Middleware context interface
  * Provides context and control to middleware functions.
  *
@@ -51,23 +58,30 @@ export type IMiddlewareAction =
  * the action, client, message, and channel. They can also
  * reject actions by calling the reject() function.
  *
+ * @template S - Type of the shared state object
+ *
  * @example
  * ```ts
- * const loggingMiddleware: IMiddleware = async ({ client, action }) => {
+ * const loggingMiddleware: IMiddleware = async ({ client, action }, next) => {
  *   console.log(`[${action}] Client: ${client?.id}`)
+ *   await next() // Pass to next middleware
  * }
  *
- * const authMiddleware: IMiddleware = async (context) => {
+ * const authMiddleware: IMiddleware<{ user: User }> = async (context, next) => {
  *   if (context.action === 'connect') {
- *     // Validate connection and reject if needed
- *     if (!isValidConnection(context.client)) {
- *       context.reject('Connection not allowed')
- *     }
+ *     const user = await validate(context.token)
+ *     context.state.user = user // Shared state!
  *   }
+ *   await next()
  * }
  * ```
  */
-export interface IMiddlewareContext {
+export interface IMiddlewareContext<S = Record<string, any>> {
+  /**
+   * Shared state between middleware layers
+   */
+  readonly state: S
+
   /**
    * The client involved in this action
    * Undefined for server-level middleware before connection
@@ -116,37 +130,15 @@ export interface IMiddlewareContext {
 /**
  * Middleware function signature
  *
- * Middleware functions are executed in sequence for each action.
- * They can inspect the context and reject actions if needed.
+ * Middleware functions are executed in sequence (onion pattern) for each action.
+ * They receive a context and a next() function to call the next layer.
  *
- * @example
- * ```ts
- * // Simple logging middleware
- * const loggingMiddleware: IMiddleware = async (context) => {
- *   console.log(`[${context.action}] Client: ${context.client?.id}`)
- * }
- *
- * // Authentication middleware with rejection
- * const authMiddleware: IMiddleware = async (context) => {
- *   if (context.action === 'connect') {
- *     if (!isValidConnection(context.client)) {
- *       context.reject('Connection not allowed')
- *     }
- *   }
- * }
- *
- * // Rate limiting middleware
- * const rateLimitMiddleware: IMiddleware = async (context) => {
- *   if (context.action === 'message' && context.client) {
- *     const count = messageCounts.get(context.client.id) ?? 0
- *     if (count > 100) {
- *       context.reject('Rate limit exceeded')
- *     }
- *   }
- * }
- * ```
+ * @template S - Type of the shared state object
  */
-export type IMiddleware = (context: IMiddlewareContext) => void | Promise<void>
+export type IMiddleware<S = any> = (
+  context: IMiddlewareContext<S>,
+  next: NextFunction,
+) => void | Promise<void>
 
 // ============================================================
 // MIDDLEWARE MANAGER INTERFACE

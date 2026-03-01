@@ -6,7 +6,6 @@
 import type {
   IClientRegistry,
   IClientConnection,
-  IMiddlewareManager,
   IEventEmitter,
   IServerEventMap,
   IChannelTransport,
@@ -68,7 +67,6 @@ export interface SignalHandlerOptions {
  */
 export class SignalHandler {
   private readonly registry: IClientRegistry
-  private readonly middleware: IMiddlewareManager
   private readonly emitter: IEventEmitter<IServerEventMap>
   private readonly options: Required<SignalHandlerOptions>
 
@@ -77,12 +75,10 @@ export class SignalHandler {
    */
   constructor(dependencies: {
     registry: IClientRegistry
-    middleware: IMiddlewareManager
     emitter: IEventEmitter<IServerEventMap>
     options?: SignalHandlerOptions
   }) {
     this.registry = dependencies.registry
-    this.middleware = dependencies.middleware
     this.emitter = dependencies.emitter
 
     // Apply defaults
@@ -146,9 +142,6 @@ export class SignalHandler {
       throw new ChannelError('Cannot subscribe to broadcast channel')
     }
 
-    // Execute subscribe middleware
-    await this.middleware.executeSubscribe(client, channel)
-
     // Subscribe to channel via registry
     // Features like reserved channels, max subscribers, etc. are now
     // handled via onSubscribe callbacks that can reject the subscription
@@ -210,9 +203,6 @@ export class SignalHandler {
     if (!this.registry.isSubscribed(client.id, channel)) {
       throw new ChannelError(`Client not subscribed to channel: ${channel}`)
     }
-
-    // Execute unsubscribe middleware
-    await this.middleware.executeUnsubscribe(client, channel)
 
     // Unsubscribe from channel via registry
     this.registry.unsubscribe(client.id, channel)
