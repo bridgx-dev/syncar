@@ -12,6 +12,7 @@ import type {
 } from './base'
 import type { ChannelName, SubscriberId, Timestamp } from './common'
 import type { DataMessage } from './message'
+import { IMiddleware } from './middleware'
 
 // ============================================================
 // CHANNEL STATE
@@ -186,6 +187,13 @@ export interface IChannelTransport<T> extends IChannel<T> {
    * @returns true if empty, false otherwise
    */
   isEmpty(): boolean
+
+  /**
+   * Register a middleware for this channel
+   *
+   * @param middleware - Middleware to register
+   */
+  use(middleware: IMiddleware): void
 }
 
 // ============================================================
@@ -342,8 +350,7 @@ export declare abstract class BaseChannel<
  */
 export declare class BroadcastChannel<T = unknown>
   extends BaseChannel<T, '__broadcast__'>
-  implements IBroadcastTransport<T>
-{
+  implements IBroadcastTransport<T> {
   /**
    * Create a new BroadcastChannel
    *
@@ -384,8 +391,7 @@ export declare class BroadcastChannel<T = unknown>
  */
 export declare class ChannelRef<T = unknown>
   extends BaseChannel<T>
-  implements IChannelTransport<T>
-{
+  implements IChannelTransport<T> {
   /**
    * Create a new ChannelRef
    *
