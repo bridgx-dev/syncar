@@ -165,6 +165,22 @@ export interface IClientRegistry {
   isSubscribed(clientId: ClientId, channel: ChannelName): boolean
 
   /**
+   * Get all channels a client is subscribed to
+   *
+   * @param clientId - Client ID
+   * @returns Set of channel names
+   */
+  getClientChannels(clientId: ClientId): Set<ChannelName>
+
+  /**
+   * Get subscriber IDs for a channel
+   *
+   * @param channel - Channel name
+   * @returns Set of subscriber IDs
+   */
+  getChannelSubscribers(channel: ChannelName): Set<ClientId>
+
+  /**
    * Clear all clients and subscriptions
    */
   clear(): void

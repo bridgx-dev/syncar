@@ -6,7 +6,7 @@
  */
 
 // Lightweight channel reference
-export { ChannelRef } from './channel-ref'
+export { MulticastChannel } from './multicast'
 
 // Broadcast channel (special case - sends to all clients)
-export { BroadcastChannel } from './broadcast-channel'
+export { BroadcastChannel } from './broadcast'

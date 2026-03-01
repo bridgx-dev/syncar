@@ -13,7 +13,7 @@ import {
     type IMiddlewareManager,
     MessageType,
 } from './types'
-import { ChannelRef } from './channel/channel-ref'
+import { MulticastChannel } from './channel/multicast'
 import { BroadcastChannel } from './channel'
 import { ConnectionHandler, MessageHandler, SignalHandler } from './handlers'
 import { MiddlewareManager } from './middleware/middleware-manager'
@@ -123,14 +123,13 @@ export class SynnelServer implements ISynnelServer {
         const existing = this.registry.getChannel<T>(name) as IMulticastTransport<T> | undefined
         if (existing) return existing
 
-        const channel = new ChannelRef<T>(
+        const channel = new MulticastChannel<T>({
             name,
-            this.registry,
-            () => new Set(this.registry.getSubscribers(name).map((c) => c.id)),
-            (clientId) => this.registry.subscribe(clientId, name),
-            (clientId) => this.registry.unsubscribe(clientId, name),
-            this.config.broadcastChunkSize,
-        )
+            registry: this.registry,
+            options: {
+                chunkSize: this.config.broadcastChunkSize,
+            },
+        })
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         this.registry.registerChannel(channel as any)

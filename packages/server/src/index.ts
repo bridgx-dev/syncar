@@ -42,7 +42,7 @@ export {
   MiddlewareExecutionError,
 } from './errors'
 export { WebSocketServerTransport } from './websocket'
-export { ChannelRef, BroadcastChannel } from './channel'
+export { MulticastChannel, BroadcastChannel } from './channel'
 
 export {
   DEFAULT_PORT,

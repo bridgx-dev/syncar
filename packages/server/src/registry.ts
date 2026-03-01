@@ -23,38 +23,23 @@ export class ClientRegistry implements IClientRegistry {
     }
 
     unregister(clientId: ClientId): boolean {
-        const exists = this.connections.has(clientId)
-        if (!exists) return false
+        const connection = this.get(clientId)
+        if (!connection) return false
 
-        const clientChannels = this.subscriptions.get(clientId)
-        if (clientChannels) {
-            const channelsToUnsubscribe = Array.from(clientChannels)
-            for (const channelName of channelsToUnsubscribe) {
-                const subscribers = this.channels.get(channelName)
-                if (subscribers) {
-                    subscribers.delete(clientId)
-                    const channel = this.getChannel(channelName)
-                    if (channel) {
-                        try {
-                            const client = this.connections.get(clientId)
-                            if (client) {
-                                channel.handleUnsubscribe(client)
-                            }
-                        } catch (error) {
-                            console.error(
-                                `Error in unsubscribe handler for ${channelName}:`,
-                                error,
-                            )
-                        }
-                    }
-                }
-            }
-            // Clear client's subscriptions
-            this.subscriptions.delete(clientId)
+        this.clearSubscriptions(connection)
+        return this.connections.delete(clientId)
+    }
+
+    private clearSubscriptions(connection: IClientConnection): void {
+        const clientChannels = this.subscriptions.get(connection.id)
+        if (!clientChannels) return
+
+        for (const channelName of clientChannels) {
+            this.channels.get(channelName)?.delete(connection.id)
+            this.getChannel(channelName)?.handleUnsubscribe(connection)
         }
 
-        // Remove from registry
-        return this.connections.delete(clientId)
+        this.subscriptions.delete(connection.id)
     }
 
     get(clientId: ClientId): IClientConnection | undefined {
@@ -78,8 +63,8 @@ export class ClientRegistry implements IClientRegistry {
         this.channelInstances.set(channel.name, channel as IMulticastTransport<any>)
     }
 
-    getChannel<T = unknown>(name: ChannelName): IMulticastTransport<T> | undefined {
-        return this.channelInstances.get(name) as IMulticastTransport<T> | undefined
+    getChannel(name: ChannelName) {
+        return this.channelInstances.get(name)
     }
 
     removeChannel(name: ChannelName): boolean {
@@ -113,7 +98,7 @@ export class ClientRegistry implements IClientRegistry {
         const subscribers = this.channels.get(channel)!
 
         // Check if already subscribed
-        if (subscribers.has(clientId)) return false
+        if (subscribers.has(clientId)) return true
 
         // Add to channels map (reverse index)
         subscribers.add(clientId)

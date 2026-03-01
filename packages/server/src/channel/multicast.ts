@@ -9,9 +9,13 @@ import type {
 } from '../types'
 import type { ChannelName, SubscriberId, ClientId } from '../types'
 import type { DataMessage } from '../types/message'
-import { BaseChannel } from './base-channel.js'
+import { BaseChannel } from './base.js'
 
-export class ChannelRef<T = unknown>
+export interface MulticastChannelOptions {
+  chunkSize?: number
+}
+
+export class MulticastChannel<T = unknown>
   extends BaseChannel<T>
   implements IChannelTransport<T> {
   private readonly middlewares: IMiddleware[] = []
@@ -20,19 +24,16 @@ export class ChannelRef<T = unknown>
   private readonly subscribeHandlers: Set<ILifecycleHandler> = new Set()
   private readonly unsubscribeHandlers: Set<ILifecycleHandler> = new Set()
 
-  constructor(
-    name: ChannelName,
-    registry: IClientRegistry,
-    private readonly _getSubscribers: () => Set<SubscriberId>,
-    private readonly subscribeFn: (clientId: SubscriberId) => boolean,
-    private readonly unsubscribeFn: (clientId: SubscriberId) => boolean,
-    chunkSize: number = 500,
-  ) {
-    super(name, registry, chunkSize)
+  constructor(config: {
+    name: ChannelName
+    registry: IClientRegistry
+    options?: MulticastChannelOptions
+  }) {
+    super(config.name, config.registry, config.options?.chunkSize)
   }
 
   protected getTargetClients(_options?: IPublishOptions): ClientId[] {
-    return Array.from(this._getSubscribers())
+    return Array.from(this.registry.getChannelSubscribers(this.name))
   }
 
   use(middleware: IMiddleware): void {
@@ -44,7 +45,7 @@ export class ChannelRef<T = unknown>
   }
 
   get subscriberCount(): number {
-    return this._getSubscribers().size
+    return this.registry.getChannelSubscribers(this.name).size
   }
 
   onMessage(handler: IMessageHandler<T>): () => void {
@@ -53,11 +54,11 @@ export class ChannelRef<T = unknown>
   }
 
   subscribe(subscriber: SubscriberId): boolean {
-    return this.subscribeFn(subscriber)
+    return this.registry.subscribe(subscriber, this.name)
   }
 
   unsubscribe(subscriber: SubscriberId): boolean {
-    return this.unsubscribeFn(subscriber)
+    return this.registry.unsubscribe(subscriber, this.name)
   }
 
   async receive(
@@ -116,15 +117,15 @@ export class ChannelRef<T = unknown>
   }
 
   hasSubscriber(subscriber: SubscriberId): boolean {
-    return this._getSubscribers().has(subscriber)
+    return this.registry.getChannelSubscribers(this.name).has(subscriber)
   }
 
   getSubscribers(): Set<SubscriberId> {
     // Return a copy to prevent external modification
-    return new Set(this._getSubscribers())
+    return new Set(this.registry.getChannelSubscribers(this.name))
   }
 
   isEmpty(): boolean {
-    return this._getSubscribers().size === 0
+    return this.registry.getChannelSubscribers(this.name).size === 0
   }
 }
