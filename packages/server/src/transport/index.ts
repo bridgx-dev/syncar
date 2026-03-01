@@ -19,5 +19,5 @@
  * ```
  */
 
-export { BaseTransport } from './base-transport'
-export { WebSocketServerTransport } from './websocket-transport'
+export { BaseTransport } from './base'
+export { WebSocketServerTransport } from './websocket'

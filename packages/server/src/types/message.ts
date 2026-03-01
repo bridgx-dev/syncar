@@ -71,37 +71,36 @@ export enum ErrorCode {
 /**
  * Base message interface
  */
-export interface Message<T = unknown> {
+export interface BaseMessage {
   /** Unique message identifier */
   id: MessageId
-  /** Message type */
-  type: MessageType
-  /** Channel name (optional for system-wide messages) */
-  channel?: ChannelName
-  /** Message payload */
-  data?: DataPayload<T>
-  /** Signal type (only for SIGNAL messages) */
-  signal?: SignalType
   /** Message timestamp */
   timestamp: Timestamp
+  /** Channel name (optional for system-wide messages) */
+  channel?: ChannelName
 }
 
 /**
  * Data message (typed message with channel)
  */
-export interface DataMessage<T = unknown> extends Message<T> {
+export interface DataMessage<T = unknown> extends BaseMessage {
+  /** Message type */
   type: MessageType.DATA
   channel: ChannelName
+  /** Message payload */
   data: T
 }
 
 /**
  * Signal message (control message)
  */
-export interface SignalMessage extends Message {
+export interface SignalMessage extends BaseMessage {
+  /** Message type */
   type: MessageType.SIGNAL
   channel: ChannelName
+  /** Signal type (only for SIGNAL messages) */
   signal: SignalType
+  /** Message payload */
   data?: DataPayload
 }
 
@@ -120,17 +119,29 @@ export interface ErrorData {
 /**
  * Error message
  */
-export interface ErrorMessage extends Message {
+export interface ErrorMessage extends BaseMessage {
+  /** Message type */
   type: MessageType.ERROR
-  channel?: ChannelName
+  /** Error detail */
   data: ErrorData
 }
 
 /**
  * Acknowledgment message
  */
-export interface AckMessage extends Message {
+export interface AckMessage extends BaseMessage {
+  /** Message type */
   type: MessageType.ACK
   /** Original message being acknowledged */
   ackMessageId: MessageId
 }
+
+/**
+ * Union type for all supported messages in the protocol.
+ * Resolves to the specific message interface based on the `type` property.
+ */
+export type Message<T = unknown> =
+  | DataMessage<T>
+  | SignalMessage
+  | ErrorMessage
+  | AckMessage

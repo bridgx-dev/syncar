@@ -39,18 +39,6 @@ import type { ClientId } from './common'
 export interface IBaseTransport extends EventEmitter {
   /** Map of all connected clients by ID */
   readonly connections: Map<ClientId, IClientConnection>
-
-  /**
-   * Start the transport
-   * Called when the server starts listening for connections.
-   */
-  start?(): Promise<void>
-
-  /**
-   * Stop the transport and clean up resources
-   * Closes all connections, removes event listeners, and stops the server.
-   */
-  stop?(): void
 }
 
 // ============================================================

@@ -1,18 +1,17 @@
-import type {
-  IServerConfig,
-  IServerOptions,
-  ISynnelServer,
-  IServerStats,
-  IServerTransport,
-  IClientRegistry,
-  IBroadcastTransport,
-  IMulticastTransport,
-  ChannelName,
-  Message,
-  DataMessage,
-  SignalMessage,
-  IMiddleware,
-  IMiddlewareManager,
+import {
+  type IServerConfig,
+  type IServerOptions,
+  type ISynnelServer,
+  type IServerStats,
+  type IServerTransport,
+  type IClientRegistry,
+  type IBroadcastTransport,
+  type IMulticastTransport,
+  type ChannelName,
+  type Message,
+  type IMiddleware,
+  type IMiddlewareManager,
+  MessageType,
 } from '../types'
 import { ChannelRef } from '../channel/channel-ref'
 import { BroadcastChannel } from '../channel'
@@ -106,9 +105,6 @@ export class SynnelServer implements ISynnelServer {
     if (!this.status.started || !this.transport) {
       return // Already stopped
     }
-
-    // Stop transport (closes all connections)
-    this.transport.stop?.()
 
     // Clear handlers
     this.connectionHandler = undefined
@@ -227,16 +223,10 @@ export class SynnelServer implements ISynnelServer {
         const client = this.registry.get(clientId)
         if (!client) return
 
-        if (message.type === 'data') {
-          await this.messageHandler!.handleMessage(
-            client,
-            message as DataMessage<unknown>,
-          )
-        } else if (message.type === 'signal') {
-          await this.signalHandler!.handleSignal(
-            client,
-            message as SignalMessage,
-          )
+        if (message.type === MessageType.DATA) {
+          await this.messageHandler!.handleMessage(client, message)
+        } else if (message.type === MessageType.SIGNAL) {
+          await this.signalHandler!.handleSignal(client, message)
         }
       } catch (error) {
         console.error('Error handling message:', error)
