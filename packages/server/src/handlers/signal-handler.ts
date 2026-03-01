@@ -8,6 +8,7 @@ import type {
   IClientConnection,
   IChannelTransport,
   SignalMessage,
+  IMiddlewareManager,
 } from '../types'
 
 import { createSignalMessage } from '../lib'
@@ -54,6 +55,7 @@ export interface SignalHandlerOptions {
  */
 export class SignalHandler {
   private readonly registry: IClientRegistry
+  private readonly middleware: IMiddlewareManager
   private readonly options: Required<SignalHandlerOptions>
 
   /**
@@ -61,9 +63,11 @@ export class SignalHandler {
    */
   constructor(dependencies: {
     registry: IClientRegistry
+    middleware: IMiddlewareManager
     options?: SignalHandlerOptions
   }) {
     this.registry = dependencies.registry
+    this.middleware = dependencies.middleware
 
     // Apply defaults
     this.options = {
@@ -83,26 +87,43 @@ export class SignalHandler {
     client: IClientConnection,
     message: SignalMessage,
   ): Promise<void> {
-    switch (message.signal) {
-      case SignalType.SUBSCRIBE:
-        await this.handleSubscribe(client, message)
-        break
+    // 1. Create Context based on signal
+    let ctx
 
-      case SignalType.UNSUBSCRIBE:
-        await this.handleUnsubscribe(client, message)
-        break
-
-      case SignalType.PING:
-        await this.handlePing(client, message)
-        break
-
-      case SignalType.PONG:
-        await this.handlePong(client, message)
-        break
-
-      default:
-        throw new MessageError(`Unknown signal type: ${message.signal}`)
+    if (message.signal === SignalType.SUBSCRIBE) {
+      ctx = this.middleware.createSubscribeContext(client, message.channel!)
+    } else if (message.signal === SignalType.UNSUBSCRIBE) {
+      ctx = this.middleware.createUnsubscribeContext(client, message.channel!)
+    } else {
+      ctx = this.middleware.createMessageContext(client, message)
     }
+
+    // 3. Define Kernel
+    const kernel = async () => {
+      switch (message.signal) {
+        case SignalType.SUBSCRIBE:
+          await this.handleSubscribe(client, message)
+          break
+
+        case SignalType.UNSUBSCRIBE:
+          await this.handleUnsubscribe(client, message)
+          break
+
+        case SignalType.PING:
+          await this.handlePing(client, message)
+          break
+
+        case SignalType.PONG:
+          await this.handlePong(client, message)
+          break
+
+        default:
+          throw new MessageError(`Unknown signal type: ${message.signal}`)
+      }
+    }
+
+    // 4. Execute Onion (Global Middleware)
+    await this.middleware.execute(ctx, this.middleware.getMiddlewares(), kernel)
   }
 
   /**

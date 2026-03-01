@@ -34,22 +34,22 @@ import type {
   IServerStats,
   IServerTransport,
   IClientRegistry,
-  IMiddlewareManager,
   IBroadcastTransport,
   IMulticastTransport,
   ChannelName,
   Message,
-  IMiddleware,
+  DataMessage,
   SignalMessage,
+  IMiddleware,
+  IMiddlewareManager,
 } from '../types'
-import { SignalType } from '../types'
 import { ClientRegistry } from '../registry'
 import { ChannelRef } from '../channel/channel-ref'
 import { BroadcastChannel } from '../channel'
-import { MiddlewareManager } from '../middleware'
 import { ConnectionHandler } from '../handlers'
 import { MessageHandler } from '../handlers'
 import { SignalHandler } from '../handlers'
+import { MiddlewareManager } from '../middleware/middleware-manager'
 import { StateError, ConfigError } from '../errors'
 
 /**
@@ -168,10 +168,12 @@ export class SynnelServer implements ISynnelServer {
 
     this.messageHandler = new MessageHandler({
       registry: this.registry,
+      middleware: this.middleware,
     })
 
     this.signalHandler = new SignalHandler({
       registry: this.registry,
+      middleware: this.middleware,
     })
 
     // Set up transport event handlers
@@ -482,47 +484,11 @@ export class SynnelServer implements ISynnelServer {
         const client = this.registry.get(clientId)
         if (!client) return
 
-        // 1. Identify all applicable middlewares
-        const globalMiddlewares = (this.middleware as MiddlewareManager).getMiddlewares()
-        let pipeline = [...globalMiddlewares]
-
-        if (message.channel) {
-          const channelRef = this.registry.getChannel(message.channel)
-          if (channelRef) {
-            // Internal cast to access middleware storage
-            pipeline = [...pipeline, ...(channelRef as any).getMiddlewares()]
-          }
+        if (message.type === 'data') {
+          await this.messageHandler!.handleMessage(client, message as DataMessage<unknown>)
+        } else if (message.type === 'signal') {
+          await this.signalHandler!.handleSignal(client, message as SignalMessage)
         }
-
-        // 2. Define the Kernel (Final Handler)
-        const kernel = async () => {
-          if (message.type === 'data') {
-            await this.messageHandler!.handleMessage(client, message as any)
-          } else if (message.type === 'signal') {
-            await this.signalHandler!.handleSignal(client, message as any)
-          }
-        }
-
-        // 3. Execute the Onion
-        const ctxFactory = this.middleware as unknown as MiddlewareManager
-
-        let context: any
-
-        if (message.type === 'signal') {
-          const signalMsg = message as SignalMessage
-          if (signalMsg.signal === SignalType.SUBSCRIBE) {
-            context = ctxFactory.createSubscribeContext(client, signalMsg.channel!)
-          } else if (signalMsg.signal === SignalType.UNSUBSCRIBE) {
-            context = ctxFactory.createUnsubscribeContext(client, signalMsg.channel!)
-          } else {
-            context = ctxFactory.createMessageContext(client, message as any)
-          }
-        } else {
-          context = ctxFactory.createMessageContext(client, message as any)
-        }
-
-        await (this.middleware as MiddlewareManager).execute(context, pipeline, kernel)
-
       } catch (error) {
         console.error('Error handling message:', error)
       }

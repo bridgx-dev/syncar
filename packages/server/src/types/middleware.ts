@@ -161,7 +161,7 @@ export type IMiddleware<S = any> = (
  * }
  * ```
  */
-export interface IMiddlewareManager {
+export interface IMiddlewareManager extends IMiddlewareContextFactory {
   /**
    * Register a middleware function
    *
@@ -181,6 +181,26 @@ export interface IMiddlewareManager {
    * Clear all middleware
    */
   clear(): void
+
+  /**
+   * Get all registered global middleware
+   *
+   * @returns Array of global middleware
+   */
+  getMiddlewares(): IMiddleware[]
+
+  /**
+   * Execute a custom composed pipeline of middleware
+   *
+   * @param context - The middleware context
+   * @param middlewares - The pipeline to execute
+   * @param kernel - The final function to execute at the center of the onion
+   */
+  execute(
+    context: IMiddlewareContext,
+    middlewares: IMiddleware[],
+    kernel: () => Promise<void>,
+  ): Promise<void>
 
   /**
    * Execute middleware for a connection action

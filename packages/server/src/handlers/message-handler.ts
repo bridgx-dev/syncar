@@ -9,6 +9,8 @@ import type {
   IChannel,
   IChannelTransport,
   DataMessage,
+  IMiddleware,
+  IMiddlewareManager,
 } from '../types'
 
 import { MessageError, ChannelError } from '../errors'
@@ -34,6 +36,7 @@ export interface MessageHandlerOptions {
  */
 export class MessageHandler {
   private readonly registry: IClientRegistry
+  private readonly middleware: IMiddlewareManager
   private readonly options: Required<MessageHandlerOptions>
 
   /**
@@ -41,9 +44,11 @@ export class MessageHandler {
    */
   constructor(dependencies: {
     registry: IClientRegistry
+    middleware: IMiddlewareManager
     options?: MessageHandlerOptions
   }) {
     this.registry = dependencies.registry
+    this.middleware = dependencies.middleware
 
     // Apply defaults
     this.options = {
@@ -67,21 +72,40 @@ export class MessageHandler {
     // Get channel using the registry
     const channel = this.registry.getChannel<T>(message.channel)
 
-
     // Validate channel exists
     if (this.options.requireChannel && !channel) {
       throw new ChannelError(`Channel not found: ${message.channel}`)
     }
 
-    // Route to channel for processing (triggers onMessage handlers)
-    if (channel) {
-      await (channel as IChannelTransport<T>).receive(
-        message.data,
-        client,
-        message,
-      )
+    // Build the middleware pipeline
+    const globalMiddlewares = this.middleware.getMiddlewares()
+    let pipeline = [...globalMiddlewares]
+
+    if (channel && 'getMiddlewares' in channel) {
+      // Append channel-specific middleware securely
+      const channelMiddlewares = (channel as unknown as { getMiddlewares?: () => IMiddleware[] }).getMiddlewares?.()
+      if (channelMiddlewares) {
+        pipeline = [...pipeline, ...channelMiddlewares]
+      }
     }
 
+    // Create Context
+    const ctx = this.middleware.createMessageContext(client, message)
+
+    // Define Kernel
+    const kernel = async () => {
+      // Route to channel for processing (triggers onMessage handlers)
+      if (channel) {
+        await (channel as IChannelTransport<T>).receive(
+          message.data,
+          client,
+          message,
+        )
+      }
+    }
+
+    // Execute Onion
+    await this.middleware.execute(ctx, pipeline, kernel)
   }
 
   /**
