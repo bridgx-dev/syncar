@@ -61,13 +61,6 @@ interface ServerState {
   startedAt: number | undefined
 }
 
-/**
- * Synnel Server - Main server class for real-time WebSocket communication
- *
- * @remarks
- * The server manages client connections, channels, and message routing.
- * It provides a comprehensive API for building real-time applications.
- */
 export class SynnelServer implements ISynnelServer {
   private readonly config: Required<IServerConfig>
   private transport: IServerTransport | undefined
@@ -81,24 +74,6 @@ export class SynnelServer implements ISynnelServer {
   private broadcastChannel: IBroadcastTransport<unknown> | undefined
 
 
-  /**
-   * Create a new SynnelServer instance
-   *
-   * @param config - Server configuration options
-   * @param config.transport - Optional transport layer (required if not using factory)
-   * @param config.registry - Optional custom client registry
-   * @param config.middleware - Optional middleware functions to register
-   * @param config.broadcastChunkSize - Chunk size for broadcast operations (default: 500)
-   *
-   * @example
-   * ```typescript
-   * const server = new SynnelServer({
-   *   transport: new WebSocketServerTransport({ server: httpServer }),
-   *   broadcastChunkSize: 1000
-   * })
-   * await server.start()
-   * ```
-   */
   constructor(config: IServerConfig = {}) {
     // Default config values
     const defaultConfig: Required<IServerConfig> = {
@@ -132,21 +107,6 @@ export class SynnelServer implements ISynnelServer {
     }
   }
 
-  /**
-   * Start the server
-   *
-   * Initializes the transport layer, creates handlers, and sets up the broadcast channel.
-   * The server must be started before creating channels or handling connections.
-   *
-   * @throws {StateError} If server is already started
-   * @throws {ConfigError} If transport is not configured
-   *
-   * @example
-   * ```typescript
-   * await server.start()
-   * console.log('Server started')
-   * ```
-   */
   async start(): Promise<void> {
     if (this.status.started) {
       throw new StateError('Server is already started')
@@ -191,22 +151,6 @@ export class SynnelServer implements ISynnelServer {
     this.status.startedAt = Date.now()
   }
 
-  /**
-   * Stop the server
-   *
-   * Gracefully shuts down the transport, closes all connections,
-   * and clears all channels and handlers.
-   *
-   * @remarks
-   * This method is idempotent - calling it multiple times has no additional effect.
-   * All client connections will be closed, and the registry will be cleared.
-   *
-   * @example
-   * ```typescript
-   * await server.stop()
-   * console.log('Server stopped')
-   * ```
-   */
   async stop(): Promise<void> {
     if (!this.status.started || !this.transport) {
       return // Already stopped

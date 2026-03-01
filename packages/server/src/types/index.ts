@@ -108,21 +108,6 @@ export type {
 } from './server'
 
 // ============================================================
-// EVENT TYPES
-// ============================================================
-export type {
-  IServerEventType,
-  IServerEventMap,
-  IEventHandler,
-  IEventDataType,
-  IEventUnsubscriber,
-  IEventEmitter,
-  IEventListenerStorage,
-  IAsyncEventHandler,
-  IAsyncServerEventMap,
-} from './events'
-
-// ============================================================
 // RE-EXPORT SHARED TYPES
 // ============================================================
 /**
