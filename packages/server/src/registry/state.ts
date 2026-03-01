@@ -43,10 +43,7 @@ export function createEmptyState(): RegistryState {
  * @param state - The registry state
  * @param name - Channel name to create
  */
-export function createChannel(
-  state: RegistryState,
-  name: ChannelName,
-): void {
+export function createChannel(state: RegistryState, name: ChannelName): void {
   if (!state.channels.has(name)) {
     state.channels.set(name, new Set())
   }
@@ -59,10 +56,7 @@ export function createChannel(
  * @param state - The registry state
  * @param name - Channel name to delete
  */
-export function deleteChannel(
-  state: RegistryState,
-  name: ChannelName,
-): void {
+export function deleteChannel(state: RegistryState, name: ChannelName): void {
   // First, remove from all clients' subscriptions
   const subscribers = state.channels.get(name)
   if (subscribers) {
@@ -93,9 +87,7 @@ export function getChannelSubscriberCount(
  * @param state - The registry state
  * @returns Total number of subscriptions
  */
-export function getTotalSubscriptionCount(
-  state: RegistryState,
-): number {
+export function getTotalSubscriptionCount(state: RegistryState): number {
   let total = 0
   for (const subscribers of state.channels.values()) {
     total += subscribers.size

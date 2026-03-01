@@ -147,7 +147,7 @@ export class SynnelServer implements ISynnelServer {
     }
     return this.broadcastChannel as IBroadcastTransport<T>
   }
-  
+
   createMulticast<T = unknown>(name: ChannelName): IMulticastTransport<T> {
     if (!this.status.started || !this.transport) {
       throw new StateError('Server must be started before creating channels')

@@ -42,7 +42,6 @@ export class SignalHandler {
     }
   }
 
-
   async handleSignal(
     client: IClientConnection,
     message: SignalMessage,
@@ -128,9 +127,7 @@ export class SignalHandler {
     } else if (this.options.requireChannel) {
       // If channel is required but not found, unsubscribe and throw
       this.registry.unsubscribe(client.id, channel)
-      throw new ChannelError(
-        `Channel "${channel}" not found`,
-      )
+      throw new ChannelError(`Channel "${channel}" not found`)
     }
 
     // Send acknowledgment
@@ -141,7 +138,7 @@ export class SignalHandler {
         undefined,
         message.id,
       )
-      client.socket.send(JSON.stringify(ackMessage), () => { })
+      client.socket.send(JSON.stringify(ackMessage), () => {})
     }
   }
 
@@ -168,7 +165,6 @@ export class SignalHandler {
       )
     }
 
-
     // Send acknowledgment
     if (this.options.sendAcknowledgments) {
       const ackMessage = createSignalMessage(
@@ -177,7 +173,7 @@ export class SignalHandler {
         undefined,
         message.id,
       )
-      client.socket.send(JSON.stringify(ackMessage), () => { })
+      client.socket.send(JSON.stringify(ackMessage), () => {})
     }
   }
 
@@ -196,7 +192,7 @@ export class SignalHandler {
         undefined,
         message.id,
       )
-      client.socket.send(JSON.stringify(pongMessage), () => { })
+      client.socket.send(JSON.stringify(pongMessage), () => {})
     }
   }
 

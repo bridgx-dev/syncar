@@ -7,7 +7,11 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { EventEmitter } from 'node:events'
 import { SynnelServer } from '../../src/server/index.js'
 import { ChannelRef, BroadcastChannel } from '../../src/channel/index.js'
-import type { ISynnelServer, IServerTransport, IClientConnection } from '../../src/types/index.js'
+import type {
+  ISynnelServer,
+  IServerTransport,
+  IClientConnection,
+} from '../../src/types/index.js'
 import type { ClientId, Message, SignalMessage } from '../../src/types/index.js'
 import { MessageType, SignalType, DataMessage } from '../../src/types/index.js'
 
@@ -28,7 +32,7 @@ class MockTransport extends EventEmitter implements IServerTransport {
     this.messageQueue.push({ clientId, message })
     const client = this.connections.get(clientId)
     if (client && typeof (client.socket as any).send === 'function') {
-      ; (client.socket as any).send(JSON.stringify(message))
+      ;(client.socket as any).send(JSON.stringify(message))
     }
   }
 
@@ -36,9 +40,11 @@ class MockTransport extends EventEmitter implements IServerTransport {
     this.connections.clear()
   }
 
-  getMessages(clientId?: ClientId): Array<{ clientId: ClientId; message: Message }> {
+  getMessages(
+    clientId?: ClientId,
+  ): Array<{ clientId: ClientId; message: Message }> {
     if (clientId) {
-      return this.messageQueue.filter(m => m.clientId === clientId)
+      return this.messageQueue.filter((m) => m.clientId === clientId)
     }
     return this.messageQueue
   }
@@ -112,9 +118,15 @@ describe('Channel Integration Tests', () => {
       broadcast.publish('Message', { exclude: ['client-2'] })
 
       // client-1 and client-3 should receive, client-2 should not
-      expect((transport.connections.get('client-1')?.socket as any).send).toHaveBeenCalled()
-      expect((transport.connections.get('client-2')?.socket as any).send).not.toHaveBeenCalled()
-      expect((transport.connections.get('client-3')?.socket as any).send).toHaveBeenCalled()
+      expect(
+        (transport.connections.get('client-1')?.socket as any).send,
+      ).toHaveBeenCalled()
+      expect(
+        (transport.connections.get('client-2')?.socket as any).send,
+      ).not.toHaveBeenCalled()
+      expect(
+        (transport.connections.get('client-3')?.socket as any).send,
+      ).toHaveBeenCalled()
     })
 
     it('should send to only specified clients', () => {
@@ -128,9 +140,15 @@ describe('Channel Integration Tests', () => {
       broadcast.publish('Private message', { to: ['client-1', 'client-3'] })
 
       // client-1 and client-3 should receive
-      expect((transport.connections.get('client-1')?.socket as any).send).toHaveBeenCalled()
-      expect((transport.connections.get('client-2')?.socket as any).send).not.toHaveBeenCalled()
-      expect((transport.connections.get('client-3')?.socket as any).send).toHaveBeenCalled()
+      expect(
+        (transport.connections.get('client-1')?.socket as any).send,
+      ).toHaveBeenCalled()
+      expect(
+        (transport.connections.get('client-2')?.socket as any).send,
+      ).not.toHaveBeenCalled()
+      expect(
+        (transport.connections.get('client-3')?.socket as any).send,
+      ).toHaveBeenCalled()
     })
   })
 
@@ -151,9 +169,15 @@ describe('Channel Integration Tests', () => {
       channel.publish('Chat message')
 
       // client-1 and client-3 should receive
-      expect((transport.connections.get('client-1')?.socket as any).send).toHaveBeenCalled()
-      expect((transport.connections.get('client-2')?.socket as any).send).not.toHaveBeenCalled()
-      expect((transport.connections.get('client-3')?.socket as any).send).toHaveBeenCalled()
+      expect(
+        (transport.connections.get('client-1')?.socket as any).send,
+      ).toHaveBeenCalled()
+      expect(
+        (transport.connections.get('client-2')?.socket as any).send,
+      ).not.toHaveBeenCalled()
+      expect(
+        (transport.connections.get('client-3')?.socket as any).send,
+      ).toHaveBeenCalled()
     })
 
     it('should handle subscribe and unsubscribe', () => {
@@ -167,8 +191,12 @@ describe('Channel Integration Tests', () => {
 
       // First message - both receive
       channel.publish('Message 1')
-      expect((transport.connections.get('client-1')?.socket as any).send).toHaveBeenCalled()
-      expect((transport.connections.get('client-2')?.socket as any).send).toHaveBeenCalled()
+      expect(
+        (transport.connections.get('client-1')?.socket as any).send,
+      ).toHaveBeenCalled()
+      expect(
+        (transport.connections.get('client-2')?.socket as any).send,
+      ).toHaveBeenCalled()
 
       // Reset mocks
       vi.clearAllMocks()
@@ -178,8 +206,12 @@ describe('Channel Integration Tests', () => {
 
       // Second message - only client-2 receives
       channel.publish('Message 2')
-      expect((transport.connections.get('client-1')?.socket as any).send).not.toHaveBeenCalled()
-      expect((transport.connections.get('client-2')?.socket as any).send).toHaveBeenCalled()
+      expect(
+        (transport.connections.get('client-1')?.socket as any).send,
+      ).not.toHaveBeenCalled()
+      expect(
+        (transport.connections.get('client-2')?.socket as any).send,
+      ).toHaveBeenCalled()
     })
 
     it('should handle client disconnection', () => {
@@ -198,9 +230,10 @@ describe('Channel Integration Tests', () => {
 
       // Publish message - only client-2 should receive
       channel.publish('After disconnect')
-      expect((transport.connections.get('client-2')?.socket as any).send).toHaveBeenCalled()
+      expect(
+        (transport.connections.get('client-2')?.socket as any).send,
+      ).toHaveBeenCalled()
     })
-
   })
 
   describe('multiple channels', () => {
@@ -392,7 +425,10 @@ describe('Channel Integration Tests', () => {
       channel.subscribe('client-3')
 
       // Publish to client-1 and client-2, but exclude client-1
-      channel.publish('Complex', { to: ['client-1', 'client-2'], exclude: ['client-1'] })
+      channel.publish('Complex', {
+        to: ['client-1', 'client-2'],
+        exclude: ['client-1'],
+      })
 
       // Only client-2 should receive
       expect((client1.socket as any).send).not.toHaveBeenCalled()
@@ -400,4 +436,4 @@ describe('Channel Integration Tests', () => {
       expect((client3.socket as any).send).not.toHaveBeenCalled()
     })
   })
-    })
+})

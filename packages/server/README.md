@@ -82,12 +82,12 @@ console.log(server.getStats())
 import { createSynnelServer } from '@synnel/server'
 
 const server = createSynnelServer({
-  port: 3000,              // Server port (default: 3000)
-  host: '0.0.0.0',         // Server host (default: '0.0.0.0')
-  path: '/ws',             // WebSocket path (default: '/synnel')
-  enablePing: true,        // Enable ping/pong (default: true)
-  pingInterval: 5000,      // Ping interval in ms (default: 5000)
-  pingTimeout: 5000,       // Ping timeout in ms (default: 5000)
+  port: 3000, // Server port (default: 3000)
+  host: '0.0.0.0', // Server host (default: '0.0.0.0')
+  path: '/ws', // WebSocket path (default: '/synnel')
+  enablePing: true, // Enable ping/pong (default: true)
+  pingInterval: 5000, // Ping interval in ms (default: 5000)
+  pingTimeout: 5000, // Ping timeout in ms (default: 5000)
   broadcastChunkSize: 500, // Chunk size for broadcasts (default: 500)
 })
 
@@ -149,12 +149,12 @@ broadcast.publish('Server announcement!')
 
 // Send to all except specific clients
 broadcast.publish('You are being logged out', {
-  exclude: ['client-123', 'client-456']
+  exclude: ['client-123', 'client-456'],
 })
 
 // Send to specific clients only
 broadcast.publish('Private message', {
-  to: ['client-1', 'client-2']
+  to: ['client-1', 'client-2'],
 })
 ```
 
@@ -233,7 +233,7 @@ const loggingMiddleware = createLoggingMiddleware({
   actions: ['connect', 'disconnect', 'message', 'subscribe'],
   format: ({ action, clientId, channel }) => {
     return `[${action}] ${clientId} ${channel ? `-> ${channel}` : ''}`
-  }
+  },
 })
 
 server.use(loggingMiddleware)
@@ -409,40 +409,40 @@ server.on('error', (error) => {
 
 ### Server Interface
 
-| Method | Description |
-|--------|-------------|
-| `start()` | Start the server |
-| `stop()` | Stop the server and close all connections |
-| `createBroadcast<T>()` | Create a broadcast channel |
-| `createMulticast<T>(name)` | Create or get a multicast channel |
-| `hasChannel(name)` | Check if a channel exists |
-| `getChannels()` | Get all active channel names |
-| `on(event, handler)` | Register event handler |
-| `once(event, handler)` | Register one-time event handler |
-| `off(event, handler)` | Remove event handler |
-| `emit(event, ...args)` | Emit event locally |
-| `use(middleware)` | Register middleware |
-| `authorize(handler)` | Set authorization handler |
-| `onMessage(handler)` | Register global message handler |
-| `getStats()` | Get server statistics |
-| `getRegistry()` | Get client registry |
-| `getConfig()` | Get server configuration |
-| `getEmitter()` | Get event emitter |
+| Method                     | Description                               |
+| -------------------------- | ----------------------------------------- |
+| `start()`                  | Start the server                          |
+| `stop()`                   | Stop the server and close all connections |
+| `createBroadcast<T>()`     | Create a broadcast channel                |
+| `createMulticast<T>(name)` | Create or get a multicast channel         |
+| `hasChannel(name)`         | Check if a channel exists                 |
+| `getChannels()`            | Get all active channel names              |
+| `on(event, handler)`       | Register event handler                    |
+| `once(event, handler)`     | Register one-time event handler           |
+| `off(event, handler)`      | Remove event handler                      |
+| `emit(event, ...args)`     | Emit event locally                        |
+| `use(middleware)`          | Register middleware                       |
+| `authorize(handler)`       | Set authorization handler                 |
+| `onMessage(handler)`       | Register global message handler           |
+| `getStats()`               | Get server statistics                     |
+| `getRegistry()`            | Get client registry                       |
+| `getConfig()`              | Get server configuration                  |
+| `getEmitter()`             | Get event emitter                         |
 
 ### Channel Interface
 
-| Method | Description |
-|--------|-------------|
-| `publish(data, options?)` | Publish data to subscribers |
-| `receive(handler)` | Register message handler |
-| `subscribe(clientId)` | Subscribe a client |
-| `unsubscribe(clientId)` | Unsubscribe a client |
-| `onSubscribe(handler)` | Register subscription handler |
-| `onUnsubscribe(handler)` | Register unsubscription handler |
-| `hasSubscriber(subscriberId)` | Check if client is subscribed |
-| `getSubscribers()` | Get all subscribers |
-| `isEmpty()` | Check if channel has no subscribers |
-| `subscriberCount` | Number of subscribers (readonly) |
+| Method                        | Description                         |
+| ----------------------------- | ----------------------------------- |
+| `publish(data, options?)`     | Publish data to subscribers         |
+| `receive(handler)`            | Register message handler            |
+| `subscribe(clientId)`         | Subscribe a client                  |
+| `unsubscribe(clientId)`       | Unsubscribe a client                |
+| `onSubscribe(handler)`        | Register subscription handler       |
+| `onUnsubscribe(handler)`      | Register unsubscription handler     |
+| `hasSubscriber(subscriberId)` | Check if client is subscribed       |
+| `getSubscribers()`            | Get all subscribers                 |
+| `isEmpty()`                   | Check if channel has no subscribers |
+| `subscriberCount`             | Number of subscribers (readonly)    |
 
 ---
 
@@ -457,9 +457,9 @@ const server = createSynnelServer({
   port: 3000,
   middleware: [
     createLoggingMiddleware({
-      actions: ['connect', 'disconnect', 'subscribe', 'unsubscribe']
-    })
-  ]
+      actions: ['connect', 'disconnect', 'subscribe', 'unsubscribe'],
+    }),
+  ],
 })
 
 await server.start()
@@ -519,11 +519,13 @@ server.on('disconnection', (clientId) => {
 presence.onSubscribe((client) => {
   // Send current online users to new subscriber
   for (const userId of onlineUsers) {
-    client.socket.send(JSON.stringify({
-      type: 'data',
-      channel: 'presence',
-      data: { id: userId, status: 'online' }
-    }))
+    client.socket.send(
+      JSON.stringify({
+        type: 'data',
+        channel: 'presence',
+        data: { id: userId, status: 'online' },
+      }),
+    )
   }
 })
 ```

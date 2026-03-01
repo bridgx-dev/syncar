@@ -10,8 +10,9 @@ import type {
 } from '../types'
 import { MiddlewareRejectionError, MiddlewareExecutionError } from '../errors'
 
-class MiddlewareContext<S = Record<string, any>>
-  implements IMiddlewareContext<S> {
+class MiddlewareContext<
+  S = Record<string, any>,
+> implements IMiddlewareContext<S> {
   public readonly state: S = {} as S
   public readonly client?: IClientConnection
   public readonly message?: Message
@@ -58,7 +59,8 @@ class MiddlewareContext<S = Record<string, any>>
 }
 
 export class MiddlewareManager
-  implements IMiddlewareManager, IMiddlewareContextFactory {
+  implements IMiddlewareManager, IMiddlewareContextFactory
+{
   protected readonly middlewares: IMiddleware[] = []
 
   use(middleware: IMiddleware): void {
@@ -82,7 +84,12 @@ export class MiddlewareManager
     return [...this.middlewares]
   }
 
-  public compose(middlewares: IMiddleware[]): (context: IMiddlewareContext, next?: () => Promise<void>) => Promise<void> {
+  public compose(
+    middlewares: IMiddleware[],
+  ): (
+    context: IMiddlewareContext,
+    next?: () => Promise<void>,
+  ) => Promise<void> {
     return async (context, next) => {
       let index = -1
 
@@ -101,7 +108,10 @@ export class MiddlewareManager
           await fn(context, dispatch.bind(null, i + 1))
         } catch (error) {
           // If it's a rejection or already an execution error, re-throw
-          if (error instanceof MiddlewareRejectionError || error instanceof MiddlewareExecutionError) {
+          if (
+            error instanceof MiddlewareRejectionError ||
+            error instanceof MiddlewareExecutionError
+          ) {
             throw error
           }
 
@@ -110,7 +120,7 @@ export class MiddlewareManager
           throw new MiddlewareExecutionError(
             context.action,
             middlewareName,
-            error instanceof Error ? error : new Error(String(error))
+            error instanceof Error ? error : new Error(String(error)),
           )
         }
       }
@@ -127,7 +137,10 @@ export class MiddlewareManager
     await this.compose(this.middlewares)(context)
   }
 
-  async executeMessage(client: IClientConnection, message: Message): Promise<void> {
+  async executeMessage(
+    client: IClientConnection,
+    message: Message,
+  ): Promise<void> {
     const context = this.createMessageContext(client, message)
     await this.compose(this.middlewares)(context)
   }
@@ -135,7 +148,7 @@ export class MiddlewareManager
   async executeSubscribe(
     client: IClientConnection,
     channel: ChannelName,
-    finalHandler?: () => Promise<void>
+    finalHandler?: () => Promise<void>,
   ): Promise<void> {
     const context = this.createSubscribeContext(client, channel)
     await this.compose(this.middlewares)(context, finalHandler)
@@ -144,7 +157,7 @@ export class MiddlewareManager
   async executeUnsubscribe(
     client: IClientConnection,
     channel: ChannelName,
-    finalHandler?: () => Promise<void>
+    finalHandler?: () => Promise<void>,
   ): Promise<void> {
     const context = this.createUnsubscribeContext(client, channel)
     await this.compose(this.middlewares)(context, finalHandler)
@@ -153,7 +166,7 @@ export class MiddlewareManager
   async execute(
     context: IMiddlewareContext,
     middlewares: IMiddleware[] = this.middlewares,
-    finalHandler?: () => Promise<void>
+    finalHandler?: () => Promise<void>,
   ): Promise<void> {
     await this.compose(middlewares)(context, finalHandler)
   }

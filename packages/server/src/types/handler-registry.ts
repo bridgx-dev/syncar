@@ -50,7 +50,7 @@ export declare class HandlerRegistry {
    */
   addMessageHandler<T = unknown>(
     channel: ChannelName,
-    handler: IMessageHandler<T>
+    handler: IMessageHandler<T>,
   ): () => void
 
   /**
@@ -61,7 +61,7 @@ export declare class HandlerRegistry {
    */
   removeMessageHandler<T = unknown>(
     channel: ChannelName,
-    handler: IMessageHandler<T>
+    handler: IMessageHandler<T>,
   ): void
 
   /**
@@ -85,7 +85,7 @@ export declare class HandlerRegistry {
    */
   addSubscribeHandler(
     channel: ChannelName,
-    handler: ILifecycleHandler
+    handler: ILifecycleHandler,
   ): () => void
 
   /**
@@ -94,10 +94,7 @@ export declare class HandlerRegistry {
    * @param channel - Channel name
    * @param handler - Handler function to remove
    */
-  removeSubscribeHandler(
-    channel: ChannelName,
-    handler: ILifecycleHandler
-  ): void
+  removeSubscribeHandler(channel: ChannelName, handler: ILifecycleHandler): void
 
   /**
    * Get all subscribe handlers for a channel
@@ -120,7 +117,7 @@ export declare class HandlerRegistry {
    */
   addUnsubscribeHandler(
     channel: ChannelName,
-    handler: ILifecycleHandler
+    handler: ILifecycleHandler,
   ): () => void
 
   /**
@@ -131,7 +128,7 @@ export declare class HandlerRegistry {
    */
   removeUnsubscribeHandler(
     channel: ChannelName,
-    handler: ILifecycleHandler
+    handler: ILifecycleHandler,
   ): void
 
   /**

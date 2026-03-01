@@ -46,7 +46,6 @@ export interface IBaseTransport extends EventEmitter {
    */
   start?(): Promise<void>
 
-
   /**
    * Stop the transport and clean up resources
    * Closes all connections, removes event listeners, and stops the server.

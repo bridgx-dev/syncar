@@ -4,7 +4,10 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { BaseTransport, WebSocketServerTransport } from '../src/transport/index.js'
+import {
+  BaseTransport,
+  WebSocketServerTransport,
+} from '../src/transport/index.js'
 import type { IClientConnection, ClientId } from '../src/types/index.js'
 import type { ClientId } from '../src/types/index.js'
 import { MessageType } from '../src/types/index.js'
@@ -170,7 +173,7 @@ describe('Transport', () => {
       it('should set up health check interval when enabled', async () => {
         vi.useFakeTimers()
         const connections = new Map<ClientId, IClientConnection>()
-        
+
         transport = new WebSocketServerTransport({
           server: mockServer,
           connections,
@@ -190,14 +193,14 @@ describe('Transport', () => {
         await transport.start()
         vi.advanceTimersByTime(110)
         expect(mockSocket.ping).toHaveBeenCalled()
-        
+
         vi.useRealTimers()
       })
 
       it('should close socket on ping timeout', async () => {
         vi.useFakeTimers()
         const connections = new Map<ClientId, IClientConnection>()
-        
+
         transport = new WebSocketServerTransport({
           server: mockServer,
           connections,
@@ -212,13 +215,13 @@ describe('Transport', () => {
           id: 'client-1' as ClientId,
           socket: mockSocket as any,
           connectedAt: Date.now(),
-          lastPingAt: Date.now() - 100 // Timed out
+          lastPingAt: Date.now() - 100, // Timed out
         })
 
         await transport.start()
         vi.advanceTimersByTime(110)
         expect(mockSocket.close).toHaveBeenCalledWith(1000, 'Ping timeout')
-        
+
         vi.useRealTimers()
       })
     })

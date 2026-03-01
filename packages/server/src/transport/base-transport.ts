@@ -6,11 +6,7 @@
  */
 
 import { EventEmitter } from 'node:events'
-import type {
-  IBaseTransport,
-  IClientConnection,
-  ClientId,
-} from '../types'
+import type { IBaseTransport, IClientConnection, ClientId } from '../types'
 
 // ============================================================
 // BASE TRANSPORT CLASS
@@ -54,5 +50,4 @@ export abstract class BaseTransport
     this.connections = connections
     this.setMaxListeners(100)
   }
-
 }

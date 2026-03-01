@@ -99,8 +99,8 @@ describe('SynnelServer', () => {
     })
 
     it('should accept middleware array', () => {
-      const middleware1 = async () => { }
-      const middleware2 = async () => { }
+      const middleware1 = async () => {}
+      const middleware2 = async () => {}
 
       const config: IServerConfig = {
         middleware: [middleware1, middleware2],
@@ -373,15 +373,15 @@ describe('SynnelServer', () => {
     it('should register middleware via use method', () => {
       server = new SynnelServer()
 
-      const middleware = async () => { }
+      const middleware = async () => {}
       server.use(middleware)
 
       // Middleware should be registered
     })
 
     it('should register middleware from config', async () => {
-      const middleware1 = async () => { }
-      const middleware2 = async () => { }
+      const middleware1 = async () => {}
+      const middleware2 = async () => {}
 
       const transport = new WebSocketServerTransport({
         server: {} as any,

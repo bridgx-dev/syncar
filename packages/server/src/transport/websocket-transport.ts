@@ -51,7 +51,6 @@ interface WebSocketServerTransportConfig extends IServerTransportConfig {
   }) => ServerInstance
 }
 
-
 /**
  * WebSocket server transport
  * Implements IServerTransport using the `ws` library.
@@ -151,7 +150,6 @@ export class WebSocketServerTransport
     // WebSocket server is already started in constructor
     // This method exists for compatibility with the transport interface
   }
-
 
   /**
    * Set up event handlers for the WebSocket server

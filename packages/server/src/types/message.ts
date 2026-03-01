@@ -134,4 +134,3 @@ export interface AckMessage extends Message {
   /** Original message being acknowledged */
   ackMessageId: MessageId
 }
-

@@ -36,11 +36,16 @@ export class ClientRegistry implements IClientRegistry {
         if (subscribers) {
           subscribers.delete(clientId)
           // Trigger unsubscribe handlers
-          for (const handler of this.handlers.getUnsubscribeHandlers(channelName)) {
+          for (const handler of this.handlers.getUnsubscribeHandlers(
+            channelName,
+          )) {
             try {
               handler(this.connections.get(clientId)!)
             } catch (error) {
-              console.error(`Error in unsubscribe handler for ${channelName}:`, error)
+              console.error(
+                `Error in unsubscribe handler for ${channelName}:`,
+                error,
+              )
             }
           }
         }

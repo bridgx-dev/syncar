@@ -124,7 +124,7 @@ export function createAuthMiddleware(
 
       // Attach user data to client (LEGACY - for compatibility)
       if (context.client) {
-        ; (context.client as unknown as Record<string, unknown>)[
+        ;(context.client as unknown as Record<string, unknown>)[
           attachProperty
         ] = userData
       }
@@ -402,11 +402,11 @@ export function createRateLimitMiddleware(
     await next()
   }
 
-    // Attach cleanup method
-    ; (middleware as { cleanup?: () => void }).cleanup = () => {
-      clearInterval(cleanupInterval)
-      rateLimitStore.clear()
-    }
+  // Attach cleanup method
+  ;(middleware as { cleanup?: () => void }).cleanup = () => {
+    clearInterval(cleanupInterval)
+    rateLimitStore.clear()
+  }
 
   return middleware
 }

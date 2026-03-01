@@ -309,8 +309,6 @@ export interface ISynnelServer {
    */
   use(middleware: IMiddleware): void
 
-
-
   /**
    * Get the client registry
    */

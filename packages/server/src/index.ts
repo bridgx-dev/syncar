@@ -54,11 +54,7 @@ export {
   DEFAULTS,
 } from './config'
 
-export {
-  BROADCAST_CHANNEL,
-  CLOSE_CODES,
-  ERROR_CODES,
-} from './config'
+export { BROADCAST_CHANNEL, CLOSE_CODES, ERROR_CODES } from './config'
 
 export { ClientRegistry } from './registry'
 

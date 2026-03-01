@@ -113,7 +113,10 @@ export declare class MessageHandler {
    * })
    * ```
    */
-  handleMessage<T = unknown>(client: IClientConnection, message: DataMessage<T>): Promise<void>
+  handleMessage<T = unknown>(
+    client: IClientConnection,
+    message: DataMessage<T>,
+  ): Promise<void>
 
   /**
    * Check if a message can be processed
@@ -146,7 +149,9 @@ export declare class MessageHandler {
    * }
    * ```
    */
-  getChannelForMessage<T = unknown>(message: DataMessage<T>): IChannel<T> | undefined
+  getChannelForMessage<T = unknown>(
+    message: DataMessage<T>,
+  ): IChannel<T> | undefined
 
   /**
    * Get handler options

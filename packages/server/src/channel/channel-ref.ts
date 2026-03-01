@@ -14,7 +14,8 @@ import { BaseChannel } from './base-channel'
 
 export class ChannelRef<T = unknown>
   extends BaseChannel<T>
-  implements IChannelTransport<T> {
+  implements IChannelTransport<T>
+{
   private readonly middlewares: IMiddleware[] = []
 
   constructor(
@@ -45,9 +46,11 @@ export class ChannelRef<T = unknown>
     return this._getSubscribers().size
   }
 
-
   onMessage(handler: IMessageHandler<T>): () => void {
-    return this.handlers.addMessageHandler(this.name, handler as IMessageHandler<unknown>)
+    return this.handlers.addMessageHandler(
+      this.name,
+      handler as IMessageHandler<unknown>,
+    )
   }
 
   subscribe(subscriber: SubscriberId): boolean {
@@ -69,7 +72,10 @@ export class ChannelRef<T = unknown>
       try {
         await handler(data, client, message as any)
       } catch (error) {
-        console.error(`Error in message handler for channel ${this.name}:`, error)
+        console.error(
+          `Error in message handler for channel ${this.name}:`,
+          error,
+        )
       }
     }
   }
@@ -89,7 +95,10 @@ export class ChannelRef<T = unknown>
       try {
         await handler(client)
       } catch (error) {
-        console.error(`Error in subscribe handler for channel ${this.name}:`, error)
+        console.error(
+          `Error in subscribe handler for channel ${this.name}:`,
+          error,
+        )
         // Re-throw to allow blocking subscription on handler error
         throw error
       }
@@ -103,7 +112,10 @@ export class ChannelRef<T = unknown>
       try {
         await handler(client)
       } catch (error) {
-        console.error(`Error in unsubscribe handler for channel ${this.name}:`, error)
+        console.error(
+          `Error in unsubscribe handler for channel ${this.name}:`,
+          error,
+        )
       }
     }
   }

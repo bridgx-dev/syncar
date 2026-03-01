@@ -9,7 +9,8 @@ import { BROADCAST_CHANNEL } from '../config'
 
 export class BroadcastChannel<T = unknown>
   extends BaseChannel<T, typeof BROADCAST_CHANNEL>
-  implements IBroadcastTransport<T> {
+  implements IBroadcastTransport<T>
+{
   constructor(registry: IClientRegistry, chunkSize: number = 500) {
     super(BROADCAST_CHANNEL, registry, chunkSize)
   }

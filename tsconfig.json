@@ -35,7 +35,7 @@
     "incremental": true,
     "isolatedModules": true,
     "composite": true,
-    "noEmit": false,
+    "noEmit": false
   },
   "include": ["*.config.*"],
   "exclude": ["node_modules", "dist", "dist-ts"]

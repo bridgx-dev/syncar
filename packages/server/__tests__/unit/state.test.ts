@@ -68,7 +68,9 @@ describe('RegistryState', () => {
       createChannel(state, 'chat' as ChannelName)
 
       // Original subscribers should still be there
-      expect(state.channels.get('chat' as ChannelName)?.has(clientId)).toBe(true)
+      expect(state.channels.get('chat' as ChannelName)?.has(clientId)).toBe(
+        true,
+      )
     })
 
     it('should allow multiple channels', () => {
@@ -102,15 +104,29 @@ describe('RegistryState', () => {
       subscribers.add('client-2' as ClientId)
 
       // Update subscriptions map
-      state.subscriptions.set('client-1' as ClientId, new Set(['chat' as ChannelName]))
-      state.subscriptions.set('client-2' as ClientId, new Set(['chat' as ChannelName]))
+      state.subscriptions.set(
+        'client-1' as ClientId,
+        new Set(['chat' as ChannelName]),
+      )
+      state.subscriptions.set(
+        'client-2' as ClientId,
+        new Set(['chat' as ChannelName]),
+      )
 
       // Delete channel
       deleteChannel(state, 'chat' as ChannelName)
 
       // Check subscriptions were cleaned up
-      expect(state.subscriptions.get('client-1' as ClientId)?.has('chat' as ChannelName)).toBe(false)
-      expect(state.subscriptions.get('client-2' as ClientId)?.has('chat' as ChannelName)).toBe(false)
+      expect(
+        state.subscriptions
+          .get('client-1' as ClientId)
+          ?.has('chat' as ChannelName),
+      ).toBe(false)
+      expect(
+        state.subscriptions
+          .get('client-2' as ClientId)
+          ?.has('chat' as ChannelName),
+      ).toBe(false)
     })
 
     it('should not error when deleting non-existent channel', () => {
@@ -122,7 +138,9 @@ describe('RegistryState', () => {
 
   describe('getChannelSubscriberCount', () => {
     it('should return 0 for non-existent channel', () => {
-      expect(getChannelSubscriberCount(state, 'nonexistent' as ChannelName)).toBe(0)
+      expect(
+        getChannelSubscriberCount(state, 'nonexistent' as ChannelName),
+      ).toBe(0)
     })
 
     it('should return correct subscriber count', () => {
@@ -160,26 +178,39 @@ describe('RegistryState', () => {
 
   describe('isSubscribed', () => {
     it('should return false for non-existent channel', () => {
-      expect(isSubscribed(state, 'client-1' as ClientId, 'nonexistent' as ChannelName)).toBe(false)
+      expect(
+        isSubscribed(
+          state,
+          'client-1' as ClientId,
+          'nonexistent' as ChannelName,
+        ),
+      ).toBe(false)
     })
 
     it('should return false for non-subscribed client', () => {
       createChannel(state, 'chat' as ChannelName)
 
-      expect(isSubscribed(state, 'client-1' as ClientId, 'chat' as ChannelName)).toBe(false)
+      expect(
+        isSubscribed(state, 'client-1' as ClientId, 'chat' as ChannelName),
+      ).toBe(false)
     })
 
     it('should return true for subscribed client', () => {
       createChannel(state, 'chat' as ChannelName)
       state.channels.get('chat' as ChannelName)!.add('client-1' as ClientId)
 
-      expect(isSubscribed(state, 'client-1' as ClientId, 'chat' as ChannelName)).toBe(true)
+      expect(
+        isSubscribed(state, 'client-1' as ClientId, 'chat' as ChannelName),
+      ).toBe(true)
     })
   })
 
   describe('getChannelSubscribers', () => {
     it('should return empty set for non-existent channel', () => {
-      const subscribers = getChannelSubscribers(state, 'nonexistent' as ChannelName)
+      const subscribers = getChannelSubscribers(
+        state,
+        'nonexistent' as ChannelName,
+      )
 
       expect(subscribers).toBeInstanceOf(Set)
       expect(subscribers.size).toBe(0)
@@ -211,7 +242,8 @@ describe('RegistryState', () => {
       createChannel(state, 'chat' as ChannelName)
       createChannel(state, 'news' as ChannelName)
 
-      const subscriptions = state.subscriptions.get('client-1' as ClientId) ?? new Set()
+      const subscriptions =
+        state.subscriptions.get('client-1' as ClientId) ?? new Set()
       subscriptions.add('chat' as ChannelName)
       subscriptions.add('news' as ChannelName)
       state.subscriptions.set('client-1' as ClientId, subscriptions)
@@ -268,7 +300,9 @@ describe('RegistryState', () => {
 
       // Check consistency
       expect(isSubscribed(state, clientId, channelName)).toBe(false)
-      expect(getChannelSubscribers(state, channelName).has(clientId)).toBe(false)
+      expect(getChannelSubscribers(state, channelName).has(clientId)).toBe(
+        false,
+      )
       expect(getClientChannels(state, clientId).has(channelName)).toBe(false)
     })
   })

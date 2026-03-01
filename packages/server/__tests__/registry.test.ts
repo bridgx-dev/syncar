@@ -128,7 +128,6 @@ describe('ClientRegistry', () => {
       expect(channels).toContain('test' as ChannelName)
     })
 
-
     it('should register multiple channels via subscribe', () => {
       const connection = createMockConnection('client-1')
       registry.register(connection)
@@ -136,10 +135,11 @@ describe('ClientRegistry', () => {
       registry.subscribe('client-1' as ClientId, 'news' as ChannelName)
       registry.subscribe('client-1' as ClientId, 'updates' as ChannelName)
 
-
       const channels = registry.getChannels()
 
-      expect(channels).toEqual(expect.arrayContaining(['chat', 'news', 'updates'] as ChannelName[]))
+      expect(channels).toEqual(
+        expect.arrayContaining(['chat', 'news', 'updates'] as ChannelName[]),
+      )
       expect(channels).toHaveLength(3)
     })
 
@@ -149,7 +149,6 @@ describe('ClientRegistry', () => {
       registry.subscribe('client-1' as ClientId, 'chat' as ChannelName)
       registry.subscribe('client-1' as ClientId, 'chat' as ChannelName)
 
-
       const channels = registry.getChannels()
       expect(channels).toHaveLength(1)
     })
@@ -158,7 +157,6 @@ describe('ClientRegistry', () => {
       const connection = createMockConnection('client-1')
       registry.register(connection)
       registry.subscribe('client-1' as ClientId, 'test' as ChannelName)
-
 
       const result = registry.removeChannel('test' as ChannelName)
 
@@ -182,28 +180,34 @@ describe('ClientRegistry', () => {
       const connection = createMockConnection('client-1')
       registry.register(connection)
       registry.subscribe('client-1' as ClientId, 'chat' as ChannelName)
-      
+
       const subscribers = registry.getChannelSubscribers('chat' as ChannelName)
       expect(subscribers).toBeInstanceOf(Set)
       expect(subscribers.size).toBe(1)
     })
-
   })
 
   describe('subscription management', () => {
     it('should subscribe a client to a channel', () => {
-
       const connection = createMockConnection('client-1')
       registry.register(connection)
 
-      const result = registry.subscribe('client-1' as ClientId, 'chat' as ChannelName)
+      const result = registry.subscribe(
+        'client-1' as ClientId,
+        'chat' as ChannelName,
+      )
 
       expect(result).toBe(true)
-      expect(registry.isSubscribed('client-1' as ClientId, 'chat' as ChannelName)).toBe(true)
+      expect(
+        registry.isSubscribed('client-1' as ClientId, 'chat' as ChannelName),
+      ).toBe(true)
     })
 
     it('should return false when subscribing non-existent client', () => {
-      const result = registry.subscribe('client-1' as ClientId, 'chat' as ChannelName)
+      const result = registry.subscribe(
+        'client-1' as ClientId,
+        'chat' as ChannelName,
+      )
 
       expect(result).toBe(false)
     })
@@ -212,7 +216,10 @@ describe('ClientRegistry', () => {
       const connection = createMockConnection('client-1')
       registry.register(connection)
 
-      const result = registry.subscribe('client-1' as ClientId, 'new-channel' as ChannelName)
+      const result = registry.subscribe(
+        'client-1' as ClientId,
+        'new-channel' as ChannelName,
+      )
 
       expect(result).toBe(true)
       expect(registry.getChannels()).toContain('new-channel' as ChannelName)
@@ -223,7 +230,10 @@ describe('ClientRegistry', () => {
       registry.register(connection)
 
       registry.subscribe('client-1' as ClientId, 'chat' as ChannelName)
-      const result = registry.subscribe('client-1' as ClientId, 'chat' as ChannelName)
+      const result = registry.subscribe(
+        'client-1' as ClientId,
+        'chat' as ChannelName,
+      )
 
       expect(result).toBe(false)
     })
@@ -233,17 +243,25 @@ describe('ClientRegistry', () => {
       registry.register(connection)
       registry.subscribe('client-1' as ClientId, 'chat' as ChannelName)
 
-      const result = registry.unsubscribe('client-1' as ClientId, 'chat' as ChannelName)
+      const result = registry.unsubscribe(
+        'client-1' as ClientId,
+        'chat' as ChannelName,
+      )
 
       expect(result).toBe(true)
-      expect(registry.isSubscribed('client-1' as ClientId, 'chat' as ChannelName)).toBe(false)
+      expect(
+        registry.isSubscribed('client-1' as ClientId, 'chat' as ChannelName),
+      ).toBe(false)
     })
 
     it('should return false when unsubscribing from non-existent channel', () => {
       const connection = createMockConnection('client-1')
       registry.register(connection)
 
-      const result = registry.unsubscribe('client-1' as ClientId, 'nonexistent' as ChannelName)
+      const result = registry.unsubscribe(
+        'client-1' as ClientId,
+        'nonexistent' as ChannelName,
+      )
 
       expect(result).toBe(false)
     })
@@ -252,7 +270,10 @@ describe('ClientRegistry', () => {
       const connection = createMockConnection('client-1')
       registry.register(connection)
 
-      const result = registry.unsubscribe('client-1' as ClientId, 'chat' as ChannelName)
+      const result = registry.unsubscribe(
+        'client-1' as ClientId,
+        'chat' as ChannelName,
+      )
 
       expect(result).toBe(false)
     })
@@ -303,18 +324,27 @@ describe('ClientRegistry', () => {
       const connection = createMockConnection('client-1')
       registry.register(connection)
 
-      expect(registry.isSubscribed('client-1' as ClientId, 'chat' as ChannelName)).toBe(false)
+      expect(
+        registry.isSubscribed('client-1' as ClientId, 'chat' as ChannelName),
+      ).toBe(false)
 
       registry.subscribe('client-1' as ClientId, 'chat' as ChannelName)
 
-      expect(registry.isSubscribed('client-1' as ClientId, 'chat' as ChannelName)).toBe(true)
+      expect(
+        registry.isSubscribed('client-1' as ClientId, 'chat' as ChannelName),
+      ).toBe(true)
     })
 
     it('should return false for non-existent channel when checking subscription', () => {
       const connection = createMockConnection('client-1')
       registry.register(connection)
 
-      expect(registry.isSubscribed('client-1' as ClientId, 'nonexistent' as ChannelName)).toBe(false)
+      expect(
+        registry.isSubscribed(
+          'client-1' as ClientId,
+          'nonexistent' as ChannelName,
+        ),
+      ).toBe(false)
     })
 
     it('should get client channels', () => {
@@ -322,7 +352,6 @@ describe('ClientRegistry', () => {
       registry.register(connection)
 
       // Channels created implicitly by subscribe
-
 
       registry.subscribe('client-1' as ClientId, 'chat' as ChannelName)
       registry.subscribe('client-1' as ClientId, 'news' as ChannelName)
@@ -348,25 +377,33 @@ describe('ClientRegistry', () => {
     it('should maintain consistency when subscribing', () => {
       // Channel created implicitly by subscribe
 
-
       const connection = createMockConnection('client-1')
       registry.register(connection)
 
       registry.subscribe('client-1' as ClientId, 'chat' as ChannelName)
 
       // Check forward index (client → channels)
-      expect(registry.getClientChannels('client-1' as ClientId).has('chat' as ChannelName)).toBe(true)
+      expect(
+        registry
+          .getClientChannels('client-1' as ClientId)
+          .has('chat' as ChannelName),
+      ).toBe(true)
 
       // Check reverse index (channel → subscribers)
-      expect(registry.getChannelSubscribers('chat' as ChannelName).has('client-1' as ClientId)).toBe(true)
+      expect(
+        registry
+          .getChannelSubscribers('chat' as ChannelName)
+          .has('client-1' as ClientId),
+      ).toBe(true)
 
       // Check isSubscribed (uses reverse index)
-      expect(registry.isSubscribed('client-1' as ClientId, 'chat' as ChannelName)).toBe(true)
+      expect(
+        registry.isSubscribed('client-1' as ClientId, 'chat' as ChannelName),
+      ).toBe(true)
     })
 
     it('should maintain consistency when unsubscribing', () => {
       // Channel created implicitly by subscribe
-
 
       const connection = createMockConnection('client-1')
       registry.register(connection)
@@ -375,18 +412,27 @@ describe('ClientRegistry', () => {
       registry.unsubscribe('client-1' as ClientId, 'chat' as ChannelName)
 
       // Check forward index
-      expect(registry.getClientChannels('client-1' as ClientId).has('chat' as ChannelName)).toBe(false)
+      expect(
+        registry
+          .getClientChannels('client-1' as ClientId)
+          .has('chat' as ChannelName),
+      ).toBe(false)
 
       // Check reverse index
-      expect(registry.getChannelSubscribers('chat' as ChannelName).has('client-1' as ClientId)).toBe(false)
+      expect(
+        registry
+          .getChannelSubscribers('chat' as ChannelName)
+          .has('client-1' as ClientId),
+      ).toBe(false)
 
       // Check isSubscribed
-      expect(registry.isSubscribed('client-1' as ClientId, 'chat' as ChannelName)).toBe(false)
+      expect(
+        registry.isSubscribed('client-1' as ClientId, 'chat' as ChannelName),
+      ).toBe(false)
     })
 
     it('should clean up empty subscription sets', () => {
       // Channels created implicitly by subscribe
-
 
       const connection = createMockConnection('client-1')
       registry.register(connection)
@@ -398,7 +444,11 @@ describe('ClientRegistry', () => {
       registry.unsubscribe('client-1' as ClientId, 'chat' as ChannelName)
 
       // Should still have the other channel
-      expect(registry.getClientChannels('client-1' as ClientId).has('news' as ChannelName)).toBe(true)
+      expect(
+        registry
+          .getClientChannels('client-1' as ClientId)
+          .has('news' as ChannelName),
+      ).toBe(true)
 
       // Unsubscribe from last channel
       registry.unsubscribe('client-1' as ClientId, 'news' as ChannelName)
@@ -412,7 +462,6 @@ describe('ClientRegistry', () => {
   describe('total subscription count', () => {
     beforeEach(() => {
       // Channels created implicitly by subscribe
-
 
       registry.register(createMockConnection('client-1'))
       registry.register(createMockConnection('client-2'))
@@ -454,7 +503,6 @@ describe('ClientRegistry', () => {
     it('should unsubscribe client from all channels when unregistered', () => {
       // Channels created implicitly by subscribe
 
-
       const connection = createMockConnection('client-1')
       registry.register(connection)
 
@@ -462,15 +510,23 @@ describe('ClientRegistry', () => {
       registry.subscribe('client-1' as ClientId, 'chat' as ChannelName)
       registry.subscribe('client-1' as ClientId, 'news' as ChannelName)
 
-      expect(registry.isSubscribed('client-1' as ClientId, 'chat' as ChannelName)).toBe(true)
-      expect(registry.isSubscribed('client-1' as ClientId, 'news' as ChannelName)).toBe(true)
+      expect(
+        registry.isSubscribed('client-1' as ClientId, 'chat' as ChannelName),
+      ).toBe(true)
+      expect(
+        registry.isSubscribed('client-1' as ClientId, 'news' as ChannelName),
+      ).toBe(true)
 
       // Unregister client
       registry.unregister('client-1' as ClientId)
 
       // Should be unsubscribed from all channels
-      expect(registry.isSubscribed('client-1' as ClientId, 'chat' as ChannelName)).toBe(false)
-      expect(registry.isSubscribed('client-1' as ClientId, 'news' as ChannelName)).toBe(false)
+      expect(
+        registry.isSubscribed('client-1' as ClientId, 'chat' as ChannelName),
+      ).toBe(false)
+      expect(
+        registry.isSubscribed('client-1' as ClientId, 'news' as ChannelName),
+      ).toBe(false)
 
       // Client channels should be empty
       expect(registry.getClientChannels('client-1' as ClientId).size).toBe(0)
@@ -480,7 +536,6 @@ describe('ClientRegistry', () => {
       // Create 10 channels but only subscribe to 2
       for (let i = 0; i < 10; i++) {
         // subscribe will create channels
-
       }
 
       const connection = createMockConnection('client-1')
@@ -494,8 +549,18 @@ describe('ClientRegistry', () => {
       // (not iterate through all 10)
       registry.unregister('client-1' as ClientId)
 
-      expect(registry.isSubscribed('client-1' as ClientId, 'channel-0' as ChannelName)).toBe(false)
-      expect(registry.isSubscribed('client-1' as ClientId, 'channel-1' as ChannelName)).toBe(false)
+      expect(
+        registry.isSubscribed(
+          'client-1' as ClientId,
+          'channel-0' as ChannelName,
+        ),
+      ).toBe(false)
+      expect(
+        registry.isSubscribed(
+          'client-1' as ClientId,
+          'channel-1' as ChannelName,
+        ),
+      ).toBe(false)
     })
   })
 
@@ -518,7 +583,6 @@ describe('ClientRegistry', () => {
       registry.subscribe('client-1' as ClientId, 'chat' as ChannelName)
       registry.subscribe('client-1' as ClientId, 'news' as ChannelName)
 
-
       expect(registry.getChannels()).toHaveLength(2)
 
       registry.clear()
@@ -530,7 +594,6 @@ describe('ClientRegistry', () => {
       const connection = createMockConnection('client-1')
       registry.register(connection)
       registry.subscribe('client-1' as ClientId, 'chat' as ChannelName)
-
 
       expect(registry.getSubscriberCount('chat' as ChannelName)).toBe(1)
 
@@ -571,7 +634,6 @@ describe('ClientRegistry', () => {
     it('should trigger subscribe handlers when subscribing', () => {
       const handler = vi.fn()
 
-
       registry.handlers.addSubscribeHandler('chat' as ChannelName, handler)
 
       const connection = createMockConnection('client-1')
@@ -584,7 +646,6 @@ describe('ClientRegistry', () => {
 
     it('should trigger unsubscribe handlers when unsubscribing', () => {
       const handler = vi.fn()
-
 
       registry.handlers.addUnsubscribeHandler('chat' as ChannelName, handler)
 
@@ -600,7 +661,6 @@ describe('ClientRegistry', () => {
     it('should trigger unsubscribe handlers when unregistering', () => {
       const handler = vi.fn()
 
-
       registry.handlers.addUnsubscribeHandler('chat' as ChannelName, handler)
 
       const connection = createMockConnection('client-1')
@@ -614,8 +674,6 @@ describe('ClientRegistry', () => {
   })
 
   it('should remove channel from all client subscriptions', () => {
-
-
     const client1 = createMockConnection('client-1')
     const client2 = createMockConnection('client-2')
 
@@ -626,15 +684,31 @@ describe('ClientRegistry', () => {
     registry.subscribe('client-2' as ClientId, 'chat' as ChannelName)
 
     // Verify subscriptions
-    expect(registry.getClientChannels('client-1' as ClientId).has('chat' as ChannelName)).toBe(true)
-    expect(registry.getClientChannels('client-2' as ClientId).has('chat' as ChannelName)).toBe(true)
+    expect(
+      registry
+        .getClientChannels('client-1' as ClientId)
+        .has('chat' as ChannelName),
+    ).toBe(true)
+    expect(
+      registry
+        .getClientChannels('client-2' as ClientId)
+        .has('chat' as ChannelName),
+    ).toBe(true)
 
     // Remove channel
     registry.removeChannel('chat' as ChannelName)
 
     // Check subscriptions are cleaned up
-    expect(registry.getClientChannels('client-1' as ClientId).has('chat' as ChannelName)).toBe(false)
-    expect(registry.getClientChannels('client-2' as ClientId).has('chat' as ChannelName)).toBe(false)
+    expect(
+      registry
+        .getClientChannels('client-1' as ClientId)
+        .has('chat' as ChannelName),
+    ).toBe(false)
+    expect(
+      registry
+        .getClientChannels('client-2' as ClientId)
+        .has('chat' as ChannelName),
+    ).toBe(false)
   })
 
   it('should clear handlers for removed channel', () => {
@@ -642,14 +716,17 @@ describe('ClientRegistry', () => {
     registry.register(connection)
     registry.subscribe('client-1' as ClientId, 'chat' as ChannelName)
 
-
     const handler = vi.fn()
     registry.handlers.addMessageHandler('chat' as ChannelName, handler)
 
-    expect(registry.handlers.getMessageHandlers('chat' as ChannelName).size).toBe(1)
+    expect(
+      registry.handlers.getMessageHandlers('chat' as ChannelName).size,
+    ).toBe(1)
 
     registry.removeChannel('chat' as ChannelName)
 
-    expect(registry.handlers.getMessageHandlers('chat' as ChannelName).size).toBe(0)
+    expect(
+      registry.handlers.getMessageHandlers('chat' as ChannelName).size,
+    ).toBe(0)
   })
 })

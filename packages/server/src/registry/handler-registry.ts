@@ -31,7 +31,9 @@ export class HandlerRegistry {
     if (!this.state.messageHandlers.has(channel)) {
       this.state.messageHandlers.set(channel, new Set())
     }
-    this.state.messageHandlers.get(channel)!.add(handler as IMessageHandler<unknown>)
+    this.state.messageHandlers
+      .get(channel)!
+      .add(handler as IMessageHandler<unknown>)
     return () => this.removeMessageHandler(channel, handler)
   }
 
@@ -44,7 +46,9 @@ export class HandlerRegistry {
     channel: ChannelName,
     handler: IMessageHandler<T>,
   ): void {
-    this.state.messageHandlers.get(channel)?.delete(handler as IMessageHandler<unknown>)
+    this.state.messageHandlers
+      .get(channel)
+      ?.delete(handler as IMessageHandler<unknown>)
   }
 
   /**

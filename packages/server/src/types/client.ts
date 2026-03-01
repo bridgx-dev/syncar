@@ -6,8 +6,6 @@
 import type { IClientConnection, IChannel } from './base'
 import type { ChannelName, ClientId } from './common'
 
-
-
 // ============================================================
 // CLIENT REGISTRY INTERFACE
 // ============================================================
@@ -171,7 +169,6 @@ export interface IClientRegistry {
    */
   clear(): void
 }
-
 
 // ============================================================
 // DISCONNECTION EVENT

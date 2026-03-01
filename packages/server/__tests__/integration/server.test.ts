@@ -8,7 +8,12 @@ import { EventEmitter } from 'node:events'
 import { SynnelServer } from '../../src/server/index.js'
 import type { ISynnelServer, IServerTransport } from '../../src/types/index.js'
 import type { IClientConnection } from '../../src/types/index.js'
-import type { ClientId, Message, DataMessage, SignalMessage } from '../../src/types/index.js'
+import type {
+  ClientId,
+  Message,
+  DataMessage,
+  SignalMessage,
+} from '../../src/types/index.js'
 import { MessageType, SignalType } from '../../src/types/index.js'
 
 // Mock transport implementation
@@ -70,7 +75,11 @@ class MockTransport extends EventEmitter implements IServerTransport {
   }
 
   // Helper to simulate a signal message (for subscribe/unsubscribe)
-  async simulateSignal(clientId: ClientId, channelName: string, signalType: SignalType): Promise<void> {
+  async simulateSignal(
+    clientId: ClientId,
+    channelName: string,
+    signalType: SignalType,
+  ): Promise<void> {
     const signal: SignalMessage = {
       id: `sig-${Date.now()}`,
       type: MessageType.SIGNAL,
@@ -83,7 +92,11 @@ class MockTransport extends EventEmitter implements IServerTransport {
   }
 
   // Helper to simulate a data message
-  async simulateDataMessage(clientId: ClientId, channelName: string, data: unknown): Promise<void> {
+  async simulateDataMessage(
+    clientId: ClientId,
+    channelName: string,
+    data: unknown,
+  ): Promise<void> {
     const message: DataMessage = {
       id: `msg-${Date.now()}`,
       type: MessageType.DATA,
@@ -227,7 +240,11 @@ describe('Integration Tests', () => {
       await transport.addMockClient('client-1' as ClientId)
 
       // Simulate subscribe signal
-      await transport.simulateSignal('client-1' as ClientId, 'chat', SignalType.SUBSCRIBE)
+      await transport.simulateSignal(
+        'client-1' as ClientId,
+        'chat',
+        SignalType.SUBSCRIBE,
+      )
 
       // Channel should have the subscriber
       expect(chat.hasSubscriber('client-1')).toBe(true)
@@ -238,11 +255,19 @@ describe('Integration Tests', () => {
       await transport.addMockClient('client-1' as ClientId)
 
       // First subscribe
-      await transport.simulateSignal('client-1' as ClientId, 'chat', SignalType.SUBSCRIBE)
+      await transport.simulateSignal(
+        'client-1' as ClientId,
+        'chat',
+        SignalType.SUBSCRIBE,
+      )
       expect(chat.hasSubscriber('client-1')).toBe(true)
 
       // Then unsubscribe
-      await transport.simulateSignal('client-1' as ClientId, 'chat', SignalType.UNSUBSCRIBE)
+      await transport.simulateSignal(
+        'client-1' as ClientId,
+        'chat',
+        SignalType.UNSUBSCRIBE,
+      )
       expect(chat.hasSubscriber('client-1')).toBe(false)
     })
 
@@ -250,14 +275,21 @@ describe('Integration Tests', () => {
       await transport.addMockClient('client-1' as ClientId)
       server.createMulticast('chat') // Create the channel first
 
-      await transport.simulateSignal('client-1' as ClientId, 'chat', SignalType.SUBSCRIBE)
+      await transport.simulateSignal(
+        'client-1' as ClientId,
+        'chat',
+        SignalType.SUBSCRIBE,
+      )
 
       // Check if acknowledgment was sent via socket.send
       const client = transport.connections.get('client-1' as ClientId)
       const calls = (client?.socket as any)?.send?.mock?.calls || []
       const ackMessages = calls.filter((call: string[]) => {
         const msg = JSON.parse(call[0])
-        return msg.type === MessageType.SIGNAL && msg.signal === SignalType.SUBSCRIBED
+        return (
+          msg.type === MessageType.SIGNAL &&
+          msg.signal === SignalType.SUBSCRIBED
+        )
       })
 
       expect(ackMessages.length).toBeGreaterThan(0)
@@ -268,18 +300,29 @@ describe('Integration Tests', () => {
       server.createMulticast('chat') // Create the channel first
 
       // First subscribe
-      await transport.simulateSignal('client-1' as ClientId, 'chat', SignalType.SUBSCRIBE)
+      await transport.simulateSignal(
+        'client-1' as ClientId,
+        'chat',
+        SignalType.SUBSCRIBE,
+      )
       vi.clearAllMocks()
 
       // Then unsubscribe
-      await transport.simulateSignal('client-1' as ClientId, 'chat', SignalType.UNSUBSCRIBE)
+      await transport.simulateSignal(
+        'client-1' as ClientId,
+        'chat',
+        SignalType.UNSUBSCRIBE,
+      )
 
       // Check if acknowledgment was sent
       const client = transport.connections.get('client-1' as ClientId)
       const calls = (client?.socket as any)?.send?.mock?.calls || []
       const ackMessages = calls.filter((call: string[]) => {
         const msg = JSON.parse(call[0])
-        return msg.type === MessageType.SIGNAL && msg.signal === SignalType.UNSUBSCRIBED
+        return (
+          msg.type === MessageType.SIGNAL &&
+          msg.signal === SignalType.UNSUBSCRIBED
+        )
       })
 
       expect(ackMessages.length).toBeGreaterThan(0)
@@ -314,7 +357,11 @@ describe('Integration Tests', () => {
 
       await transport.addMockClient('client-1' as ClientId)
       server.createMulticast('test') // Create the channel first
-      await transport.simulateDataMessage('client-1' as ClientId, 'test', 'test message')
+      await transport.simulateDataMessage(
+        'client-1' as ClientId,
+        'test',
+        'test message',
+      )
 
       expect(receivedData).toBe('test message')
     })
@@ -339,7 +386,11 @@ describe('Integration Tests', () => {
 
       // Should not throw despite error in handler
       await expect(
-        transport.simulateDataMessage('client-1' as ClientId, 'test', 'test message'),
+        transport.simulateDataMessage(
+          'client-1' as ClientId,
+          'test',
+          'test message',
+        ),
       ).resolves.toBeUndefined()
 
       // Both handlers should be called
@@ -360,7 +411,11 @@ describe('Integration Tests', () => {
       await transport.addMockClient('client-1' as ClientId)
       server.createMulticast('test') // Create the channel first
 
-      await transport.simulateDataMessage('client-1' as ClientId, 'test', 'test message')
+      await transport.simulateDataMessage(
+        'client-1' as ClientId,
+        'test',
+        'test message',
+      )
 
       // Handler should not be called due to authorization denial
       expect(handlerCalled).toBe(false)
@@ -379,7 +434,11 @@ describe('Integration Tests', () => {
       await transport.addMockClient('client-1' as ClientId)
       server.createMulticast('test') // Create the channel first
 
-      await transport.simulateDataMessage('client-1' as ClientId, 'test', 'test message')
+      await transport.simulateDataMessage(
+        'client-1' as ClientId,
+        'test',
+        'test message',
+      )
 
       // Handler should be called
       expect(handlerCalled).toBe(true)

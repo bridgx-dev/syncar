@@ -71,7 +71,6 @@ export const DEFAULT_SERVER_CONFIG: IDefaultServerConfig = {
   broadcastChunkSize: 500,
 } as const
 
-
 /**
  * Default rate limit settings
  */

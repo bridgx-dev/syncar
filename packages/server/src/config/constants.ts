@@ -133,7 +133,6 @@ export const CLOSE_CODES = {
    */
   CHANNEL_NOT_FOUND: 4003,
 
-
   /**
    * Unauthorized
    * Client not authorized for this action
@@ -244,4 +243,3 @@ export const DEFAULT_PING_INTERVAL = 30000
  * Default ping timeout in milliseconds (5 seconds)
  */
 export const DEFAULT_PING_TIMEOUT = 5000
-

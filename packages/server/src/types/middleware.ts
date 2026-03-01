@@ -230,7 +230,10 @@ export interface IMiddlewareManager extends IMiddlewareContextFactory {
    * @param channel - The channel name
    * @throws MiddlewareRejectionError if any middleware rejects
    */
-  executeSubscribe(client: IClientConnection, channel: ChannelName): Promise<void>
+  executeSubscribe(
+    client: IClientConnection,
+    channel: ChannelName,
+  ): Promise<void>
 
   /**
    * Execute middleware for an unsubscribe action
@@ -239,7 +242,10 @@ export interface IMiddlewareManager extends IMiddlewareContextFactory {
    * @param channel - The channel name
    * @throws MiddlewareRejectionError if any middleware rejects
    */
-  executeUnsubscribe(client: IClientConnection, channel: ChannelName): Promise<void>
+  executeUnsubscribe(
+    client: IClientConnection,
+    channel: ChannelName,
+  ): Promise<void>
 }
 
 // ============================================================
@@ -432,7 +438,9 @@ export type IActionMiddleware<T extends IMiddlewareAction> = (
  * await manager.executeConnection(client, 'connect')
  * ```
  */
-export declare class MiddlewareManager implements IMiddlewareManager, IMiddlewareContextFactory {
+export declare class MiddlewareManager
+  implements IMiddlewareManager, IMiddlewareContextFactory
+{
   protected readonly middlewares: IMiddleware[]
 
   /**
@@ -447,7 +455,7 @@ export declare class MiddlewareManager implements IMiddlewareManager, IMiddlewar
    * reject the action, or pass control to the next layer.
    */
   compose(
-    middlewares: IMiddleware[]
+    middlewares: IMiddleware[],
   ): (context: IMiddlewareContext, next?: () => Promise<void>) => Promise<void>
 
   /**
@@ -499,7 +507,10 @@ export declare class MiddlewareManager implements IMiddlewareManager, IMiddlewar
    * @throws {MiddlewareRejectionError} If middleware rejects the action
    * @throws {MiddlewareExecutionError} If middleware throws an unexpected error
    */
-  executeConnection(client: IClientConnection, action: 'connect' | 'disconnect'): Promise<void>
+  executeConnection(
+    client: IClientConnection,
+    action: 'connect' | 'disconnect',
+  ): Promise<void>
 
   /**
    * Execute middleware for a message action
@@ -525,7 +536,7 @@ export declare class MiddlewareManager implements IMiddlewareManager, IMiddlewar
   executeSubscribe(
     client: IClientConnection,
     channel: ChannelName,
-    finalHandler?: () => Promise<void>
+    finalHandler?: () => Promise<void>,
   ): Promise<void>
 
   /**
@@ -541,7 +552,7 @@ export declare class MiddlewareManager implements IMiddlewareManager, IMiddlewar
   executeUnsubscribe(
     client: IClientConnection,
     channel: ChannelName,
-    finalHandler?: () => Promise<void>
+    finalHandler?: () => Promise<void>,
   ): Promise<void>
 
   /**
@@ -558,7 +569,7 @@ export declare class MiddlewareManager implements IMiddlewareManager, IMiddlewar
   execute(
     context: IMiddlewareContext,
     middlewares?: IMiddleware[],
-    finalHandler?: () => Promise<void>
+    finalHandler?: () => Promise<void>,
   ): Promise<void>
 
   /**
@@ -570,7 +581,7 @@ export declare class MiddlewareManager implements IMiddlewareManager, IMiddlewar
    */
   createConnectionContext(
     client: IClientConnection,
-    action: 'connect' | 'disconnect'
+    action: 'connect' | 'disconnect',
   ): IMiddlewareContext
 
   /**
@@ -582,7 +593,7 @@ export declare class MiddlewareManager implements IMiddlewareManager, IMiddlewar
    */
   createMessageContext(
     client: IClientConnection,
-    message: Message
+    message: Message,
   ): IMiddlewareContext
 
   /**
@@ -594,7 +605,7 @@ export declare class MiddlewareManager implements IMiddlewareManager, IMiddlewar
    */
   createSubscribeContext(
     client: IClientConnection,
-    channel: ChannelName
+    channel: ChannelName,
   ): IMiddlewareContext
 
   /**
@@ -606,7 +617,7 @@ export declare class MiddlewareManager implements IMiddlewareManager, IMiddlewar
    */
   createUnsubscribeContext(
     client: IClientConnection,
-    channel: ChannelName
+    channel: ChannelName,
   ): IMiddlewareContext
 
   /**

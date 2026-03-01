@@ -1,7 +1,4 @@
-import type {
-  IClientRegistry,
-  IClientConnection,
-} from '../types'
+import type { IClientRegistry, IClientConnection } from '../types'
 import { CLOSE_CODES } from '../config'
 
 export interface ConnectionHandlerOptions {
@@ -30,7 +27,6 @@ export class ConnectionHandler {
   ): Promise<IClientConnection> {
     // Register client in registry
     const client = this.registry.register(connection)
-
     return client
   }
 

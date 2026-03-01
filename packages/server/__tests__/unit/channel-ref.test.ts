@@ -232,7 +232,9 @@ describe('ChannelRef', () => {
 
       channelRef.onMessage(handler)
 
-      const registered = handlers.getMessageHandlers('test-channel' as ChannelName)
+      const registered = handlers.getMessageHandlers(
+        'test-channel' as ChannelName,
+      )
       expect(registered.size).toBe(1)
     })
 
@@ -241,11 +243,15 @@ describe('ChannelRef', () => {
 
       const unsubscribe = channelRef.onMessage(handler)
 
-      expect(handlers.getMessageHandlers('test-channel' as ChannelName).size).toBe(1)
+      expect(
+        handlers.getMessageHandlers('test-channel' as ChannelName).size,
+      ).toBe(1)
 
       unsubscribe()
 
-      expect(handlers.getMessageHandlers('test-channel' as ChannelName).size).toBe(0)
+      expect(
+        handlers.getMessageHandlers('test-channel' as ChannelName).size,
+      ).toBe(0)
     })
   })
 
@@ -255,7 +261,9 @@ describe('ChannelRef', () => {
 
       channelRef.onSubscribe(handler)
 
-      const registered = handlers.getSubscribeHandlers('test-channel' as ChannelName)
+      const registered = handlers.getSubscribeHandlers(
+        'test-channel' as ChannelName,
+      )
       expect(registered.size).toBe(1)
     })
 
@@ -264,11 +272,15 @@ describe('ChannelRef', () => {
 
       const unsubscribe = channelRef.onSubscribe(handler)
 
-      expect(handlers.getSubscribeHandlers('test-channel' as ChannelName).size).toBe(1)
+      expect(
+        handlers.getSubscribeHandlers('test-channel' as ChannelName).size,
+      ).toBe(1)
 
       unsubscribe()
 
-      expect(handlers.getSubscribeHandlers('test-channel' as ChannelName).size).toBe(0)
+      expect(
+        handlers.getSubscribeHandlers('test-channel' as ChannelName).size,
+      ).toBe(0)
     })
   })
 
@@ -278,7 +290,9 @@ describe('ChannelRef', () => {
 
       channelRef.onUnsubscribe(handler)
 
-      const registered = handlers.getUnsubscribeHandlers('test-channel' as ChannelName)
+      const registered = handlers.getUnsubscribeHandlers(
+        'test-channel' as ChannelName,
+      )
       expect(registered.size).toBe(1)
     })
 
@@ -287,11 +301,15 @@ describe('ChannelRef', () => {
 
       const unsubscribe = channelRef.onUnsubscribe(handler)
 
-      expect(handlers.getUnsubscribeHandlers('test-channel' as ChannelName).size).toBe(1)
+      expect(
+        handlers.getUnsubscribeHandlers('test-channel' as ChannelName).size,
+      ).toBe(1)
 
       unsubscribe()
 
-      expect(handlers.getUnsubscribeHandlers('test-channel' as ChannelName).size).toBe(0)
+      expect(
+        handlers.getUnsubscribeHandlers('test-channel' as ChannelName).size,
+      ).toBe(0)
     })
   })
 
@@ -366,7 +384,9 @@ describe('ChannelRef', () => {
 
       const client = createMockConnection('client-1')
 
-      await expect(channelRef.handleSubscribe(client)).rejects.toThrow('Reject subscription')
+      await expect(channelRef.handleSubscribe(client)).rejects.toThrow(
+        'Reject subscription',
+      )
     })
   })
 

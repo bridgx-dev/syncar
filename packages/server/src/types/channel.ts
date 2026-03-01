@@ -10,11 +10,7 @@ import type {
   IClientConnection,
   IPublishOptions,
 } from './base'
-import type {
-  ChannelName,
-  SubscriberId,
-  Timestamp,
-} from './common'
+import type { ChannelName, SubscriberId, Timestamp } from './common'
 import type { DataMessage } from './message'
 
 // ============================================================
@@ -264,8 +260,10 @@ export type IMulticastTransport<T> = IChannelTransport<T>
  * @template T - Type of data published on this channel
  * @template N - Type of the channel name
  */
-export declare abstract class BaseChannel<T = unknown, N extends ChannelName = ChannelName>
-  implements IChannel<T> {
+export declare abstract class BaseChannel<
+  T = unknown,
+  N extends ChannelName = ChannelName,
+> implements IChannel<T> {
   /**
    * Channel name
    */
@@ -278,7 +276,11 @@ export declare abstract class BaseChannel<T = unknown, N extends ChannelName = C
    * @param registry - Client registry for connection lookups
    * @param chunkSize - Maximum number of subscribers to process in a single chunk
    */
-  constructor(name: N, registry: import('./client').IClientRegistry, chunkSize?: number)
+  constructor(
+    name: N,
+    registry: import('./client').IClientRegistry,
+    chunkSize?: number,
+  )
 
   /**
    * Get the number of subscribers
@@ -304,17 +306,27 @@ export declare abstract class BaseChannel<T = unknown, N extends ChannelName = C
    * @param options - Optional publish options
    * @returns Array of client IDs
    */
-  protected abstract getTargetClients(options?: IPublishOptions): readonly string[]
+  protected abstract getTargetClients(
+    options?: IPublishOptions,
+  ): readonly string[]
 
   /**
    * Internal helper to publish to a set of clients synchronously
    */
-  protected publishToClients(data: T, clientIds: readonly string[], options?: IPublishOptions): void
+  protected publishToClients(
+    data: T,
+    clientIds: readonly string[],
+    options?: IPublishOptions,
+  ): void
 
   /**
    * Publish data to clients in chunks using setImmediate
    */
-  protected publishInChunks(data: T, clientIds: readonly string[], options?: IPublishOptions): void
+  protected publishInChunks(
+    data: T,
+    clientIds: readonly string[],
+    options?: IPublishOptions,
+  ): void
 }
 
 /**
@@ -330,7 +342,8 @@ export declare abstract class BaseChannel<T = unknown, N extends ChannelName = C
  */
 export declare class BroadcastChannel<T = unknown>
   extends BaseChannel<T, '__broadcast__'>
-  implements IBroadcastTransport<T> {
+  implements IBroadcastTransport<T>
+{
   /**
    * Create a new BroadcastChannel
    *
@@ -371,7 +384,8 @@ export declare class BroadcastChannel<T = unknown>
  */
 export declare class ChannelRef<T = unknown>
   extends BaseChannel<T>
-  implements IChannelTransport<T> {
+  implements IChannelTransport<T>
+{
   /**
    * Create a new ChannelRef
    *
@@ -390,7 +404,7 @@ export declare class ChannelRef<T = unknown>
     handlers: import('./handler-registry').HandlerRegistry,
     subscribeFn: (clientId: string) => boolean,
     unsubscribeFn: (clientId: string) => boolean,
-    chunkSize?: number
+    chunkSize?: number,
   )
 
   /**
@@ -448,7 +462,11 @@ export declare class ChannelRef<T = unknown>
    * @param client - The client that sent the message
    * @param message - The original data message
    */
-  receive(data: T, client: IClientConnection, message: DataMessage<T>): Promise<void>
+  receive(
+    data: T,
+    client: IClientConnection,
+    message: DataMessage<T>,
+  ): Promise<void>
 
   /**
    * Register a handler for new subscriptions

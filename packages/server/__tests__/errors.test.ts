@@ -350,8 +350,13 @@ describe('Errors', () => {
     })
 
     it('should format with custom action type', () => {
-      const error = new MiddlewareRejectionError('Not allowed', 'subscribe' as const)
-      expect(error.toString()).toBe('[MiddlewareRejectionError:subscribe] Not allowed')
+      const error = new MiddlewareRejectionError(
+        'Not allowed',
+        'subscribe' as const,
+      )
+      expect(error.toString()).toBe(
+        '[MiddlewareRejectionError:subscribe] Not allowed',
+      )
     })
   })
 
@@ -400,7 +405,9 @@ describe('Errors', () => {
       )
 
       const str = error.toString()
-      expect(str).toBe('[MiddlewareExecutionError] db-middleware failed during message: Database connection failed')
+      expect(str).toBe(
+        '[MiddlewareExecutionError] db-middleware failed during message: Database connection failed',
+      )
     })
 
     it('should getCause return original error', () => {

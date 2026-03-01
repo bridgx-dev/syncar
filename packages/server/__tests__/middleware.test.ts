@@ -5,7 +5,10 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { MiddlewareManager } from '../src/middleware/index.js'
-import { MiddlewareRejectionError, MiddlewareExecutionError } from '../src/errors/index.js'
+import {
+  MiddlewareRejectionError,
+  MiddlewareExecutionError,
+} from '../src/errors/index.js'
 import {
   createAuthMiddleware,
   createLoggingMiddleware,
@@ -52,7 +55,7 @@ describe('MiddlewareManager', () => {
     })
 
     it('should remove middleware', () => {
-      const middleware = async () => { }
+      const middleware = async () => {}
       manager.use(middleware)
 
       expect(manager.remove(middleware)).toBe(true)
@@ -60,8 +63,8 @@ describe('MiddlewareManager', () => {
     })
 
     it('should clear all middleware', async () => {
-      manager.use(async () => { })
-      manager.use(async () => { })
+      manager.use(async () => {})
+      manager.use(async () => {})
 
       manager.clear()
 
@@ -72,8 +75,8 @@ describe('MiddlewareManager', () => {
     it('should get middleware count', () => {
       expect(manager.getCount()).toBe(0)
 
-      manager.use(async () => { })
-      manager.use(async () => { })
+      manager.use(async () => {})
+      manager.use(async () => {})
 
       expect(manager.getCount()).toBe(2)
     })
@@ -81,7 +84,7 @@ describe('MiddlewareManager', () => {
     it('should check if has middleware', () => {
       expect(manager.hasMiddleware()).toBe(false)
 
-      manager.use(async () => { })
+      manager.use(async () => {})
 
       expect(manager.hasMiddleware()).toBe(true)
     })
@@ -270,7 +273,9 @@ describe('MiddlewareManager', () => {
         expect(true).toBe(false) // Should not reach here
       } catch (error) {
         expect(error).toBeInstanceOf(MiddlewareExecutionError)
-        expect((error as MiddlewareExecutionError).cause?.message).toBe('string error')
+        expect((error as MiddlewareExecutionError).cause?.message).toBe(
+          'string error',
+        )
       }
     })
 
@@ -466,9 +471,9 @@ describe('Middleware Factories', () => {
         timestamp: Date.now(),
       }
 
-      await expect(
-        manager.executeMessage(mockClient, message),
-      ).rejects.toThrow('Authentication token required')
+      await expect(manager.executeMessage(mockClient, message)).rejects.toThrow(
+        'Authentication token required',
+      )
     })
 
     it('should reject invalid token', async () => {
@@ -519,7 +524,10 @@ describe('Middleware Factories', () => {
 
       await manager.executeMessage(mockClient, message)
 
-      expect((mockClient as any).user).toEqual({ userId: 'user-123', role: 'admin' })
+      expect((mockClient as any).user).toEqual({
+        userId: 'user-123',
+        role: 'admin',
+      })
     })
 
     it('should only check specified actions', async () => {
@@ -539,7 +547,12 @@ describe('Middleware Factories', () => {
 
   describe('createLoggingMiddleware', () => {
     it('should log connections when enabled', async () => {
-      const logger = { log: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+      const logger = {
+        log: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+      }
       const middleware = createLoggingMiddleware({
         actions: ['connect'],
         logger,
@@ -558,7 +571,12 @@ describe('Middleware Factories', () => {
     })
 
     it('should log messages when enabled', async () => {
-      const logger = { log: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+      const logger = {
+        log: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+      }
       const middleware = createLoggingMiddleware({
         actions: ['message'],
         logger,
@@ -583,7 +601,12 @@ describe('Middleware Factories', () => {
     })
 
     it('should log subscriptions when enabled', async () => {
-      const logger = { log: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+      const logger = {
+        log: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+      }
       const middleware = createLoggingMiddleware({
         actions: ['subscribe'],
         logger,
@@ -596,13 +619,16 @@ describe('Middleware Factories', () => {
       expect(logger.warn).toHaveBeenCalledWith(
         expect.stringContaining('subscribe'),
       )
-      expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('chat'),
-      )
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('chat'))
     })
 
     it('should use custom format function', async () => {
-      const logger = { log: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+      const logger = {
+        log: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+      }
       const middleware = createLoggingMiddleware({
         logger,
         logLevel: 'log',
@@ -616,7 +642,12 @@ describe('Middleware Factories', () => {
     })
 
     it('should only log specified actions', async () => {
-      const logger = { log: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+      const logger = {
+        log: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+      }
       const middleware = createLoggingMiddleware({
         logger,
         logLevel: 'log',
@@ -682,9 +713,9 @@ describe('Middleware Factories', () => {
       }
 
       // 4th message should be rejected
-      await expect(
-        manager.executeMessage(mockClient, message),
-      ).rejects.toThrow(MiddlewareRejectionError)
+      await expect(manager.executeMessage(mockClient, message)).rejects.toThrow(
+        MiddlewareRejectionError,
+      )
     })
 
     it('should use custom getMessageId', async () => {
@@ -709,9 +740,9 @@ describe('Middleware Factories', () => {
       await manager.executeMessage(mockClient, message)
 
       // Should reject because shared ID exceeded limit
-      await expect(
-        manager.executeMessage(mockClient, message),
-      ).rejects.toThrow(MiddlewareRejectionError)
+      await expect(manager.executeMessage(mockClient, message)).rejects.toThrow(
+        MiddlewareRejectionError,
+      )
     })
 
     it('should only rate limit specified actions', async () => {
@@ -799,10 +830,12 @@ describe('Middleware Factories', () => {
 
       // Middleware should have cleanup method
       expect((middleware as { cleanup?: () => void }).cleanup).toBeDefined()
-      expect(typeof (middleware as { cleanup?: () => void }).cleanup).toBe('function')
+      expect(typeof (middleware as { cleanup?: () => void }).cleanup).toBe(
+        'function',
+      )
 
-        // Call cleanup - should not throw
-        ; (middleware as { cleanup?: () => void }).cleanup!()
+      // Call cleanup - should not throw
+      ;(middleware as { cleanup?: () => void }).cleanup!()
 
       // Store should be cleared
       const state = getRateLimitState('client-1')

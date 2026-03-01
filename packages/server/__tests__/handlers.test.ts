@@ -25,7 +25,11 @@ import { CLOSE_CODES } from '../src/config/index.js'
 import { ChannelError, MessageError } from '../src/errors/index.js'
 
 // Helper function to create data messages
-function createDataMessage<T>(channel: string, data: T, id?: string): DataMessage<T> {
+function createDataMessage<T>(
+  channel: string,
+  data: T,
+  id?: string,
+): DataMessage<T> {
   return {
     id: id || `msg-${Date.now()}`,
     type: MessageType.DATA,
@@ -192,7 +196,10 @@ describe('Handlers', () => {
           // Expected error
         }
 
-        expect(connection.socket.close).toHaveBeenCalledWith(4003, 'Connection rejected')
+        expect(connection.socket.close).toHaveBeenCalledWith(
+          4003,
+          'Connection rejected',
+        )
       })
     })
 
@@ -329,7 +336,6 @@ describe('Handlers', () => {
       })
     })
 
-
     describe('handleMessage', () => {
       it('should route message to channel', async () => {
         const connection = createMockConnection('client-1')
@@ -340,7 +346,11 @@ describe('Handlers', () => {
 
         await handler.handleMessage(client, message)
 
-        expect(mockChannel.receive).toHaveBeenCalledWith('Hello', client, message)
+        expect(mockChannel.receive).toHaveBeenCalledWith(
+          'Hello',
+          client,
+          message,
+        )
       })
 
       it('should execute message middleware', async () => {
@@ -402,7 +412,10 @@ describe('Handlers', () => {
         const connection = createMockConnection('client-1')
         const client = registry.register(connection)
 
-        const message: DataMessage<string> = createDataMessage('nonexistent', 'Hello')
+        const message: DataMessage<string> = createDataMessage(
+          'nonexistent',
+          'Hello',
+        )
 
         await expect(
           handlerStrict.handleMessage(client, message),
@@ -420,7 +433,10 @@ describe('Handlers', () => {
         const connection = createMockConnection('client-1')
         const client = registry.register(connection)
 
-        const message: DataMessage<string> = createDataMessage('nonexistent', 'Hello')
+        const message: DataMessage<string> = createDataMessage(
+          'nonexistent',
+          'Hello',
+        )
 
         // Should not throw
         await handlerLenient.handleMessage(client, message)
@@ -447,7 +463,10 @@ describe('Handlers', () => {
       })
 
       it('should return false for non-existent channel when requireChannel is true', () => {
-        const message: DataMessage<string> = createDataMessage('nonexistent', 'Hello')
+        const message: DataMessage<string> = createDataMessage(
+          'nonexistent',
+          'Hello',
+        )
 
         expect(handler.canProcessMessage(message)).toBe(false)
       })
@@ -460,7 +479,10 @@ describe('Handlers', () => {
           options: { requireChannel: false },
         })
 
-        const message: DataMessage<string> = createDataMessage('nonexistent', 'Hello')
+        const message: DataMessage<string> = createDataMessage(
+          'nonexistent',
+          'Hello',
+        )
 
         expect(handlerLenient.canProcessMessage(message)).toBe(true)
       })
@@ -475,9 +497,11 @@ describe('Handlers', () => {
         expect(found).toBe(mockChannel)
       })
 
-
       it('should return undefined for non-existent channel', () => {
-        const message: DataMessage<string> = createDataMessage('nonexistent', 'Hello')
+        const message: DataMessage<string> = createDataMessage(
+          'nonexistent',
+          'Hello',
+        )
 
         const found = handler.getChannelForMessage(message)
 
@@ -544,7 +568,6 @@ describe('Handlers', () => {
       })
     })
 
-
     describe('handleSignal', () => {
       it('should route subscribe signal to handleSubscribe', async () => {
         const connection = createMockConnection('client-1')
@@ -552,7 +575,10 @@ describe('Handlers', () => {
 
         const subscribeSpy = vi.spyOn(handler, 'handleSubscribe')
 
-        const message: SignalMessage = createSignalMessage('chat', SignalType.SUBSCRIBE)
+        const message: SignalMessage = createSignalMessage(
+          'chat',
+          SignalType.SUBSCRIBE,
+        )
 
         await handler.handleSignal(client, message)
 
@@ -566,7 +592,10 @@ describe('Handlers', () => {
 
         const unsubscribeSpy = vi.spyOn(handler, 'handleUnsubscribe')
 
-        const message: SignalMessage = createSignalMessage('chat', SignalType.UNSUBSCRIBE)
+        const message: SignalMessage = createSignalMessage(
+          'chat',
+          SignalType.UNSUBSCRIBE,
+        )
 
         await handler.handleSignal(client, message)
 
@@ -612,9 +641,9 @@ describe('Handlers', () => {
           timestamp: Date.now(),
         }
 
-        await expect(
-          handler.handleSignal(client, message),
-        ).rejects.toThrow(MessageError)
+        await expect(handler.handleSignal(client, message)).rejects.toThrow(
+          MessageError,
+        )
       })
     })
 
@@ -622,11 +651,16 @@ describe('Handlers', () => {
       it('should subscribe client to channel', async () => {
         const connection = createMockConnection('client-1')
         const client = registry.register(connection)
-        const message: SignalMessage = createSignalMessage('chat', SignalType.SUBSCRIBE)
+        const message: SignalMessage = createSignalMessage(
+          'chat',
+          SignalType.SUBSCRIBE,
+        )
 
         await handler.handleSubscribe(client, message)
 
-        expect(registry.isSubscribed('client-1' as any, 'chat' as any)).toBe(true)
+        expect(registry.isSubscribed('client-1' as any, 'chat' as any)).toBe(
+          true,
+        )
         expect(mockChannel.handleSubscribe).toHaveBeenCalledWith(client)
       })
 
@@ -639,7 +673,10 @@ describe('Handlers', () => {
           middlewareSpy(action)
         })
 
-        const message: SignalMessage = createSignalMessage('chat', SignalType.SUBSCRIBE)
+        const message: SignalMessage = createSignalMessage(
+          'chat',
+          SignalType.SUBSCRIBE,
+        )
 
         await handler.handleSubscribe(client, message)
 
@@ -653,7 +690,10 @@ describe('Handlers', () => {
         const eventSpy = vi.fn()
         emitter.on('subscribe', eventSpy)
 
-        const message: SignalMessage = createSignalMessage('chat', SignalType.SUBSCRIBE)
+        const message: SignalMessage = createSignalMessage(
+          'chat',
+          SignalType.SUBSCRIBE,
+        )
 
         await handler.handleSubscribe(client, message)
 
@@ -664,21 +704,23 @@ describe('Handlers', () => {
         const connection = createMockConnection('client-1')
         const client = registry.register(connection)
 
-        const message: SignalMessage = createSignalMessage('chat', SignalType.SUBSCRIBE)
+        const message: SignalMessage = createSignalMessage(
+          'chat',
+          SignalType.SUBSCRIBE,
+        )
 
         await handler.handleSubscribe(client, message)
 
         expect(connection.socket.send).toHaveBeenCalledWith(
           expect.stringContaining('"signal":"subscribed"'),
-          expect.any(Function)
+          expect.any(Function),
         )
       })
 
       it('should throw error for reserved channel', async () => {
-        // Mock reserved channel logic via middleware or similar if needed, 
+        // Mock reserved channel logic via middleware or similar if needed,
         // but here we just test the handler's built-in check
         // Channel created implicitly by subscribe
-
 
         const handlerStrict = new SignalHandler({
           registry,
@@ -690,7 +732,10 @@ describe('Handlers', () => {
         const connection = createMockConnection('client-1')
         const client = registry.register(connection)
 
-        const message: SignalMessage = createSignalMessage('__private__', SignalType.SUBSCRIBE)
+        const message: SignalMessage = createSignalMessage(
+          '__private__',
+          SignalType.SUBSCRIBE,
+        )
 
         const error = await handlerStrict
           .handleSubscribe(client, message)
@@ -713,7 +758,10 @@ describe('Handlers', () => {
         const connection = createMockConnection('client-1')
         const client = registry.register(connection)
 
-        const message: SignalMessage = createSignalMessage('__broadcast__', SignalType.SUBSCRIBE)
+        const message: SignalMessage = createSignalMessage(
+          '__broadcast__',
+          SignalType.SUBSCRIBE,
+        )
 
         await expect(
           handlerWithAllowReserved.handleSubscribe(client, message),
@@ -724,11 +772,14 @@ describe('Handlers', () => {
         const connection = createMockConnection('client-1')
         const client = registry.register(connection)
 
-        const message: SignalMessage = createSignalMessage('nonexistent', SignalType.SUBSCRIBE)
+        const message: SignalMessage = createSignalMessage(
+          'nonexistent',
+          SignalType.SUBSCRIBE,
+        )
 
-        await expect(
-          handler.handleSubscribe(client, message),
-        ).rejects.toThrow(ChannelError)
+        await expect(handler.handleSubscribe(client, message)).rejects.toThrow(
+          ChannelError,
+        )
       })
 
       it('should throw error when registry subscribe fails', async () => {
@@ -739,11 +790,14 @@ describe('Handlers', () => {
           .spyOn(registry, 'subscribe')
           .mockReturnValue(false)
 
-        const message: SignalMessage = createSignalMessage('chat', SignalType.SUBSCRIBE)
+        const message: SignalMessage = createSignalMessage(
+          'chat',
+          SignalType.SUBSCRIBE,
+        )
 
-        await expect(
-          handler.handleSubscribe(client, message),
-        ).rejects.toThrow('Failed to subscribe')
+        await expect(handler.handleSubscribe(client, message)).rejects.toThrow(
+          'Failed to subscribe',
+        )
 
         subscribeSpy.mockRestore()
       })
@@ -754,11 +808,16 @@ describe('Handlers', () => {
         const connection = createMockConnection('client-1')
         const client = registry.register(connection)
         registry.subscribe('client-1' as any, 'chat' as any)
-        const message: SignalMessage = createSignalMessage('chat', SignalType.UNSUBSCRIBE)
+        const message: SignalMessage = createSignalMessage(
+          'chat',
+          SignalType.UNSUBSCRIBE,
+        )
 
         await handler.handleUnsubscribe(client, message)
 
-        expect(registry.isSubscribed('client-1' as any, 'chat' as any)).toBe(false)
+        expect(registry.isSubscribed('client-1' as any, 'chat' as any)).toBe(
+          false,
+        )
         expect(mockChannel.handleUnsubscribe).toHaveBeenCalledWith(client)
       })
 
@@ -772,7 +831,10 @@ describe('Handlers', () => {
           middlewareSpy(action)
         })
 
-        const message: SignalMessage = createSignalMessage('chat', SignalType.UNSUBSCRIBE)
+        const message: SignalMessage = createSignalMessage(
+          'chat',
+          SignalType.UNSUBSCRIBE,
+        )
 
         await handler.handleUnsubscribe(client, message)
 
@@ -787,7 +849,10 @@ describe('Handlers', () => {
         const eventSpy = vi.fn()
         emitter.on('unsubscribe', eventSpy)
 
-        const message: SignalMessage = createSignalMessage('chat', SignalType.UNSUBSCRIBE)
+        const message: SignalMessage = createSignalMessage(
+          'chat',
+          SignalType.UNSUBSCRIBE,
+        )
 
         await handler.handleUnsubscribe(client, message)
 
@@ -799,13 +864,16 @@ describe('Handlers', () => {
         const client = registry.register(connection)
         registry.subscribe('client-1', 'chat')
 
-        const message: SignalMessage = createSignalMessage('chat', SignalType.UNSUBSCRIBE)
+        const message: SignalMessage = createSignalMessage(
+          'chat',
+          SignalType.UNSUBSCRIBE,
+        )
 
         await handler.handleUnsubscribe(client, message)
 
         expect(connection.socket.send).toHaveBeenCalledWith(
           expect.stringContaining('"signal":"unsubscribed"'),
-          expect.any(Function)
+          expect.any(Function),
         )
       })
 
@@ -813,7 +881,10 @@ describe('Handlers', () => {
         const connection = createMockConnection('client-1')
         const client = registry.register(connection)
 
-        const message: SignalMessage = createSignalMessage('chat', SignalType.UNSUBSCRIBE)
+        const message: SignalMessage = createSignalMessage(
+          'chat',
+          SignalType.UNSUBSCRIBE,
+        )
 
         await expect(
           handler.handleUnsubscribe(client, message),
@@ -832,7 +903,7 @@ describe('Handlers', () => {
 
         expect(connection.socket.send).toHaveBeenCalledWith(
           expect.stringContaining('"signal":"pong"'),
-          expect.any(Function)
+          expect.any(Function),
         )
       })
 

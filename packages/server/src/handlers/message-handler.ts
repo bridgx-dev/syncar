@@ -34,7 +34,6 @@ export class MessageHandler {
     }
   }
 
-
   async handleMessage<T = unknown>(
     client: IClientConnection,
     message: DataMessage<T>,
@@ -58,7 +57,9 @@ export class MessageHandler {
 
     if (channel && 'getMiddlewares' in channel) {
       // Append channel-specific middleware securely
-      const channelMiddlewares = (channel as unknown as { getMiddlewares?: () => IMiddleware[] }).getMiddlewares?.()
+      const channelMiddlewares = (
+        channel as unknown as { getMiddlewares?: () => IMiddleware[] }
+      ).getMiddlewares?.()
       if (channelMiddlewares) {
         pipeline = [...pipeline, ...channelMiddlewares]
       }
@@ -91,7 +92,6 @@ export class MessageHandler {
     if (this.options.requireChannel) {
       return !!this.registry.getChannel<T>(message.channel)
     }
-
 
     return true
   }

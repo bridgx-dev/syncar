@@ -5,7 +5,10 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { HandlerRegistry } from '../../src/registry/handler-registry.js'
-import type { IMessageHandler, ILifecycleHandler } from '../../src/types/index.js'
+import type {
+  IMessageHandler,
+  ILifecycleHandler,
+} from '../../src/types/index.js'
 import type { ChannelName, ClientId } from '../../src/types/index.js'
 import type { IClientConnection } from '../../src/types/index.js'
 
@@ -34,7 +37,10 @@ describe('HandlerRegistry', () => {
       const handler1: IMessageHandler = vi.fn()
       const handler2: IMessageHandler = vi.fn()
 
-      const unsubscribe = registry.addMessageHandler('chat' as ChannelName, handler1)
+      const unsubscribe = registry.addMessageHandler(
+        'chat' as ChannelName,
+        handler1,
+      )
 
       expect(registry.getMessageHandlers('chat' as ChannelName).size).toBe(1)
 
@@ -45,7 +51,9 @@ describe('HandlerRegistry', () => {
       unsubscribe()
 
       expect(registry.getMessageHandlers('chat' as ChannelName).size).toBe(1)
-      expect(registry.getMessageHandlers('chat' as ChannelName).has(handler1)).toBe(false)
+      expect(
+        registry.getMessageHandlers('chat' as ChannelName).has(handler1),
+      ).toBe(false)
 
       registry.removeMessageHandler('chat' as ChannelName, handler2)
       expect(registry.getMessageHandlers('chat' as ChannelName).size).toBe(0)
@@ -75,7 +83,10 @@ describe('HandlerRegistry', () => {
       const handler1: ILifecycleHandler = vi.fn()
       const handler2: ILifecycleHandler = vi.fn()
 
-      const unsubscribe = registry.addSubscribeHandler('chat' as ChannelName, handler1)
+      const unsubscribe = registry.addSubscribeHandler(
+        'chat' as ChannelName,
+        handler1,
+      )
 
       expect(registry.getSubscribeHandlers('chat' as ChannelName).size).toBe(1)
 
@@ -85,14 +96,18 @@ describe('HandlerRegistry', () => {
       unsubscribe()
 
       expect(registry.getSubscribeHandlers('chat' as ChannelName).size).toBe(1)
-      expect(registry.getSubscribeHandlers('chat' as ChannelName).has(handler1)).toBe(false)
+      expect(
+        registry.getSubscribeHandlers('chat' as ChannelName).has(handler1),
+      ).toBe(false)
 
       registry.removeSubscribeHandler('chat' as ChannelName, handler2)
       expect(registry.getSubscribeHandlers('chat' as ChannelName).size).toBe(0)
     })
 
     it('should return empty set for channel with no handlers', () => {
-      const handlers = registry.getSubscribeHandlers('nonexistent' as ChannelName)
+      const handlers = registry.getSubscribeHandlers(
+        'nonexistent' as ChannelName,
+      )
 
       expect(handlers).toBeInstanceOf(Set)
       expect(handlers.size).toBe(0)
@@ -104,24 +119,39 @@ describe('HandlerRegistry', () => {
       const handler1: ILifecycleHandler = vi.fn()
       const handler2: ILifecycleHandler = vi.fn()
 
-      const unsubscribe = registry.addUnsubscribeHandler('chat' as ChannelName, handler1)
+      const unsubscribe = registry.addUnsubscribeHandler(
+        'chat' as ChannelName,
+        handler1,
+      )
 
-      expect(registry.getUnsubscribeHandlers('chat' as ChannelName).size).toBe(1)
+      expect(registry.getUnsubscribeHandlers('chat' as ChannelName).size).toBe(
+        1,
+      )
 
       registry.addUnsubscribeHandler('chat' as ChannelName, handler2)
-      expect(registry.getUnsubscribeHandlers('chat' as ChannelName).size).toBe(2)
+      expect(registry.getUnsubscribeHandlers('chat' as ChannelName).size).toBe(
+        2,
+      )
 
       unsubscribe()
 
-      expect(registry.getUnsubscribeHandlers('chat' as ChannelName).size).toBe(1)
-      expect(registry.getUnsubscribeHandlers('chat' as ChannelName).has(handler1)).toBe(false)
+      expect(registry.getUnsubscribeHandlers('chat' as ChannelName).size).toBe(
+        1,
+      )
+      expect(
+        registry.getUnsubscribeHandlers('chat' as ChannelName).has(handler1),
+      ).toBe(false)
 
       registry.removeUnsubscribeHandler('chat' as ChannelName, handler2)
-      expect(registry.getUnsubscribeHandlers('chat' as ChannelName).size).toBe(0)
+      expect(registry.getUnsubscribeHandlers('chat' as ChannelName).size).toBe(
+        0,
+      )
     })
 
     it('should return empty set for channel with no handlers', () => {
-      const handlers = registry.getUnsubscribeHandlers('nonexistent' as ChannelName)
+      const handlers = registry.getUnsubscribeHandlers(
+        'nonexistent' as ChannelName,
+      )
 
       expect(handlers).toBeInstanceOf(Set)
       expect(handlers.size).toBe(0)
@@ -140,13 +170,17 @@ describe('HandlerRegistry', () => {
 
       expect(registry.getMessageHandlers('chat' as ChannelName).size).toBe(1)
       expect(registry.getSubscribeHandlers('chat' as ChannelName).size).toBe(1)
-      expect(registry.getUnsubscribeHandlers('chat' as ChannelName).size).toBe(1)
+      expect(registry.getUnsubscribeHandlers('chat' as ChannelName).size).toBe(
+        1,
+      )
 
       registry.clearChannel('chat' as ChannelName)
 
       expect(registry.getMessageHandlers('chat' as ChannelName).size).toBe(0)
       expect(registry.getSubscribeHandlers('chat' as ChannelName).size).toBe(0)
-      expect(registry.getUnsubscribeHandlers('chat' as ChannelName).size).toBe(0)
+      expect(registry.getUnsubscribeHandlers('chat' as ChannelName).size).toBe(
+        0,
+      )
     })
 
     it('should not affect other channels', () => {
@@ -286,7 +320,10 @@ describe('HandlerRegistry', () => {
     it('should return function that removes handler', () => {
       const handler: IMessageHandler = vi.fn()
 
-      const unsubscribe = registry.addMessageHandler('chat' as ChannelName, handler)
+      const unsubscribe = registry.addMessageHandler(
+        'chat' as ChannelName,
+        handler,
+      )
 
       expect(registry.getMessageHandlers('chat' as ChannelName).size).toBe(1)
 
@@ -299,14 +336,24 @@ describe('HandlerRegistry', () => {
       const handler1 = vi.fn()
       const handler2 = vi.fn()
 
-      const unsubscribe1 = registry.addMessageHandler('chat' as ChannelName, handler1)
-      const unsubscribe2 = registry.addMessageHandler('chat' as ChannelName, handler2)
+      const unsubscribe1 = registry.addMessageHandler(
+        'chat' as ChannelName,
+        handler1,
+      )
+      const unsubscribe2 = registry.addMessageHandler(
+        'chat' as ChannelName,
+        handler2,
+      )
 
       unsubscribe1()
 
       expect(registry.getMessageHandlers('chat' as ChannelName).size).toBe(1)
-      expect(registry.getMessageHandlers('chat' as ChannelName).has(handler1)).toBe(false)
-      expect(registry.getMessageHandlers('chat' as ChannelName).has(handler2)).toBe(true)
+      expect(
+        registry.getMessageHandlers('chat' as ChannelName).has(handler1),
+      ).toBe(false)
+      expect(
+        registry.getMessageHandlers('chat' as ChannelName).has(handler2),
+      ).toBe(true)
 
       unsubscribe2()
 
@@ -315,7 +362,10 @@ describe('HandlerRegistry', () => {
 
     it('should be idempotent - calling unsubscribe multiple times is safe', () => {
       const handler = vi.fn()
-      const unsubscribe = registry.addMessageHandler('chat' as ChannelName, handler)
+      const unsubscribe = registry.addMessageHandler(
+        'chat' as ChannelName,
+        handler,
+      )
 
       unsubscribe()
       unsubscribe()

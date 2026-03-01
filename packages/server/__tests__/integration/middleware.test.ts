@@ -6,10 +6,19 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { EventEmitter } from 'node:events'
 import { SynnelServer } from '../../src/server/index.js'
-import { createAuthMiddleware, createLoggingMiddleware, createRateLimitMiddleware, createChannelWhitelistMiddleware, clearRateLimitStore } from '../../src/middleware/index.js'
+import {
+  createAuthMiddleware,
+  createLoggingMiddleware,
+  createRateLimitMiddleware,
+  createChannelWhitelistMiddleware,
+  clearRateLimitStore,
+} from '../../src/middleware/index.js'
 import { clearRateLimitStore as clearRateLimitStoreFromFactories } from '../../src/middleware/factories.js'
 import type { ISynnelServer, IServerTransport } from '../../src/types/index.js'
-import type { IClientConnection, IServerEventMap } from '../../src/types/index.js'
+import type {
+  IClientConnection,
+  IServerEventMap,
+} from '../../src/types/index.js'
 import type { ClientId } from '../../src/types/index.js'
 import { MessageType, SignalType } from '../../src/types/index.js'
 
@@ -204,7 +213,12 @@ describe('Middleware Integration Tests', () => {
 
   describe('logging middleware integration', () => {
     it('should log connections when enabled', async () => {
-      const logger = { log: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+      const logger = {
+        log: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+      }
 
       const loggingMiddleware = createLoggingMiddleware({
         logger,
@@ -223,7 +237,12 @@ describe('Middleware Integration Tests', () => {
     })
 
     it('should log messages when enabled', async () => {
-      const logger = { log: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+      const logger = {
+        log: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+      }
 
       const loggingMiddleware = createLoggingMiddleware({
         logger,
@@ -257,7 +276,12 @@ describe('Middleware Integration Tests', () => {
     })
 
     it('should log subscriptions when enabled', async () => {
-      const logger = { log: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+      const logger = {
+        log: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+      }
 
       const loggingMiddleware = createLoggingMiddleware({
         logger,
@@ -287,7 +311,12 @@ describe('Middleware Integration Tests', () => {
     })
 
     it('should support custom format function', async () => {
-      const logger = { log: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
+      const logger = {
+        log: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+      }
 
       const loggingMiddleware = createLoggingMiddleware({
         logger,

@@ -126,10 +126,7 @@ export type {
 // ============================================================
 // HANDLER REGISTRY TYPES
 // ============================================================
-export type {
-  HandlerRegistry,
-  HandlerRegistryState,
-} from './handler-registry'
+export type { HandlerRegistry, HandlerRegistryState } from './handler-registry'
 
 // ============================================================
 // RE-EXPORT SHARED TYPES
