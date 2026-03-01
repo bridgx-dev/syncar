@@ -406,3 +406,220 @@ export type IComposedMiddleware = (
 export type IActionMiddleware<T extends IMiddlewareAction> = (
   context: IMiddlewareContext & { action: T },
 ) => void | Promise<void>
+
+// ============================================================
+// MIDDLEWARE MANAGER CLASS
+// ============================================================
+
+/**
+ * Middleware Manager - manages and executes middleware functions
+ *
+ * Middleware functions are executed in an onion pattern (recursive composition).
+ * Each middleware calls next() to pass control to the next layer.
+ *
+ * @example
+ * ```ts
+ * const manager = new MiddlewareManager()
+ *
+ * // Register middleware
+ * manager.use(async (context, next) => {
+ *   console.log('Before')
+ *   await next()
+ *   console.log('After')
+ * })
+ *
+ * // Execute middleware
+ * await manager.executeConnection(client, 'connect')
+ * ```
+ */
+export declare class MiddlewareManager implements IMiddlewareManager, IMiddlewareContextFactory {
+  protected readonly middlewares: IMiddleware[]
+
+  /**
+   * Compose multiple middleware functions into a single execution function
+   *
+   * @param middlewares - Array of middleware functions
+   * @returns A composed function that runs the onion
+   *
+   * @remarks
+   * The compose function creates an onion-like execution pattern where
+   * each middleware wraps the next. Middleware can modify the context,
+   * reject the action, or pass control to the next layer.
+   */
+  compose(
+    middlewares: IMiddleware[]
+  ): (context: IMiddlewareContext, next?: () => Promise<void>) => Promise<void>
+
+  /**
+   * Register a middleware function
+   *
+   * @param middleware - Middleware function to register
+   *
+   * @example
+   * ```ts
+   * manager.use(async (context, next) => {
+   *   console.log('Processing:', context.action)
+   *   await next()
+   * })
+   * ```
+   */
+  use(middleware: IMiddleware): void
+
+  /**
+   * Remove a middleware function
+   *
+   * @param middleware - Middleware function to remove
+   * @returns true if removed, false if not found
+   */
+  remove(middleware: IMiddleware): boolean
+
+  /**
+   * Clear all middleware
+   *
+   * @example
+   * ```ts
+   * manager.clear()
+   * ```
+   */
+  clear(): void
+
+  /**
+   * Get all registered middleware
+   *
+   * @returns Array of registered middleware functions
+   */
+  getMiddlewares(): IMiddleware[]
+
+  /**
+   * Execute middleware for a connection action
+   *
+   * @param client - The client connection
+   * @param action - The connection action ('connect' | 'disconnect')
+   *
+   * @throws {MiddlewareRejectionError} If middleware rejects the action
+   * @throws {MiddlewareExecutionError} If middleware throws an unexpected error
+   */
+  executeConnection(client: IClientConnection, action: 'connect' | 'disconnect'): Promise<void>
+
+  /**
+   * Execute middleware for a message action
+   *
+   * @param client - The client connection
+   * @param message - The message being processed
+   *
+   * @throws {MiddlewareRejectionError} If middleware rejects the action
+   * @throws {MiddlewareExecutionError} If middleware throws an unexpected error
+   */
+  executeMessage(client: IClientConnection, message: Message): Promise<void>
+
+  /**
+   * Execute middleware for a subscribe action
+   *
+   * @param client - The client connection
+   * @param channel - The channel name
+   * @param finalHandler - Optional final handler to execute after middleware
+   *
+   * @throws {MiddlewareRejectionError} If middleware rejects the action
+   * @throws {MiddlewareExecutionError} If middleware throws an unexpected error
+   */
+  executeSubscribe(
+    client: IClientConnection,
+    channel: ChannelName,
+    finalHandler?: () => Promise<void>
+  ): Promise<void>
+
+  /**
+   * Execute middleware for an unsubscribe action
+   *
+   * @param client - The client connection
+   * @param channel - The channel name
+   * @param finalHandler - Optional final handler to execute after middleware
+   *
+   * @throws {MiddlewareRejectionError} If middleware rejects the action
+   * @throws {MiddlewareExecutionError} If middleware throws an unexpected error
+   */
+  executeUnsubscribe(
+    client: IClientConnection,
+    channel: ChannelName,
+    finalHandler?: () => Promise<void>
+  ): Promise<void>
+
+  /**
+   * Execute a chain of middlewares with a context
+   * Useful for internal manual triggers
+   *
+   * @param context - The middleware context
+   * @param middlewares - Array of middleware to execute (defaults to all registered)
+   * @param finalHandler - Optional final handler to execute after middleware
+   *
+   * @throws {MiddlewareRejectionError} If middleware rejects the action
+   * @throws {MiddlewareExecutionError} If middleware throws an unexpected error
+   */
+  execute(
+    context: IMiddlewareContext,
+    middlewares?: IMiddleware[],
+    finalHandler?: () => Promise<void>
+  ): Promise<void>
+
+  /**
+   * Create context for a connection action
+   *
+   * @param client - The client connection
+   * @param action - The connection action
+   * @returns Middleware context for connection actions
+   */
+  createConnectionContext(
+    client: IClientConnection,
+    action: 'connect' | 'disconnect'
+  ): IMiddlewareContext
+
+  /**
+   * Create context for a message action
+   *
+   * @param client - The client connection
+   * @param message - The message being processed
+   * @returns Middleware context for message actions
+   */
+  createMessageContext(
+    client: IClientConnection,
+    message: Message
+  ): IMiddlewareContext
+
+  /**
+   * Create context for a subscribe action
+   *
+   * @param client - The client connection
+   * @param channel - The channel name
+   * @returns Middleware context for subscribe actions
+   */
+  createSubscribeContext(
+    client: IClientConnection,
+    channel: ChannelName
+  ): IMiddlewareContext
+
+  /**
+   * Create context for an unsubscribe action
+   *
+   * @param client - The client connection
+   * @param channel - The channel name
+   * @returns Middleware context for unsubscribe actions
+   */
+  createUnsubscribeContext(
+    client: IClientConnection,
+    channel: ChannelName
+  ): IMiddlewareContext
+
+  /**
+   * Get the number of registered middleware
+   *
+   * @returns Count of registered middleware functions
+   */
+  getCount(): number
+
+  /**
+   * Check if any middleware is registered
+   *
+   * @returns true if at least one middleware is registered
+   */
+  hasMiddleware(): boolean
+}

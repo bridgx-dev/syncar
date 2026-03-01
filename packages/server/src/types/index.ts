@@ -69,6 +69,7 @@ export type {
 // CLIENT TYPES
 // ============================================================
 export type { IClientRegistry, IDisconnectionEvent } from './client'
+export type { ClientRegistry } from './client'
 
 // ============================================================
 // CHANNEL TYPES
@@ -79,6 +80,7 @@ export type {
   IBroadcastTransport,
   IMulticastTransport,
 } from './channel'
+export type { BaseChannel, BroadcastChannel, ChannelRef } from './channel'
 
 // ============================================================
 // MIDDLEWARE TYPES
@@ -94,6 +96,7 @@ export type {
   IComposedMiddleware,
   IActionMiddleware,
 } from './middleware'
+export type { MiddlewareManager } from './middleware'
 
 // ============================================================
 // SERVER CONFIG TYPES
@@ -106,6 +109,27 @@ export type {
   IServerStats,
   ISynnelServer,
 } from './server'
+export type { SynnelServer } from './server'
+
+// ============================================================
+// HANDLER TYPES
+// ============================================================
+export type {
+  MessageHandler,
+  MessageHandlerOptions,
+  SignalHandler,
+  SignalHandlerOptions,
+  ConnectionHandler,
+  ConnectionHandlerOptions,
+} from './handlers'
+
+// ============================================================
+// HANDLER REGISTRY TYPES
+// ============================================================
+export type {
+  HandlerRegistry,
+  HandlerRegistryState,
+} from './handler-registry'
 
 // ============================================================
 // RE-EXPORT SHARED TYPES

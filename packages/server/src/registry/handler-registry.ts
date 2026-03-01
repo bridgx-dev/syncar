@@ -1,26 +1,12 @@
-/**
- * Handler Registry
- * Manages channel handlers separately from data storage.
- */
-
 import type { IMessageHandler, ILifecycleHandler } from '../types'
 import type { ChannelName } from '../types'
 
-/**
- * Handler registry state
- */
 export interface HandlerRegistryState {
   messageHandlers: Map<ChannelName, Set<IMessageHandler<unknown>>>
   subscribeHandlers: Map<ChannelName, Set<ILifecycleHandler>>
   unsubscribeHandlers: Map<ChannelName, Set<ILifecycleHandler>>
 }
 
-/**
- * Handler Registry - manages channel event handlers
- *
- * Handlers are stored separately from channel data for better organization
- * and to enable centralized handler management.
- */
 export class HandlerRegistry {
   private readonly state: HandlerRegistryState = {
     messageHandlers: new Map(),

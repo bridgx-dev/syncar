@@ -1,12 +1,3 @@
-/**
- * Client Registry
- * Manages the lifecycle and subscriptions of connected clients.
- *
- * Uses bidirectional index for efficient lookups:
- * - subscriptions: ClientId → Channels (for disconnect cleanup)
- * - channels: ChannelName → Subscribers (for broadcasting)
- */
-
 import type {
   IClientRegistry,
   IClientConnection,
@@ -16,41 +7,16 @@ import type {
 } from '../types'
 import { HandlerRegistry } from './handler-registry'
 
-/**
- * Client Registry - manages connected clients and their subscriptions
- */
 export class ClientRegistry implements IClientRegistry {
-  /**
-   * Shared map of all connected clients by ID
-   */
   public readonly connections: Map<ClientId, IClientConnection> = new Map()
 
-  /**
-   * Client → Channels mapping (forward index)
-   * Used for efficient disconnect cleanup
-   */
   private readonly subscriptions: Map<ClientId, Set<ChannelName>> = new Map()
 
-  /**
-   * Channel → Subscribers mapping (reverse index)
-   * Used for efficient broadcasting
-   */
   private readonly channels: Map<ChannelName, Set<ClientId>> = new Map()
 
-  /**
-   * Handler registry for channel event handlers
-   */
   public readonly handlers: HandlerRegistry = new HandlerRegistry()
 
-  /**
-   * Internal map of channel instances
-   */
   private readonly channelInstances: Map<ChannelName, IChannel<any>> = new Map()
-
-
-  // ============================================================
-  // CLIENT REGISTRATION
-  // ============================================================
 
   register(connection: IClientConnection): IClientConnection {
     this.connections.set(connection.id, connection)

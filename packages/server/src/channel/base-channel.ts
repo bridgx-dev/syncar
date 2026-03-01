@@ -1,8 +1,3 @@
-/**
- * Base Channel
- * Abstract base class for all channel types providing common publishing logic.
- */
-
 import type {
     IChannel,
     ChannelName,
@@ -12,10 +7,6 @@ import type {
 } from '../types'
 import { createDataMessage } from '../lib'
 
-/**
- * Base Channel implementation
- * Handles the complexities of chunked publishing and filtering.
- */
 export abstract class BaseChannel<T = unknown, N extends ChannelName = ChannelName>
     implements IChannel<T> {
     constructor(
@@ -24,22 +15,10 @@ export abstract class BaseChannel<T = unknown, N extends ChannelName = ChannelNa
         protected readonly chunkSize: number = 500,
     ) { }
 
-    /**
-     * Get the number of subscribers
-     */
     abstract get subscriberCount(): number
 
-    /**
-     * Check if channel is empty
-     */
     abstract isEmpty(): boolean
 
-    /**
-     * Publish data to subscribers
-     *
-     * @param data - The data to publish
-     * @param options - Optional publish options (to, exclude)
-     */
     publish(data: T, options?: IPublishOptions): void {
         const clients = this.getTargetClients(options)
 
@@ -50,17 +29,8 @@ export abstract class BaseChannel<T = unknown, N extends ChannelName = ChannelNa
         }
     }
 
-    /**
-     * Get the list of client IDs that should receive the message
-     *
-     * @param options - Optional publish options
-     * @returns Array of client IDs
-     */
     protected abstract getTargetClients(options?: IPublishOptions): ClientId[]
 
-    /**
-     * Internal helper to publish to a set of clients synchronously
-     */
     protected publishToClients(
         data: T,
         clientIds: ClientId[],
@@ -84,9 +54,6 @@ export abstract class BaseChannel<T = unknown, N extends ChannelName = ChannelNa
         }
     }
 
-    /**
-     * Publish data to clients in chunks using setImmediate
-     */
     protected publishInChunks(
         data: T,
         clientIds: ClientId[],

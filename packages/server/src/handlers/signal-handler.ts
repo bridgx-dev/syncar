@@ -1,8 +1,3 @@
-/**
- * Signal Handler
- * Processes signal messages (SUBSCRIBE, UNSUBSCRIBE, PING, PONG).
- */
-
 import type {
   IClientRegistry,
   IClientConnection,
@@ -17,50 +12,18 @@ import { ChannelError, MessageError } from '../errors'
 import { BROADCAST_CHANNEL } from '../config'
 import { isReservedChannelName } from '../lib'
 
-/**
- * Signal handler options
- */
 export interface SignalHandlerOptions {
-  /**
-   * Whether to require a valid channel for subscription and unsubscription
-   * @default false
-   */
   requireChannel?: boolean
-
-
-  /**
-   * Whether to allow clients to subscribe to reserved channels (starting with '__')
-   * @default false
-   */
   allowReservedChannels?: boolean
-
-  /**
-   * Whether to send SUBSCRIBED/UNSUBSCRIBED acknowledgment messages
-   * @default true
-   */
   sendAcknowledgments?: boolean
-
-  /**
-   * Whether to automatically respond to PING with PONG
-   * @default true
-   */
   autoRespondToPing?: boolean
 }
 
-
-
-/**
- * Signal Handler
- * Processes signal messages from clients.
- */
 export class SignalHandler {
   private readonly registry: IClientRegistry
   private readonly middleware: IMiddlewareManager
   private readonly options: Required<SignalHandlerOptions>
 
-  /**
-   * Create a new signal handler
-   */
   constructor(dependencies: {
     registry: IClientRegistry
     middleware: IMiddlewareManager
@@ -80,9 +43,6 @@ export class SignalHandler {
   }
 
 
-  /**
-   * Handle a signal message from a client
-   */
   async handleSignal(
     client: IClientConnection,
     message: SignalMessage,
@@ -126,9 +86,6 @@ export class SignalHandler {
     await this.middleware.execute(ctx, this.middleware.getMiddlewares(), kernel)
   }
 
-  /**
-   * Handle SUBSCRIBE signal
-   */
   async handleSubscribe(
     client: IClientConnection,
     message: SignalMessage,
@@ -188,9 +145,6 @@ export class SignalHandler {
     }
   }
 
-  /**
-   * Handle UNSUBSCRIBE signal
-   */
   async handleUnsubscribe(
     client: IClientConnection,
     message: SignalMessage,
@@ -227,9 +181,6 @@ export class SignalHandler {
     }
   }
 
-  /**
-   * Handle PING signal
-   */
   async handlePing(
     client: IClientConnection,
     message: SignalMessage,
@@ -249,9 +200,6 @@ export class SignalHandler {
     }
   }
 
-  /**
-   * Handle PONG signal
-   */
   async handlePong(
     client: IClientConnection,
     _message: SignalMessage,
@@ -261,9 +209,6 @@ export class SignalHandler {
     client.lastPingAt = Date.now()
   }
 
-  /**
-   * Get handler options
-   */
   getOptions(): Readonly<Required<SignalHandlerOptions>> {
     return this.options
   }

@@ -1,10 +1,3 @@
-/**
- * Middleware Manager
- * Manages registration and execution of middleware functions.
- *
- * @module middleware/middleware-manager
- */
-
 import type {
   IMiddleware,
   IMiddlewareContext,
@@ -17,28 +10,6 @@ import type {
 } from '../types'
 import { MiddlewareRejectionError, MiddlewareExecutionError } from '../errors'
 
-// ============================================================
-// MIDDLEWARE CONTEXT CLASS
-// ============================================================
-
-/**
- * Middleware Context implementation
- * Provides context and control to middleware functions.
- *
- * @example
- * ```ts
- * const context = new MiddlewareContext({
- *   client: client,
- *   action: 'connect'
- * })
- * ```
- */
-/**
- * Middleware Context implementation
- * Provides context and control to middleware functions.
- *
- * @template S - Type of the shared state object
- */
 class MiddlewareContext<S = Record<string, any>>
   implements IMiddlewareContext<S> {
   public readonly state: S = {} as S
@@ -71,67 +42,29 @@ class MiddlewareContext<S = Record<string, any>>
     this.getRejectionReason = this._getRejectionReason.bind(this)
   }
 
-  /**
-   * Reject the action with a reason
-   * Calling this will prevent the action from completing
-   *
-   * @param reason - Human-readable reason for rejection
-   * @throws MiddlewareRejectionError
-   */
   private _reject(reason: string): void {
     this._rejected = true
     this._rejectionReason = reason
     throw new MiddlewareRejectionError(reason, this.action)
   }
 
-  /**
-   * Check if this context was rejected
-   * Used internally by the middleware manager
-   */
   private _isRejected(): boolean {
     return this._rejected
   }
 
-  /**
-   * Get the rejection reason
-   * Used internally by the middleware manager
-   */
   private _getRejectionReason(): string | undefined {
     return this._rejectionReason
   }
 }
 
-// ============================================================
-// MIDDLEWARE MANAGER CLASS
-// ============================================================
-
-/**
- * Middleware Manager - manages and executes middleware functions
- *
- * Middleware functions are executed in an onion pattern (recursive composition).
- * Each middleware calls next() to pass control to the next layer.
- */
 export class MiddlewareManager
   implements IMiddlewareManager, IMiddlewareContextFactory {
-  /**
-   * Registered middleware functions
-   */
   protected readonly middlewares: IMiddleware[] = []
 
-  // ============================================================
-  // MIDDLEWARE REGISTRATION (implements IMiddlewareManager)
-  // ============================================================
-
-  /**
-   * Register a middleware function
-   */
   use(middleware: IMiddleware): void {
     this.middlewares.push(middleware)
   }
 
-  /**
-   * Remove a middleware function
-   */
   remove(middleware: IMiddleware): boolean {
     const index = this.middlewares.indexOf(middleware)
     if (index !== -1) {
@@ -141,30 +74,14 @@ export class MiddlewareManager
     return false
   }
 
-  /**
-   * Clear all middleware
-   */
   clear(): void {
     this.middlewares.length = 0
   }
 
-  /**
-   * Get all registered middleware
-   */
   getMiddlewares(): IMiddleware[] {
     return [...this.middlewares]
   }
 
-  // ============================================================
-  // MIDDLEWARE EXECUTION
-  // ============================================================
-
-  /**
-   * Compose multiple middleware functions into a single execution function
-   *
-   * @param middlewares - Array of middleware functions
-   * @returns A composed function that runs the onion
-   */
   public compose(middlewares: IMiddleware[]): (context: IMiddlewareContext, next?: () => Promise<void>) => Promise<void> {
     return async (context, next) => {
       let index = -1
@@ -202,9 +119,6 @@ export class MiddlewareManager
     }
   }
 
-  /**
-   * Execute middleware for a connection action
-   */
   async executeConnection(
     client: IClientConnection,
     action: 'connect' | 'disconnect',
@@ -213,17 +127,11 @@ export class MiddlewareManager
     await this.compose(this.middlewares)(context)
   }
 
-  /**
-   * Execute middleware for a message action
-   */
   async executeMessage(client: IClientConnection, message: Message): Promise<void> {
     const context = this.createMessageContext(client, message)
     await this.compose(this.middlewares)(context)
   }
 
-  /**
-   * Execute middleware for a subscribe action
-   */
   async executeSubscribe(
     client: IClientConnection,
     channel: ChannelName,
@@ -233,9 +141,6 @@ export class MiddlewareManager
     await this.compose(this.middlewares)(context, finalHandler)
   }
 
-  /**
-   * Execute middleware for an unsubscribe action
-   */
   async executeUnsubscribe(
     client: IClientConnection,
     channel: ChannelName,
@@ -245,10 +150,6 @@ export class MiddlewareManager
     await this.compose(this.middlewares)(context, finalHandler)
   }
 
-  /**
-   * Execute a chain of middlewares with a context
-   * Useful for internal manual triggers
-   */
   async execute(
     context: IMiddlewareContext,
     middlewares: IMiddleware[] = this.middlewares,
@@ -257,13 +158,6 @@ export class MiddlewareManager
     await this.compose(middlewares)(context, finalHandler)
   }
 
-  // ============================================================
-  // CONTEXT FACTORY (implements IMiddlewareContextFactory)
-  // ============================================================
-
-  /**
-   * Create context for a connection action
-   */
   createConnectionContext(
     client: IClientConnection,
     action: 'connect' | 'disconnect',
@@ -274,9 +168,6 @@ export class MiddlewareManager
     })
   }
 
-  /**
-   * Create context for a message action
-   */
   createMessageContext(
     client: IClientConnection,
     message: Message,
@@ -288,9 +179,6 @@ export class MiddlewareManager
     })
   }
 
-  /**
-   * Create context for a subscribe action
-   */
   createSubscribeContext(
     client: IClientConnection,
     channel: ChannelName,
@@ -302,9 +190,6 @@ export class MiddlewareManager
     })
   }
 
-  /**
-   * Create context for an unsubscribe action
-   */
   createUnsubscribeContext(
     client: IClientConnection,
     channel: ChannelName,
@@ -316,16 +201,10 @@ export class MiddlewareManager
     })
   }
 
-  /**
-   * Get the number of registered middleware
-   */
   getCount(): number {
     return this.middlewares.length
   }
 
-  /**
-   * Check if any middleware is registered
-   */
   hasMiddleware(): boolean {
     return this.middlewares.length > 0
   }
