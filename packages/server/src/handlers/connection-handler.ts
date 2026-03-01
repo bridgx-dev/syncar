@@ -8,8 +8,6 @@
 import type {
   IClientRegistry,
   IClientConnection,
-  IEventEmitter,
-  IServerEventMap,
 } from '../types'
 import { CLOSE_CODES } from '../config'
 
@@ -29,17 +27,6 @@ import { CLOSE_CODES } from '../config'
  * ```
  */
 export interface ConnectionHandlerOptions {
-  /**
-   * Whether to emit connection events
-   * @default true
-   */
-  emitConnectionEvent?: boolean
-
-  /**
-   * Whether to emit disconnection events
-   * @default true
-   */
-  emitDisconnectionEvent?: boolean
 
   /**
    * Close code to use when middleware rejects connection
@@ -81,37 +68,16 @@ export interface ConnectionHandlerOptions {
  */
 export class ConnectionHandler {
   private readonly registry: IClientRegistry
-  private readonly emitter: IEventEmitter<IServerEventMap>
   private readonly options: Required<ConnectionHandlerOptions>
 
-  /**
-   * Create a new connection handler
-   *
-   * @param dependencies - Handler dependencies
-   *
-   * @example
-   * ```ts
-   * const handler = new ConnectionHandler({
-   *   registry: clientRegistry,
-   *   middleware: middlewareManager,
-   *   emitter: eventEmitter,
-   *   transport: serverTransport
-   * })
-   * ```
-   */
   constructor(dependencies: {
     registry: IClientRegistry
-    emitter: IEventEmitter<IServerEventMap>
     options?: ConnectionHandlerOptions
   }) {
     this.registry = dependencies.registry
-    this.emitter = dependencies.emitter
 
     // Apply defaults
     this.options = {
-      emitConnectionEvent: dependencies.options?.emitConnectionEvent ?? true,
-      emitDisconnectionEvent:
-        dependencies.options?.emitDisconnectionEvent ?? true,
       rejectionCloseCode:
         dependencies.options?.rejectionCloseCode ?? CLOSE_CODES.REJECTED,
     }
@@ -146,11 +112,6 @@ export class ConnectionHandler {
     // Register client in registry
     const client = this.registry.register(connection)
 
-    // Emit connection event
-    if (this.options.emitConnectionEvent) {
-      this.emitter.emit('connection', client)
-    }
-
     return client
   }
 
@@ -177,14 +138,8 @@ export class ConnectionHandler {
       return // Client already unregistered
     }
 
-    // Unregister client from registry FIRST
-    // This ensures that getStats() returns the correct count in event handlers
+    // Unregister client
     this.registry.unregister(clientId)
-
-    // Emit disconnection event AFTER unregistering
-    if (this.options.emitDisconnectionEvent) {
-      this.emitter.emit('disconnection', client)
-    }
   }
 
   /**

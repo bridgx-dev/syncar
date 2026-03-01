@@ -5,8 +5,6 @@
 
 import type {
   IClientRegistry,
-  IEventEmitter,
-  IServerEventMap,
   IClientConnection,
   IChannel,
   IChannelTransport,
@@ -20,11 +18,6 @@ import { isDataMessage } from '../lib'
  * Message handler options
  */
 export interface MessageHandlerOptions {
-  /**
-   * Whether to emit message events
-   * @default true
-   */
-  emitMessageEvent?: boolean
 
   /**
    * Whether to require a valid channel for data messages
@@ -41,7 +34,6 @@ export interface MessageHandlerOptions {
  */
 export class MessageHandler {
   private readonly registry: IClientRegistry
-  private readonly emitter: IEventEmitter<IServerEventMap>
   private readonly options: Required<MessageHandlerOptions>
 
   /**
@@ -49,15 +41,12 @@ export class MessageHandler {
    */
   constructor(dependencies: {
     registry: IClientRegistry
-    emitter: IEventEmitter<IServerEventMap>
     options?: MessageHandlerOptions
   }) {
     this.registry = dependencies.registry
-    this.emitter = dependencies.emitter
 
     // Apply defaults
     this.options = {
-      emitMessageEvent: dependencies.options?.emitMessageEvent ?? true,
       requireChannel: dependencies.options?.requireChannel ?? true,
     }
   }
@@ -93,10 +82,6 @@ export class MessageHandler {
       )
     }
 
-    // Emit message event
-    if (this.options.emitMessageEvent) {
-      this.emitter.emit('message', client, message)
-    }
   }
 
   /**
@@ -123,7 +108,6 @@ export class MessageHandler {
   ): IChannel<T> | undefined {
     return this.registry.getChannel<T>(message.channel)
   }
-
 
   /**
    * Get handler options

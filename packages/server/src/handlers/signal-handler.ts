@@ -6,8 +6,6 @@
 import type {
   IClientRegistry,
   IClientConnection,
-  IEventEmitter,
-  IServerEventMap,
   IChannelTransport,
   SignalMessage,
 } from '../types'
@@ -28,17 +26,6 @@ export interface SignalHandlerOptions {
    */
   requireChannel?: boolean
 
-  /**
-   * Whether to emit subscribe events
-   * @default true
-   */
-  emitSubscribeEvent?: boolean
-
-  /**
-   * Whether to emit unsubscribe events
-   * @default true
-   */
-  emitUnsubscribeEvent?: boolean
 
   /**
    * Whether to allow clients to subscribe to reserved channels (starting with '__')
@@ -67,7 +54,6 @@ export interface SignalHandlerOptions {
  */
 export class SignalHandler {
   private readonly registry: IClientRegistry
-  private readonly emitter: IEventEmitter<IServerEventMap>
   private readonly options: Required<SignalHandlerOptions>
 
   /**
@@ -75,17 +61,13 @@ export class SignalHandler {
    */
   constructor(dependencies: {
     registry: IClientRegistry
-    emitter: IEventEmitter<IServerEventMap>
     options?: SignalHandlerOptions
   }) {
     this.registry = dependencies.registry
-    this.emitter = dependencies.emitter
 
     // Apply defaults
     this.options = {
       requireChannel: dependencies.options?.requireChannel ?? false,
-      emitSubscribeEvent: dependencies.options?.emitSubscribeEvent ?? true,
-      emitUnsubscribeEvent: dependencies.options?.emitUnsubscribeEvent ?? true,
       allowReservedChannels:
         dependencies.options?.allowReservedChannels ?? false,
       sendAcknowledgments: dependencies.options?.sendAcknowledgments ?? true,
@@ -102,19 +84,19 @@ export class SignalHandler {
     message: SignalMessage,
   ): Promise<void> {
     switch (message.signal) {
-      case 'subscribe':
+      case SignalType.SUBSCRIBE:
         await this.handleSubscribe(client, message)
         break
 
-      case 'unsubscribe':
+      case SignalType.UNSUBSCRIBE:
         await this.handleUnsubscribe(client, message)
         break
 
-      case 'ping':
+      case SignalType.PING:
         await this.handlePing(client, message)
         break
 
-      case 'pong':
+      case SignalType.PONG:
         await this.handlePong(client, message)
         break
 
@@ -173,16 +155,11 @@ export class SignalHandler {
       )
     }
 
-    // Emit subscribe event
-    if (this.options.emitSubscribeEvent) {
-      this.emitter.emit('subscribe', client, channel)
-    }
-
     // Send acknowledgment
     if (this.options.sendAcknowledgments) {
       const ackMessage = createSignalMessage(
         channel,
-        'subscribed' as SignalType,
+        SignalType.SUBSCRIBED,
         undefined,
         message.id,
       )
@@ -216,16 +193,12 @@ export class SignalHandler {
       )
     }
 
-    // Emit unsubscribe event
-    if (this.options.emitUnsubscribeEvent) {
-      this.emitter.emit('unsubscribe', client, channel)
-    }
 
     // Send acknowledgment
     if (this.options.sendAcknowledgments) {
       const ackMessage = createSignalMessage(
         channel,
-        'unsubscribed' as SignalType,
+        SignalType.UNSUBSCRIBED,
         undefined,
         message.id,
       )
@@ -247,7 +220,7 @@ export class SignalHandler {
     if (this.options.autoRespondToPing) {
       const pongMessage = createSignalMessage(
         message.channel,
-        'pong' as SignalType,
+        SignalType.PONG,
         undefined,
         message.id,
       )

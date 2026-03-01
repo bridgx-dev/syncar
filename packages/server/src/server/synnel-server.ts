@@ -35,25 +35,22 @@ import type {
   IServerTransport,
   IClientRegistry,
   IMiddlewareManager,
-  IEventEmitter,
-  IServerEventMap,
-  IServerEventType,
   IBroadcastTransport,
   IMulticastTransport,
   ChannelName,
-  ClientId,
-  IPublishOptions,
+  Message,
+  IMiddleware,
+  SignalMessage,
 } from '../types'
+import { SignalType } from '../types'
 import { ClientRegistry } from '../registry'
 import { ChannelRef } from '../channel/channel-ref'
 import { BroadcastChannel } from '../channel'
 import { MiddlewareManager } from '../middleware'
-import { EventEmitter } from '../emitter'
 import { ConnectionHandler } from '../handlers'
 import { MessageHandler } from '../handlers'
 import { SignalHandler } from '../handlers'
 import { StateError, ConfigError } from '../errors'
-import { createDataMessage } from '../lib'
 
 /**
  * Internal server state
@@ -72,17 +69,16 @@ interface ServerState {
  * It provides a comprehensive API for building real-time applications.
  */
 export class SynnelServer implements ISynnelServer {
-  private readonly config: IServerConfig
+  private readonly config: Required<IServerConfig>
   private transport: IServerTransport | undefined
-  public readonly registry: ClientRegistry // Changed to public for ChannelRef access
+  public readonly registry: IClientRegistry
   private readonly middleware: IMiddlewareManager
-  private readonly emitter: IEventEmitter<IServerEventMap>
+  private readonly status: ServerState = { started: false, startedAt: undefined }
   private connectionHandler: ConnectionHandler | undefined
   private messageHandler: MessageHandler | undefined
   private signalHandler: SignalHandler | undefined
 
   private broadcastChannel: IBroadcastTransport<unknown> | undefined
-  private readonly state: ServerState
 
 
   /**
@@ -104,28 +100,35 @@ export class SynnelServer implements ISynnelServer {
    * ```
    */
   constructor(config: IServerConfig = {}) {
-    this.config = config
-    this.state = { started: false, startedAt: undefined }
+    // Default config values
+    const defaultConfig: Required<IServerConfig> = {
+      broadcastChunkSize: 500,
+      transport: undefined as any,
+      registry: new ClientRegistry(),
+      middleware: [],
+      server: undefined as any,
+      port: 3000,
+      host: '0.0.0.0',
+      path: '/synnel',
+      enablePing: true,
+      pingInterval: 5000,
+      pingTimeout: 5000,
+      connections: undefined as any,
+    }
+
+    this.config = { ...defaultConfig, ...config }
 
     // Create or use injected client registry
-    this.registry = (config.registry as ClientRegistry) ?? new ClientRegistry()
+    this.registry = this.config.registry
 
     // Create middleware manager
     this.middleware = new MiddlewareManager()
 
     // Register any middleware from config
-    if (config.middleware) {
-      for (const mw of config.middleware) {
+    if (this.config.middleware) {
+      for (const mw of this.config.middleware) {
         this.middleware.use(mw)
       }
-    }
-
-    // Create event emitter
-    this.emitter = new EventEmitter<IServerEventMap>()
-
-    // Set default broadcast chunk size
-    if (this.config.broadcastChunkSize === undefined) {
-      this.config.broadcastChunkSize = 500
     }
   }
 
@@ -145,7 +148,7 @@ export class SynnelServer implements ISynnelServer {
    * ```
    */
   async start(): Promise<void> {
-    if (this.state.started) {
+    if (this.status.started) {
       throw new StateError('Server is already started')
     }
 
@@ -161,37 +164,29 @@ export class SynnelServer implements ISynnelServer {
     // Create handlers with getChannel callback
     this.connectionHandler = new ConnectionHandler({
       registry: this.registry,
-      emitter: this.emitter,
     })
 
     this.messageHandler = new MessageHandler({
       registry: this.registry,
-      emitter: this.emitter,
     })
-
-
 
     this.signalHandler = new SignalHandler({
       registry: this.registry,
-      emitter: this.emitter,
     })
-
-
 
     // Set up transport event handlers
     this.setupTransportHandlers()
 
     // Create broadcast channel and register it
     this.broadcastChannel = new BroadcastChannel(
-      this.transport.connections,
+      this.registry,
       this.config.broadcastChunkSize,
     )
     this.registry.registerChannel(this.broadcastChannel)
 
-
     // Update state
-    this.state.started = true
-    this.state.startedAt = Date.now()
+    this.status.started = true
+    this.status.startedAt = Date.now()
   }
 
   /**
@@ -211,7 +206,7 @@ export class SynnelServer implements ISynnelServer {
    * ```
    */
   async stop(): Promise<void> {
-    if (!this.state.started || !this.transport) {
+    if (!this.status.started || !this.transport) {
       return // Already stopped
     }
 
@@ -228,9 +223,8 @@ export class SynnelServer implements ISynnelServer {
     this.broadcastChannel = undefined
 
     // Update state
-
-    this.state.started = false
-    this.state.startedAt = undefined
+    this.status.started = false
+    this.status.startedAt = undefined
   }
 
   // ============================================================
@@ -262,13 +256,12 @@ export class SynnelServer implements ISynnelServer {
    * ```
    */
   createBroadcast<T = unknown>(): IBroadcastTransport<T> {
-    if (!this.state.started || !this.broadcastChannel) {
+    if (!this.status.started || !this.broadcastChannel) {
       throw new StateError('Server must be started before creating channels')
     }
 
     return this.broadcastChannel as IBroadcastTransport<T>
   }
-
   /**
    * Create or get a multicast transport using ChannelRef
    *
@@ -310,7 +303,7 @@ export class SynnelServer implements ISynnelServer {
   createMulticast<T = unknown>(
     name: ChannelName,
   ): IMulticastTransport<T> {
-    if (!this.state.started || !this.transport) {
+    if (!this.status.started || !this.transport) {
       throw new StateError('Server must be started before creating channels')
     }
 
@@ -320,27 +313,26 @@ export class SynnelServer implements ISynnelServer {
       return existing
     }
 
-
-    // Create ChannelRef with closures to registry state
+    // Create ChannelRef with BaseChannel inheritance
     const channel = new ChannelRef<T>(
       name,
-      // Closure to get subscribers for this channel
-      () => this.registry.getChannelSubscribers(name),
+      this.registry,
+      // Closure to get subscriber IDs for this channel
+      () => new Set(this.registry.getSubscribers(name).map(c => c.id)),
       // Handler registry
-      this.registry.handlers,
+      (this.registry as any).handlers,
       // Closure to subscribe a client
       (clientId) => this.registry.subscribe(clientId, name),
       // Closure to unsubscribe a client
       (clientId) => this.registry.unsubscribe(clientId, name),
-      // Closure to publish to this channel
-      (data, options) => this.publishToChannel(name, data, options),
+      // Chunk size for publishing
+      this.config.broadcastChunkSize,
     )
 
     // Register instance in registry
     this.registry.registerChannel(channel as any)
 
     return channel
-
   }
 
   /**
@@ -376,178 +368,6 @@ export class SynnelServer implements ISynnelServer {
     return this.registry.getChannels()
   }
 
-  /**
-   * Publish data to a specific channel
-   *
-   * @param channelName - Channel to publish to
-   * @param data - Data to publish
-   * @param options - Optional publish options (to, exclude)
-   */
-  private publishToChannel<T>(
-    channelName: ChannelName,
-    data: T,
-    options?: IPublishOptions,
-  ): void {
-    const subscribers = this.registry.getChannelSubscribers(channelName)
-    const chunkSize = this.config.broadcastChunkSize || 500
-
-    if (subscribers.size > chunkSize) {
-      // Use chunked publishing for large subscriber sets to avoid blocking event loop
-      this.publishInChunks(channelName, data, subscribers, options)
-    } else {
-      // Synchronous publish for small sets
-      this.publishToSubscribers(channelName, data, subscribers, options)
-    }
-  }
-
-  /**
-   * Internal helper to publish to a set of subscribers synchronously
-   */
-  private publishToSubscribers<T>(
-    channelName: ChannelName,
-    data: T,
-    subscribers: Set<ClientId> | ClientId[],
-    options?: IPublishOptions,
-  ): void {
-    // Create data message
-    const message = createDataMessage<T>(channelName, data)
-
-    // Publish to each subscriber
-    for (const clientId of subscribers) {
-      // Apply filters
-      if (options?.to && !options.to.includes(clientId)) continue
-      if (options?.exclude && options.exclude.includes(clientId)) continue
-
-      // Get client connection
-      const client = this.registry.connections.get(clientId)
-      if (client) {
-        try {
-          client.socket.send(JSON.stringify(message))
-        } catch (error) {
-          console.error(`Failed to send to ${clientId}:`, error)
-        }
-      }
-    }
-  }
-
-  /**
-   * Publish data to a channel in chunks using setImmediate to avoid blocking the event loop
-   */
-  private publishInChunks<T>(
-    channelName: ChannelName,
-    data: T,
-    subscribers: Set<ClientId>,
-    options?: IPublishOptions,
-  ): void {
-    const subscriberIds = Array.from(subscribers)
-    const chunkSize = this.config.broadcastChunkSize || 500
-    let index = 0
-
-    const nextChunk = () => {
-      const chunk = subscriberIds.slice(index, index + chunkSize)
-      if (chunk.length === 0) return
-
-      this.publishToSubscribers(channelName, data, chunk, options)
-      index += chunkSize
-
-      if (index < subscriberIds.length) {
-        setImmediate(nextChunk)
-      }
-    }
-
-    nextChunk()
-  }
-
-  // ============================================================
-  // EVENT METHODS
-  // ============================================================
-
-  /**
-   * Register an event handler
-   *
-   * @template E - Event type
-   * @param event - Event name to listen for
-   * @param handler - Event handler function
-   * @returns Unsubscribe function to remove the handler
-   *
-   * @example
-   * ```typescript
-   * const unsubscribe = server.on('connection', (client) => {
-   *   console.log(`Client connected: ${client.id}`)
-   * })
-   *
-   * // Later: unsubscribe()
-   * ```
-   */
-  on<E extends IServerEventType>(
-    event: E,
-    handler: IServerEventMap[E],
-  ): () => void {
-    return this.emitter.on(event, handler as any)
-  }
-
-  /**
-   * Register a one-time event handler
-   *
-   * The handler will be automatically removed after being called once.
-   *
-   * @template E - Event type
-   * @param event - Event name to listen for
-   * @param handler - Event handler function
-   * @returns Unsubscribe function to remove the handler
-   *
-   * @example
-   * ```typescript
-   * server.once('connection', (client) => {
-   *   console.log('First client connected!')
-   * })
-   * ```
-   */
-  once<E extends IServerEventType>(
-    event: E,
-    handler: IServerEventMap[E],
-  ): () => void {
-    return this.emitter.once(event, handler as any)
-  }
-
-  /**
-   * Emit an event locally
-   *
-   * Emits an event on the server without sending to clients.
-   *
-   * @template E - Event type
-   * @param event - Event name to emit
-   * @param args - Event arguments
-   *
-   * @example
-   * ```typescript
-   * server.emit('customEvent', { data: 'value' })
-   * ```
-   */
-  emit<E extends IServerEventType>(
-    event: E,
-    ...args: IServerEventMap[E] extends (...args: infer P) => any ? P : never
-  ): void {
-    this.emitter.emit(event, ...(args as any))
-  }
-
-  /**
-   * Remove an event handler
-   *
-   * @template E - Event type
-   * @param event - Event name
-   * @param handler - Handler function to remove
-   *
-   * @example
-   * ```typescript
-   * const handler = (client) => console.log('Connected')
-   * server.on('connection', handler)
-   * server.off('connection', handler)
-   * ```
-   */
-  off<E extends IServerEventType>(event: E, handler: IServerEventMap[E]): void {
-    this.emitter.off(event, handler as any)
-  }
 
   // ============================================================
   // MIDDLEWARE METHODS
@@ -568,7 +388,7 @@ export class SynnelServer implements ISynnelServer {
    * })
    * ```
    */
-  use(middleware: any): void {
+  use(middleware: IMiddleware): void {
     this.middleware.use(middleware)
   }
 
@@ -597,7 +417,7 @@ export class SynnelServer implements ISynnelServer {
    */
   getStats(): IServerStats {
     return {
-      startedAt: this.state.startedAt,
+      startedAt: this.status.startedAt,
       clientCount: this.registry.getCount(),
       channelCount: this.registry.getChannels().length,
       subscriptionCount: this.registry.getTotalSubscriptionCount(),
@@ -626,19 +446,6 @@ export class SynnelServer implements ISynnelServer {
     return this.registry
   }
 
-  /**
-   * Get the event emitter
-   *
-   * @returns The event emitter instance
-   *
-   * @remarks
-   * This provides direct access to the emitter for advanced use cases
-   * like emitting custom events or managing listeners.
-   */
-  getEmitter(): IEventEmitter<IServerEventMap> {
-    return this.emitter
-  }
-
   // ============================================================
   // PRIVATE HELPERS
   // ============================================================
@@ -652,7 +459,7 @@ export class SynnelServer implements ISynnelServer {
         await this.middleware.executeConnection(connection, 'connect')
         await this.connectionHandler!.handleConnection(connection)
       } catch (error) {
-        this.emitter.emit('error', error as Error)
+        console.error('Error handling connection:', error)
       }
     })
 
@@ -665,14 +472,14 @@ export class SynnelServer implements ISynnelServer {
           await this.connectionHandler!.handleDisconnection(clientId)
         }
       } catch (error) {
-        this.emitter.emit('error', error as Error)
+        console.error('Error handling disconnection:', error)
       }
     })
 
     // Handle messages
-    transport.on('message', async (clientId, message) => {
+    transport.on('message', async (clientId: string, message: Message) => {
       try {
-        const client = this.registry.get(clientId as string)
+        const client = this.registry.get(clientId)
         if (!client) return
 
         // 1. Identify all applicable middlewares
@@ -680,9 +487,10 @@ export class SynnelServer implements ISynnelServer {
         let pipeline = [...globalMiddlewares]
 
         if (message.channel) {
-          const channelRef = this.registry.getChannel(message.channel) as ChannelRef
-          if (channelRef && typeof channelRef.getMiddlewares === 'function') {
-            pipeline = [...pipeline, ...channelRef.getMiddlewares()]
+          const channelRef = this.registry.getChannel(message.channel)
+          if (channelRef) {
+            // Internal cast to access middleware storage
+            pipeline = [...pipeline, ...(channelRef as any).getMiddlewares()]
           }
         }
 
@@ -691,38 +499,38 @@ export class SynnelServer implements ISynnelServer {
           if (message.type === 'data') {
             await this.messageHandler!.handleMessage(client, message as any)
           } else if (message.type === 'signal') {
-            // Special handling for subscribe/unsubscribe to include their specific hooks
-            if (message.signal === 'SUBSCRIBE' || message.signal === 'UNSUBSCRIBE') {
-              // SignalHandler will handle internal hooks and registry updates
-              await this.signalHandler!.handleSignal(client, message as any)
-            } else {
-              await this.signalHandler!.handleSignal(client, message as any)
-            }
+            await this.signalHandler!.handleSignal(client, message as any)
           }
         }
 
         // 3. Execute the Onion
         const ctxFactory = this.middleware as unknown as MiddlewareManager
-        const action = message.type === 'signal' && (message.signal === 'SUBSCRIBE' || message.signal === 'UNSUBSCRIBE')
-          ? (message.signal.toLowerCase() as any)
-          : 'message'
 
-        const context = action === 'subscribe'
-          ? ctxFactory.createSubscribeContext(client, message.channel!)
-          : action === 'unsubscribe'
-            ? ctxFactory.createUnsubscribeContext(client, message.channel!)
-            : ctxFactory.createMessageContext(client, message)
+        let context: any
+
+        if (message.type === 'signal') {
+          const signalMsg = message as SignalMessage
+          if (signalMsg.signal === SignalType.SUBSCRIBE) {
+            context = ctxFactory.createSubscribeContext(client, signalMsg.channel!)
+          } else if (signalMsg.signal === SignalType.UNSUBSCRIBE) {
+            context = ctxFactory.createUnsubscribeContext(client, signalMsg.channel!)
+          } else {
+            context = ctxFactory.createMessageContext(client, message as any)
+          }
+        } else {
+          context = ctxFactory.createMessageContext(client, message as any)
+        }
 
         await (this.middleware as MiddlewareManager).execute(context, pipeline, kernel)
 
       } catch (error) {
-        this.emitter.emit('error', error as Error)
+        console.error('Error handling message:', error)
       }
     })
 
     // Handle transport errors
-    transport.on('error', (error) => {
-      this.emitter.emit('error', error)
+    transport.on('error', (error: Error) => {
+      console.error('Transport error:', error)
     })
   }
 }

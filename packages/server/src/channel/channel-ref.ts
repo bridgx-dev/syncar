@@ -16,10 +16,12 @@ import type {
   IClientConnection,
   IPublishOptions,
   IMiddleware,
+  IClientRegistry,
 } from '../types'
-import type { ChannelName, SubscriberId } from '../types'
+import type { ChannelName, SubscriberId, ClientId } from '../types'
 import type { HandlerRegistry } from '../registry/handler-registry'
 import type { DataMessage } from '../types/message'
+import { BaseChannel } from './base-channel'
 
 /**
  * ChannelRef - Lightweight channel reference
@@ -29,7 +31,9 @@ import type { DataMessage } from '../types/message'
  *
  * @template T The type of data published on this channel
  */
-export class ChannelRef<T = unknown> implements IChannelTransport<T> {
+export class ChannelRef<T = unknown>
+  extends BaseChannel<T>
+  implements IChannelTransport<T> {
   /**
    * Channel-specific middleware functions
    */
@@ -39,20 +43,31 @@ export class ChannelRef<T = unknown> implements IChannelTransport<T> {
    * Create a new ChannelRef
    *
    * @param name - Channel name
+   * @param registry - Client registry for connection lookups
    * @param _getSubscribers - Function to get the subscriber set for this channel
    * @param handlers - Handler registry for channel event handlers
    * @param subscribeFn - Function to subscribe a client to this channel
    * @param unsubscribeFn - Function to unsubscribe a client from this channel
-   * @param publishFn - Function to publish a message to this channel
+   * @param chunkSize - Maximum number of subscribers to process in a single chunk
    */
   constructor(
-    public readonly name: ChannelName,
+    name: ChannelName,
+    registry: IClientRegistry,
     private readonly _getSubscribers: () => Set<SubscriberId>,
     private readonly handlers: HandlerRegistry,
     private readonly subscribeFn: (clientId: SubscriberId) => boolean,
     private readonly unsubscribeFn: (clientId: SubscriberId) => boolean,
-    private readonly publishFn: (data: T, options?: IPublishOptions) => void,
-  ) { }
+    chunkSize: number = 500,
+  ) {
+    super(name, registry, chunkSize)
+  }
+
+  /**
+   * Get the list of client IDs that should receive the message
+   */
+  protected getTargetClients(_options?: IPublishOptions): ClientId[] {
+    return Array.from(this._getSubscribers())
+  }
 
   /**
    * Register a channel-specific middleware function
@@ -83,15 +98,6 @@ export class ChannelRef<T = unknown> implements IChannelTransport<T> {
     return this._getSubscribers().size
   }
 
-  /**
-   * Publish data to channel subscribers
-   *
-   * @param data - The data to publish
-   * @param options - Optional publish options (to, exclude)
-   */
-  publish(data: T, options?: IPublishOptions): void {
-    this.publishFn(data, options)
-  }
 
   // ============================================================
   // IChannelTransport implementation

@@ -8,13 +8,9 @@ import type { DeepPartial } from './utilities'
 import type { ClientId } from './common'
 import type { IServerTransport } from './transport'
 import type { IMiddleware } from './middleware'
-import type {
-  IBroadcastTransport,
-  IMulticastTransport,
-} from './channel'
-import type { IServerEventMap, IServerEventType, IEventEmitter } from './events'
 import type { IClientRegistry } from './client'
 import type { IClientConnection } from './base'
+import type { IBroadcastTransport, IMulticastTransport } from './channel'
 
 // ============================================================
 // SERVER CONFIGURATION
@@ -295,73 +291,6 @@ export interface ISynnelServer {
    */
   hasChannel(name: import('./common').ChannelName): boolean
 
-  /**
-   * Get all active channel names
-   *
-   * @returns Array of channel names
-   */
-  getChannels(): import('./common').ChannelName[]
-
-  // ============================================================
-  // EVENT METHODS
-  // ============================================================
-
-  /**
-   * Register an event handler
-   *
-   * @template E The event type
-   * @param event - The event to listen for
-   * @param handler - The event handler
-   * @returns Unsubscribe function
-   *
-   * @example
-   * ```ts
-   * const unsubscribe = server.on('connection', (client) => {
-   *   console.log(`Client connected: ${client.id}`)
-   * })
-   *
-   * // Later: unsubscribe()
-   * ```
-   */
-  on<E extends IServerEventType>(
-    event: E,
-    handler: IServerEventMap[E],
-  ): () => void
-
-  /**
-   * Register a one-time event handler
-   *
-   * @template E The event type
-   * @param event - The event to listen for
-   * @param handler - The event handler
-   * @returns Unsubscribe function
-   */
-  once<E extends IServerEventType>(
-    event: E,
-    handler: IServerEventMap[E],
-  ): () => void
-
-  /**
-   * Remove an event handler
-   *
-   * @template E The event type
-   * @param event - The event to remove
-   * @param handler - The event handler to remove
-   */
-  off<E extends IServerEventType>(event: E, handler: IServerEventMap[E]): void
-
-  /**
-   * Emit an event locally
-   *
-   * @template E The event type
-   * @param event - The event to emit
-   * @param args - The event data
-   */
-  emit<E extends IServerEventType>(
-    event: E,
-    ...args: IServerEventMap[E] extends (...args: infer P) => any ? P : never
-  ): void
-
   // ============================================================
   // UTILITY METHODS
   // ============================================================
@@ -391,10 +320,5 @@ export interface ISynnelServer {
    * Get the server configuration
    */
   getConfig(): Readonly<IServerConfig>
-
-  /**
-   * Get the event emitter
-   */
-  getEmitter(): IEventEmitter<IServerEventMap>
 }
 

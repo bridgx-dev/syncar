@@ -3,9 +3,6 @@
  * Types for the server event system including event types, handlers, and emission.
  */
 
-import type { IClientConnection } from './base'
-import type { ChannelName } from './common'
-import type { Message } from './message'
 
 // ============================================================
 // SERVER EVENT TYPES
@@ -31,11 +28,8 @@ import type { Message } from './message'
  * ```
  */
 export type IServerEventType =
-  | 'connection' // New client connected
-  | 'disconnection' // Client disconnected
-  | 'message' // Message received from client
-  | 'subscribe' // Client subscribed to channel
-  | 'unsubscribe' // Client unsubscribed from channel
+  | 'start' // Server started
+  | 'stop' // Server stopped
   | 'error' // Server error occurred
 
 // ============================================================
@@ -64,42 +58,14 @@ export type IServerEventType =
  */
 export interface IServerEventMap {
   /**
-   * Fired when a new client connects
-   *
-   * @param client - The connected client
+   * Fired when the server starts
    */
-  connection: (client: IClientConnection) => void
+  start: () => void
 
   /**
-   * Fired when a client disconnects
-   *
-   * @param client - The disconnected client
+   * Fired when the server stops
    */
-  disconnection: (client: IClientConnection) => void
-
-  /**
-   * Fired when a message is received from a client
-   *
-   * @param client - The client who sent the message
-   * @param message - The received message
-   */
-  message: (client: IClientConnection, message: Message) => void
-
-  /**
-   * Fired when a client subscribes to a channel
-   *
-   * @param client - The client
-   * @param channel - The channel name
-   */
-  subscribe: (client: IClientConnection, channel: ChannelName) => void
-
-  /**
-   * Fired when a client unsubscribes from a channel
-   *
-   * @param client - The client
-   * @param channel - The channel name
-   */
-  unsubscribe: (client: IClientConnection, channel: ChannelName) => void
+  stop: () => void
 
   /**
    * Fired when an error occurs
@@ -278,10 +244,7 @@ export type IAsyncEventHandler<E extends IServerEventType> = (
  * All handlers can be async.
  */
 export interface IAsyncServerEventMap {
-  connection: IAsyncEventHandler<'connection'>
-  disconnection: IAsyncEventHandler<'disconnection'>
-  message: IAsyncEventHandler<'message'>
-  subscribe: IAsyncEventHandler<'subscribe'>
-  unsubscribe: IAsyncEventHandler<'unsubscribe'>
+  start: IAsyncEventHandler<'start'>
+  stop: IAsyncEventHandler<'stop'>
   error: IAsyncEventHandler<'error'>
 }
