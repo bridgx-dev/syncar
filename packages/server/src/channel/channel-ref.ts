@@ -8,21 +8,22 @@ import type {
   IClientRegistry,
 } from '../types'
 import type { ChannelName, SubscriberId, ClientId } from '../types'
-import type { HandlerRegistry } from '../registry/handler-registry'
 import type { DataMessage } from '../types/message'
-import { BaseChannel } from './base-channel'
+import { BaseChannel } from './base-channel.js'
 
 export class ChannelRef<T = unknown>
   extends BaseChannel<T>
-  implements IChannelTransport<T>
-{
+  implements IChannelTransport<T> {
   private readonly middlewares: IMiddleware[] = []
+
+  private readonly messageHandlers: Set<IMessageHandler<T>> = new Set()
+  private readonly subscribeHandlers: Set<ILifecycleHandler> = new Set()
+  private readonly unsubscribeHandlers: Set<ILifecycleHandler> = new Set()
 
   constructor(
     name: ChannelName,
     registry: IClientRegistry,
     private readonly _getSubscribers: () => Set<SubscriberId>,
-    private readonly handlers: HandlerRegistry,
     private readonly subscribeFn: (clientId: SubscriberId) => boolean,
     private readonly unsubscribeFn: (clientId: SubscriberId) => boolean,
     chunkSize: number = 500,
@@ -47,10 +48,8 @@ export class ChannelRef<T = unknown>
   }
 
   onMessage(handler: IMessageHandler<T>): () => void {
-    return this.handlers.addMessageHandler(
-      this.name,
-      handler as IMessageHandler<unknown>,
-    )
+    this.messageHandlers.add(handler)
+    return () => this.messageHandlers.delete(handler)
   }
 
   subscribe(subscriber: SubscriberId): boolean {
@@ -66,11 +65,9 @@ export class ChannelRef<T = unknown>
     client: IClientConnection,
     message: DataMessage<T>,
   ): Promise<void> {
-    const handlers = this.handlers.getMessageHandlers(this.name)
-
-    for (const handler of handlers) {
+    for (const handler of this.messageHandlers) {
       try {
-        await handler(data, client, message as any)
+        await handler(data, client, message)
       } catch (error) {
         console.error(
           `Error in message handler for channel ${this.name}:`,
@@ -81,17 +78,17 @@ export class ChannelRef<T = unknown>
   }
 
   onSubscribe(handler: ILifecycleHandler): () => void {
-    return this.handlers.addSubscribeHandler(this.name, handler)
+    this.subscribeHandlers.add(handler)
+    return () => this.subscribeHandlers.delete(handler)
   }
 
   onUnsubscribe(handler: ILifecycleHandler): () => void {
-    return this.handlers.addUnsubscribeHandler(this.name, handler)
+    this.unsubscribeHandlers.add(handler)
+    return () => this.unsubscribeHandlers.delete(handler)
   }
 
   async handleSubscribe(client: IClientConnection): Promise<void> {
-    const handlers = this.handlers.getSubscribeHandlers(this.name)
-
-    for (const handler of handlers) {
+    for (const handler of this.subscribeHandlers) {
       try {
         await handler(client)
       } catch (error) {
@@ -106,9 +103,7 @@ export class ChannelRef<T = unknown>
   }
 
   async handleUnsubscribe(client: IClientConnection): Promise<void> {
-    const handlers = this.handlers.getUnsubscribeHandlers(this.name)
-
-    for (const handler of handlers) {
+    for (const handler of this.unsubscribeHandlers) {
       try {
         await handler(client)
       } catch (error) {

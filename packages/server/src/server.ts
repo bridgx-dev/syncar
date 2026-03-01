@@ -19,7 +19,7 @@ import { ConnectionHandler, MessageHandler, SignalHandler } from './handlers'
 import { MiddlewareManager } from './middleware/middleware-manager'
 import { StateError, ConfigError } from './errors'
 import { ClientRegistry } from './registry'
-import { WebSocketServerTransport } from './transport'
+import { WebSocketServerTransport } from './websocket'
 import { DEFAULT_SERVER_CONFIG, DEFAULT_MAX_PAYLOAD } from './config'
 
 interface ServerState {
@@ -127,8 +127,6 @@ export class SynnelServer implements ISynnelServer {
             name,
             this.registry,
             () => new Set(this.registry.getSubscribers(name).map((c) => c.id)),
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (this.registry as any).handlers,
             (clientId) => this.registry.subscribe(clientId, name),
             (clientId) => this.registry.unsubscribe(clientId, name),
             this.config.broadcastChunkSize,

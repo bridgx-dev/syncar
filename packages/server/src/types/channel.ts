@@ -407,7 +407,6 @@ export declare class ChannelRef<T = unknown>
     name: ChannelName,
     registry: import('./client').IClientRegistry,
     _getSubscribers: () => Set<string>,
-    handlers: import('./handler-registry').HandlerRegistry,
     subscribeFn: (clientId: string) => boolean,
     unsubscribeFn: (clientId: string) => boolean,
     chunkSize?: number,

@@ -19,7 +19,7 @@ export {
   isValidMessageId,
   isValidClientId,
   isValidSubscriberId,
-} from './id.js'
+} from './id'
 
 // Validation utilities
 export {
@@ -27,7 +27,7 @@ export {
   isReservedChannelName,
   isNonReservedChannelName,
   assertValidChannelName,
-} from './validation.js'
+} from './validation'
 
 // Message utilities
 export {
@@ -39,23 +39,7 @@ export {
   createSignalMessage,
   createErrorMessage,
   createAckMessage,
-} from './message.js'
-
-// Reconnection utilities
-export {
-  calculateBackoff,
-  calculateBackoffWithJitter,
-  shouldReconnect,
-  createInitialReconnectionState,
-  advanceReconnectionState,
-  resetReconnectionState,
-  type ReconnectionState,
-  type ReconnectionOptions,
-  DEFAULT_RECONNECT_DELAY,
-  DEFAULT_MAX_RECONNECT_DELAY,
-  DEFAULT_BACKOFF_MULTIPLIER,
-  DEFAULT_JITTER_FACTOR,
-} from './reconnection.js'
+} from './message'
 
 // Logger utilities
 export {
@@ -68,4 +52,4 @@ export {
   createLogTimestamp,
   type LoggerFn,
   type LogLevel,
-} from './logger.js'
+} from './logger'

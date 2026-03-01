@@ -41,7 +41,7 @@ export {
   MiddlewareRejectionError,
   MiddlewareExecutionError,
 } from './errors'
-export { WebSocketServerTransport } from './transport'
+export { WebSocketServerTransport } from './websocket'
 export { ChannelRef, BroadcastChannel } from './channel'
 
 export {
@@ -63,25 +63,13 @@ export { ConnectionHandler, MessageHandler, SignalHandler } from './handlers'
 export type {
   MergeTypes,
   DeepPartial,
-  DeepReadonly,
   Prettify,
-  KeysOfType,
-  PickByType,
-  OmitByType,
-  RequiredKeys,
-  OptionalKeys,
   Branded,
   Awaited,
   FnParameters,
   FnReturnType,
-  FunctionPropertyNames,
-  OnlyMethods,
-  OptionalKeysOf,
-  RequiredKeysOf,
   ArrayElement,
   ValueOf,
-  UnionToIntersection,
-  LastOfTuple,
   TupleToUnion,
   IClientConnection,
   IChannel,

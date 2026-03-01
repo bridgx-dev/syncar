@@ -233,11 +233,6 @@ export declare class ClientRegistry implements IClientRegistry {
    */
   readonly connections: Map<ClientId, IClientConnection>
 
-  /**
-   * Handler registry for channel event handlers
-   */
-  readonly handlers: import('./handler-registry').HandlerRegistry
-
   // ============================================================
   // CLIENT REGISTRATION
   // ============================================================

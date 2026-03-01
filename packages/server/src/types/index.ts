@@ -22,25 +22,13 @@
 export type {
   MergeTypes,
   DeepPartial,
-  DeepReadonly,
   Prettify,
-  KeysOfType,
-  PickByType,
-  OmitByType,
-  RequiredKeys,
-  OptionalKeys,
   Branded,
   Awaited,
   FnParameters,
   FnReturnType,
-  FunctionPropertyNames,
-  OnlyMethods,
-  OptionalKeysOf,
-  RequiredKeysOf,
   ArrayElement,
   ValueOf,
-  UnionToIntersection,
-  LastOfTuple,
   TupleToUnion,
 } from './utilities'
 
@@ -123,10 +111,6 @@ export type {
   ConnectionHandlerOptions,
 } from './handlers'
 
-// ============================================================
-// HANDLER REGISTRY TYPES
-// ============================================================
-export type { HandlerRegistry, HandlerRegistryState } from './handler-registry'
 
 // ============================================================
 // RE-EXPORT SHARED TYPES
