@@ -1,5 +1,6 @@
 import type {
   IServerConfig,
+  IServerOptions,
   ISynnelServer,
   IServerStats,
   IServerTransport,
@@ -13,7 +14,6 @@ import type {
   IMiddleware,
   IMiddlewareManager,
 } from '../types'
-import { ClientRegistry } from '../registry'
 import { ChannelRef } from '../channel/channel-ref'
 import { BroadcastChannel } from '../channel'
 import { ConnectionHandler } from '../handlers'
@@ -28,7 +28,7 @@ interface ServerState {
 }
 
 export class SynnelServer implements ISynnelServer {
-  private readonly config: Required<IServerConfig>
+  private readonly config: IServerOptions
   private transport: IServerTransport | undefined
   public readonly registry: IClientRegistry
   private readonly middleware: IMiddlewareManager
@@ -39,27 +39,10 @@ export class SynnelServer implements ISynnelServer {
   private connectionHandler: ConnectionHandler | undefined
   private messageHandler: MessageHandler | undefined
   private signalHandler: SignalHandler | undefined
-
   private broadcastChannel: IBroadcastTransport<unknown> | undefined
 
-  constructor(config: IServerConfig = {}) {
-    // Default config values
-    const defaultConfig: Required<IServerConfig> = {
-      broadcastChunkSize: 500,
-      transport: undefined as any,
-      registry: new ClientRegistry(),
-      middleware: [],
-      server: undefined as any,
-      port: 3000,
-      host: '0.0.0.0',
-      path: '/synnel',
-      enablePing: true,
-      pingInterval: 5000,
-      pingTimeout: 5000,
-      connections: undefined as any,
-    }
-
-    this.config = { ...defaultConfig, ...config }
+  constructor(config: IServerOptions) {
+    this.config = config
 
     // Create or use injected client registry
     this.registry = this.config.registry
@@ -191,17 +174,9 @@ export class SynnelServer implements ISynnelServer {
     return this.registry.getChannels()
   }
 
-  // ============================================================
-  // MIDDLEWARE METHODS
-  // ============================================================
-
   use(middleware: IMiddleware): void {
     this.middleware.use(middleware)
   }
-
-  // ============================================================
-  // STATS AND UTILITIES
-  // ============================================================
 
   getStats(): IServerStats {
     return {
@@ -219,10 +194,6 @@ export class SynnelServer implements ISynnelServer {
   getRegistry(): IClientRegistry {
     return this.registry
   }
-
-  // ============================================================
-  // PRIVATE HELPERS
-  // ============================================================
 
   private setupTransportHandlers(): void {
     const transport = this.transport!

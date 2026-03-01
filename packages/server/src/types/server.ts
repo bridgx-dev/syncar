@@ -5,11 +5,10 @@
 
 import type { Server as HttpServer } from 'node:http'
 import type { DeepPartial } from './utilities'
-import type { ClientId, ChannelName } from './common'
+import type { ChannelName } from './common'
 import type { IServerTransport } from './transport'
 import type { IMiddleware } from './middleware'
 import type { IClientRegistry } from './client'
-import type { IClientConnection } from './base'
 import type { IBroadcastTransport, IMulticastTransport } from './channel'
 
 // ============================================================
@@ -106,11 +105,6 @@ export interface IServerConfig {
   registry?: IClientRegistry
 
   /**
-   * Shared connection map (optional, shared with transport)
-   */
-  connections?: Map<ClientId, IClientConnection>
-
-  /**
    * Middleware functions for processing messages and connections
    *
    * @example
@@ -150,9 +144,14 @@ export interface IDefaultServerConfig {
 }
 
 /**
- * Server configuration with defaults applied
+ * Server configuration options for internal use with all required fields
  */
-export type IServerConfigWithDefaults = IServerConfig & IDefaultServerConfig
+export interface IServerOptions extends IDefaultServerConfig {
+  server?: HttpServer
+  transport?: IServerTransport
+  registry: IClientRegistry
+  middleware: IMiddleware[]
+}
 
 /**
  * Partial server configuration for incremental updates

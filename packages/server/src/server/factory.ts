@@ -1,27 +1,11 @@
-/**
- * Server Factory
- * Factory function for convenient server creation.
- *
- * @module server/factory
- */
-
-import type { IServerConfig, ISynnelServer, IServerTransport } from '../types'
-import type { Server as HttpServer } from 'http'
+import type { IServerConfig, IServerOptions, ISynnelServer, IServerTransport } from '../types'
 import { SynnelServer } from './synnel-server'
 import { ClientRegistry } from '../registry'
 import { WebSocketServerTransport } from '../transport'
 import {
-  DEFAULT_PORT,
-  DEFAULT_HOST,
-  DEFAULT_PATH,
-  DEFAULT_PING_INTERVAL,
-  DEFAULT_PING_TIMEOUT,
+  DEFAULT_SERVER_CONFIG,
   DEFAULT_MAX_PAYLOAD,
 } from '../config'
-
-// ============================================================
-// SYNEL SERVER FACTORY
-// ============================================================
 
 /**
  * Create a Synnel server with automatic WebSocket transport setup
@@ -66,49 +50,45 @@ export function createSynnelServer(config: IServerConfig = {}): ISynnelServer {
   // Create or use injected client registry
   const registry = config.registry ?? new ClientRegistry()
 
-  // Use shared connections map from registry
-  const connections = config.connections ?? registry.connections
+  // Merge defaults and use defined registry
+  const serverConfig: IServerOptions = {
+    ...DEFAULT_SERVER_CONFIG,
+    middleware: [],
+    ...config,
+    registry,
+  }
 
   let transport: IServerTransport
 
   // If transport is provided, use it directly
-  if (config.transport) {
-    transport = config.transport
+  if (serverConfig.transport) {
+    transport = serverConfig.transport
   } else {
     // Import http module dynamically
     import('node:http').then((http) => {
       // If server is not provided, create one
-      if (!config.server) {
-        const port = config.port ?? DEFAULT_PORT
-        const host = config.host ?? DEFAULT_HOST
+      if (!serverConfig.server) {
         const httpServer = http.createServer()
-        httpServer.listen(port, host)
+        httpServer.listen(serverConfig.port, serverConfig.host)
 
         // Update config with the created server
-        ;(config as { server: HttpServer }).server = httpServer
+        // Note: this may run after WebSocketServerTransport is created due to async import
+        serverConfig.server = httpServer
       }
     })
 
-    // Create WebSocket transport with shared connections
+    // Create WebSocket transport with registry connections
     transport = new WebSocketServerTransport({
-      server: config.server as unknown,
-      path: config.path ?? DEFAULT_PATH,
-      maxPayload:
-        (config as { maxPayload?: number }).maxPayload ?? DEFAULT_MAX_PAYLOAD,
-      enablePing: config.enablePing,
-      pingInterval: config.pingInterval ?? DEFAULT_PING_INTERVAL,
-      pingTimeout: config.pingTimeout ?? DEFAULT_PING_TIMEOUT,
-      connections,
+      server: serverConfig.server as unknown,
+      path: serverConfig.path,
+      maxPayload: (config as { maxPayload?: number }).maxPayload ?? DEFAULT_MAX_PAYLOAD,
+      enablePing: serverConfig.enablePing,
+      pingInterval: serverConfig.pingInterval,
+      pingTimeout: serverConfig.pingTimeout,
+      connections: registry.connections,
     })
   }
 
   // Create SynnelServer with the transport and registry
-  const server = new SynnelServer({
-    ...config,
-    transport,
-    registry,
-    connections,
-  })
-
-  return server
+  return new SynnelServer({ ...serverConfig, transport })
 }

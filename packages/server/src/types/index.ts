@@ -103,8 +103,8 @@ export type { MiddlewareManager } from './middleware'
 // ============================================================
 export type {
   IServerConfig,
+  IServerOptions,
   IDefaultServerConfig,
-  IServerConfigWithDefaults,
   IPartialServerConfig,
   IServerStats,
   ISynnelServer,
