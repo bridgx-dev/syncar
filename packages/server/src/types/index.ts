@@ -81,6 +81,7 @@ export type {
   IMiddlewareContext,
   IMiddleware,
   IContextManager,
+  Next,
   IMiddlewareRejectionError,
   IMiddlewareContextFactory,
   IMiddlewareChain,

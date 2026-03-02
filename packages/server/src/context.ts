@@ -1,4 +1,4 @@
-import { MiddlewareRejectionError } from './errors'
+import { MiddlewareRejectionError, MiddlewareExecutionError } from './errors'
 import { compose } from './lib'
 import type {
     Context,
@@ -44,8 +44,8 @@ export function createContext<S = Record<string, any>>(
         },
 
         var: state,
-
         state, // Legacy compatibility
+        finalized: false,
 
         get: <K extends keyof S>(key: K): S[K] => {
             return state[key]
@@ -92,43 +92,69 @@ export class ContextManager
     async executeConnection(
         client: IClientConnection,
         action: 'connect' | 'disconnect',
-    ): Promise<void> {
+    ): Promise<Context> {
         const c = this.createConnectionContext(client, action)
-        await compose(this.middlewares)(c)
+        return await this.execute(c)
     }
 
     async executeMessage(
         client: IClientConnection,
         message: Message,
-    ): Promise<void> {
+    ): Promise<Context> {
         const c = this.createMessageContext(client, message)
-        await compose(this.middlewares)(c)
+        return await this.execute(c)
     }
 
     async executeSubscribe(
         client: IClientConnection,
         channel: ChannelName,
         finalHandler?: () => Promise<void>,
-    ): Promise<void> {
+    ): Promise<Context> {
         const c = this.createSubscribeContext(client, channel)
-        await compose(this.middlewares)(c, finalHandler)
+        return await this.execute(c, this.middlewares, finalHandler)
     }
 
     async executeUnsubscribe(
         client: IClientConnection,
         channel: ChannelName,
         finalHandler?: () => Promise<void>,
-    ): Promise<void> {
+    ): Promise<Context> {
         const c = this.createUnsubscribeContext(client, channel)
-        await compose(this.middlewares)(c, finalHandler)
+        return await this.execute(c, this.middlewares, finalHandler)
     }
 
     async execute(
         context: Context,
         middlewares: IMiddleware[] = this.middlewares,
         finalHandler?: () => Promise<void>,
-    ): Promise<void> {
-        await compose(middlewares)(context, finalHandler)
+    ): Promise<Context> {
+        const action = context.req.action || 'unknown'
+
+        // Wrap middlewares to capture specific execution errors
+        const wrappedMiddlewares = middlewares.map((mw, i) => {
+            return async (ctx: Context, next: () => Promise<void>) => {
+                try {
+                    await mw(ctx, next)
+                } catch (error) {
+                    // Re-throw if already handled or explicit rejection
+                    if (
+                        error instanceof MiddlewareRejectionError ||
+                        error instanceof MiddlewareExecutionError
+                    ) {
+                        throw error
+                    }
+
+                    const middlewareName = mw.name || `middleware[${i}]`
+                    throw new MiddlewareExecutionError(
+                        action,
+                        middlewareName,
+                        error instanceof Error ? error : new Error(String(error)),
+                    )
+                }
+            }
+        })
+
+        return await compose(wrappedMiddlewares)(context, finalHandler as any)
     }
 
     createConnectionContext(

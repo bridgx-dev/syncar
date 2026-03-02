@@ -43,12 +43,8 @@ export type IMiddlewareAction =
 // MIDDLEWARE CONTEXT INTERFACE
 // ============================================================
 
-/**
- * Next function type
- * Called by middleware to pass control to the next layer in the onion.
- * Returns a promise that resolves when all downstream layers have finished.
- */
-export type NextFunction = () => Promise<void>
+export type NextFunction = () => Promise<any>
+export type Next = NextFunction
 
 /**
  * Middleware context interface (Hono-style)
@@ -70,6 +66,21 @@ export interface Context<S = Record<string, any>> {
     /** The action being performed */
     readonly action: IMiddlewareAction
   }
+
+  /**
+   * The error object if an error occurred during execution
+   */
+  error?: Error
+
+  /**
+   * Whether the request/action has been finalized
+   */
+  finalized: boolean
+
+  /**
+   * The result/response object
+   */
+  res?: any
 
   /**
    * Shared state variables
@@ -113,7 +124,7 @@ export interface Context<S = Record<string, any>> {
 export type Middleware<S = any> = (
   c: Context<S>,
   next: NextFunction,
-) => void | Promise<void>
+) => any | Promise<any>
 
 // Alias for legacy compatibility
 export type IMiddleware<S = any> = Middleware<S>
@@ -134,10 +145,10 @@ export type IMiddlewareManager = IContextManager
  *   use(middleware: IMiddleware): void { ... }
  *   remove(middleware: IMiddleware): boolean { ... }
  *   clear(): void { ... }
- *   executeConnection(client, action): Promise<void> { ... }
- *   executeMessage(client, message): Promise<void> { ... }
- *   executeSubscribe(client, channel): Promise<void> { ... }
- *   executeUnsubscribe(client, channel): Promise<void> { ... }
+ *   executeConnection(client, action): Promise<Context> { ... }
+ *   executeMessage(client, message): Promise<Context> { ... }
+ *   executeSubscribe(client, channel): Promise<Context> { ... }
+ *   executeUnsubscribe(client, channel): Promise<Context> { ... }
  * }
  * ```
  */
@@ -177,10 +188,10 @@ export interface IContextManager extends IMiddlewareContextFactory {
    * @param kernel - The final function to execute at the center of the onion
    */
   execute(
-    context: IMiddlewareContext,
-    middlewares: IMiddleware[],
-    kernel: () => Promise<void>,
-  ): Promise<void>
+    context: Context,
+    middlewares?: Middleware[],
+    kernel?: () => Promise<any>,
+  ): Promise<Context>
 
   /**
    * Execute middleware for a connection action
@@ -192,7 +203,7 @@ export interface IContextManager extends IMiddlewareContextFactory {
   executeConnection(
     client: IClientConnection,
     action: 'connect' | 'disconnect',
-  ): Promise<void>
+  ): Promise<Context>
 
   /**
    * Execute middleware for a message action
@@ -201,7 +212,7 @@ export interface IContextManager extends IMiddlewareContextFactory {
    * @param message - The message
    * @throws MiddlewareRejectionError if any middleware rejects
    */
-  executeMessage(client: IClientConnection, message: Message): Promise<void>
+  executeMessage(client: IClientConnection, message: Message): Promise<Context>
 
   /**
    * Execute middleware for a subscribe action
@@ -213,7 +224,8 @@ export interface IContextManager extends IMiddlewareContextFactory {
   executeSubscribe(
     client: IClientConnection,
     channel: ChannelName,
-  ): Promise<void>
+    finalHandler?: () => Promise<any>,
+  ): Promise<Context>
 
   /**
    * Execute middleware for an unsubscribe action
@@ -225,7 +237,8 @@ export interface IContextManager extends IMiddlewareContextFactory {
   executeUnsubscribe(
     client: IClientConnection,
     channel: ChannelName,
-  ): Promise<void>
+    finalHandler?: () => Promise<any>,
+  ): Promise<Context>
 }
 
 // ============================================================
@@ -281,7 +294,7 @@ export interface IMiddlewareContextFactory {
   createConnectionContext(
     client: IClientConnection,
     action: 'connect' | 'disconnect',
-  ): IMiddlewareContext
+  ): Context
 
   /**
    * Create context for a message action
@@ -293,7 +306,7 @@ export interface IMiddlewareContextFactory {
   createMessageContext(
     client: IClientConnection,
     message: Message,
-  ): IMiddlewareContext
+  ): Context
 
   /**
    * Create context for a subscribe action
@@ -305,7 +318,7 @@ export interface IMiddlewareContextFactory {
   createSubscribeContext(
     client: IClientConnection,
     channel: ChannelName,
-  ): IMiddlewareContext
+  ): Context
 
   /**
    * Create context for an unsubscribe action
@@ -317,7 +330,7 @@ export interface IMiddlewareContextFactory {
   createUnsubscribeContext(
     client: IClientConnection,
     channel: ChannelName,
-  ): IMiddlewareContext
+  ): Context
 }
 
 // ============================================================
@@ -363,7 +376,7 @@ export type IMiddlewareChain = ReadonlyArray<IMiddleware>
  */
 export type IComposedMiddleware = (
   context: IMiddlewareContext,
-) => Promise<void> & {
+) => Promise<Context> & {
   readonly composed: true
   readonly middlewares: IMiddlewareChain
 }
@@ -391,7 +404,7 @@ export type IComposedMiddleware = (
  */
 export type IActionMiddleware<T extends IMiddlewareAction> = (
   context: IMiddlewareContext & { action: T },
-) => void | Promise<void>
+) => any | Promise<any>
 
 // ============================================================
 // MIDDLEWARE MANAGER CLASS
@@ -434,8 +447,8 @@ export declare class ContextManager
    * reject the action, or pass control to the next layer.
    */
   compose(
-    middlewares: IMiddleware[],
-  ): (context: IMiddlewareContext, next?: () => Promise<void>) => Promise<void>
+    middlewares: Middleware[],
+  ): (context: Context, next?: () => Promise<any>) => Promise<Context>
 
   /**
    * Register a middleware function
@@ -489,7 +502,7 @@ export declare class ContextManager
   executeConnection(
     client: IClientConnection,
     action: 'connect' | 'disconnect',
-  ): Promise<void>
+  ): Promise<Context>
 
   /**
    * Execute middleware for a message action
@@ -500,7 +513,7 @@ export declare class ContextManager
    * @throws {MiddlewareRejectionError} If middleware rejects the action
    * @throws {MiddlewareExecutionError} If middleware throws an unexpected error
    */
-  executeMessage(client: IClientConnection, message: Message): Promise<void>
+  executeMessage(client: IClientConnection, message: Message): Promise<Context>
 
   /**
    * Execute middleware for a subscribe action
@@ -515,8 +528,8 @@ export declare class ContextManager
   executeSubscribe(
     client: IClientConnection,
     channel: ChannelName,
-    finalHandler?: () => Promise<void>,
-  ): Promise<void>
+    finalHandler?: () => Promise<any>,
+  ): Promise<Context>
 
   /**
    * Execute middleware for an unsubscribe action
@@ -531,8 +544,8 @@ export declare class ContextManager
   executeUnsubscribe(
     client: IClientConnection,
     channel: ChannelName,
-    finalHandler?: () => Promise<void>,
-  ): Promise<void>
+    finalHandler?: () => Promise<any>,
+  ): Promise<Context>
 
   /**
    * Execute a chain of middlewares with a context
@@ -546,22 +559,15 @@ export declare class ContextManager
    * @throws {MiddlewareExecutionError} If middleware throws an unexpected error
    */
   execute(
-    context: IMiddlewareContext,
-    middlewares?: IMiddleware[],
-    finalHandler?: () => Promise<void>,
-  ): Promise<void>
+    context: Context,
+    middlewares?: Middleware[],
+    finalHandler?: () => Promise<any>,
+  ): Promise<Context>
 
-  /**
-   * Create context for a connection action
-   *
-   * @param client - The client connection
-   * @param action - The connection action
-   * @returns Middleware context for connection actions
-   */
   createConnectionContext(
     client: IClientConnection,
     action: 'connect' | 'disconnect',
-  ): IMiddlewareContext
+  ): Context
 
   /**
    * Create context for a message action
@@ -573,7 +579,7 @@ export declare class ContextManager
   createMessageContext(
     client: IClientConnection,
     message: Message,
-  ): IMiddlewareContext
+  ): Context
 
   /**
    * Create context for a subscribe action
@@ -585,7 +591,7 @@ export declare class ContextManager
   createSubscribeContext(
     client: IClientConnection,
     channel: ChannelName,
-  ): IMiddlewareContext
+  ): Context
 
   /**
    * Create context for an unsubscribe action
@@ -597,7 +603,7 @@ export declare class ContextManager
   createUnsubscribeContext(
     client: IClientConnection,
     channel: ChannelName,
-  ): IMiddlewareContext
+  ): Context
 
   /**
    * Get the number of registered middleware
