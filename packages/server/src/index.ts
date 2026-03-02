@@ -23,12 +23,13 @@
 export { SynnelServer, createSynnelServer } from './server'
 export { SynnelServer as Synnel } from './server'
 export {
-  MiddlewareManager,
   createAuthMiddleware,
   createLoggingMiddleware,
   createRateLimitMiddleware,
   createChannelWhitelistMiddleware,
 } from './middleware'
+export { ContextManager, createContext } from './context'
+export type { Context, Middleware } from './types'
 export {
   SynnelError,
   ConfigError,
@@ -89,7 +90,7 @@ export type {
   IMiddlewareAction,
   IMiddlewareContext,
   IMiddleware,
-  IMiddlewareManager,
+  IContextManager,
   IMiddlewareRejectionError,
   IMiddlewareContextFactory,
   IMiddlewareChain,

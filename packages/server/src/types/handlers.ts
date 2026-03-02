@@ -9,7 +9,7 @@ import type {
   IChannel,
   DataMessage,
   SignalMessage,
-  IMiddlewareManager,
+  IContextManager,
 } from './index'
 
 // ============================================================
@@ -69,21 +69,21 @@ export declare class MessageHandler {
    *
    * @param dependencies - Handler dependencies
    * @param dependencies.registry - Client registry for channel lookups
-   * @param dependencies.middleware - Middleware manager for execution
+   * @param dependencies.context - Context manager for execution
    * @param dependencies.options - Optional handler configuration
    *
    * @example
    * ```ts
    * const handler = new MessageHandler({
    *   registry: clientRegistry,
-   *   middleware: middlewareManager,
+   *   context: contextManager,
    *   options: { requireChannel: true }
    * })
    * ```
    */
   constructor(dependencies: {
     registry: IClientRegistry
-    middleware: IMiddlewareManager
+    context: IContextManager
     options?: MessageHandlerOptions
   })
 
@@ -242,7 +242,7 @@ export interface SignalHandlerOptions {
  */
 export declare class SignalHandler {
   private readonly registry
-  private readonly middleware
+  private readonly context
   private readonly options
 
   /**
@@ -250,14 +250,14 @@ export declare class SignalHandler {
    *
    * @param dependencies - Handler dependencies
    * @param dependencies.registry - Client registry for subscription management
-   * @param dependencies.middleware - Middleware manager for execution
+   * @param dependencies.context - Context manager for execution
    * @param dependencies.options - Optional handler configuration
    *
    * @example
    * ```ts
    * const handler = new SignalHandler({
    *   registry: clientRegistry,
-   *   middleware: middlewareManager,
+   *   context: contextManager,
    *   options: {
    *     requireChannel: false,
    *     sendAcknowledgments: true
@@ -267,7 +267,7 @@ export declare class SignalHandler {
    */
   constructor(dependencies: {
     registry: IClientRegistry
-    middleware: IMiddlewareManager
+    context: IContextManager
     options?: SignalHandlerOptions
   })
 

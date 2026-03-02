@@ -376,41 +376,26 @@ export declare class BroadcastChannel<T = unknown>
 }
 
 /**
- * ChannelRef - Lightweight channel reference
+ * MulticastChannel - Lightweight channel reference
  *
- * Implements IChannelTransport by delegating to registry state via closures.
+ * Implements IChannelTransport by delegating to registry state.
  * Does not store any state itself - all state is in the registry.
  *
  * @template T - The type of data published on this channel
- *
- * @example
- * ```ts
- * const channel = new ChannelRef('chat', registry, ...)
- * channel.publish({ text: 'Hello' })
- * ```
  */
-export declare class ChannelRef<T = unknown>
+export declare class MulticastChannel<T = unknown>
   extends BaseChannel<T>
   implements IChannelTransport<T> {
   /**
-   * Create a new ChannelRef
+   * Create a new MulticastChannel
    *
-   * @param name - Channel name
-   * @param registry - Client registry for connection lookups
-   * @param _getSubscribers - Function to get the subscriber set for this channel
-   * @param handlers - Handler registry for channel event handlers
-   * @param subscribeFn - Function to subscribe a client to this channel
-   * @param unsubscribeFn - Function to unsubscribe a client from this channel
-   * @param chunkSize - Maximum number of subscribers to process in a single chunk
+   * @param config - Configuration object
    */
-  constructor(
-    name: ChannelName,
-    registry: import('./client').IClientRegistry,
-    _getSubscribers: () => Set<string>,
-    subscribeFn: (clientId: string) => boolean,
-    unsubscribeFn: (clientId: string) => boolean,
-    chunkSize?: number,
-  )
+  constructor(config: {
+    name: ChannelName
+    registry: import('./client').IClientRegistry
+    options?: { chunkSize?: number }
+  })
 
   /**
    * Register a channel-specific middleware function

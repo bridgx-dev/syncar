@@ -51,76 +51,54 @@ export type IMiddlewareAction =
 export type NextFunction = () => Promise<void>
 
 /**
- * Middleware context interface
+ * Middleware context interface (Hono-style)
  * Provides context and control to middleware functions.
  *
- * Middleware functions receive this context and can inspect
- * the action, client, message, and channel. They can also
- * reject actions by calling the reject() function.
- *
  * @template S - Type of the shared state object
- *
- * @example
- * ```ts
- * const loggingMiddleware: IMiddleware = async ({ client, action }, next) => {
- *   console.log(`[${action}] Client: ${client?.id}`)
- *   await next() // Pass to next middleware
- * }
- *
- * const authMiddleware: IMiddleware<{ user: User }> = async (context, next) => {
- *   if (context.action === 'connect') {
- *     const user = await validate(context.token)
- *     context.state.user = user // Shared state!
- *   }
- *   await next()
- * }
- * ```
  */
-export interface IMiddlewareContext<S = Record<string, any>> {
+export interface Context<S = Record<string, any>> {
   /**
-   * Shared state between middleware layers
+   * Request-specific data
    */
-  readonly state: S
+  readonly req: {
+    /** The client involved in this action */
+    readonly client?: IClientConnection
+    /** The message being processed */
+    readonly message?: Message
+    /** The channel name for channel-specific actions */
+    readonly channel?: ChannelName
+    /** The action being performed */
+    readonly action: IMiddlewareAction
+  }
 
   /**
-   * The client involved in this action
-   * Undefined for server-level middleware before connection
+   * Shared state variables
    */
-  client?: IClientConnection
+  readonly var: S
 
   /**
-   * The message being processed
-   * Undefined for non-message actions (connect, disconnect, subscribe, unsubscribe)
+   * Get a variable from the state
    */
-  message?: Message
+  get<K extends keyof S>(key: K): S[K]
 
   /**
-   * The channel name for channel-specific actions
-   * Undefined for non-channel actions
+   * Set a variable in the state
    */
-  channel?: ChannelName
-
-  /**
-   * The action being performed
-   */
-  action: IMiddlewareAction
+  set<K extends keyof S>(key: K, value: S[K]): void
 
   /**
    * Reject the action with a reason
-   * Calling this will prevent the action from completing and
-   * send an error to the client if applicable.
    *
    * @param reason - Human-readable reason for rejection
    * @throws MiddlewareRejectionError
-   *
-   * @example
-   * ```ts
-   * if (!isAuthorized(client)) {
-   *   context.reject('User not authorized for this action')
-   * }
-   * ```
    */
-  reject(reason: string): void
+  reject(reason: string): never
+
+  /**
+   * Internal reference to the state object
+   * @deprecated Use get/set or var instead
+   */
+  readonly state: S
 }
 
 // ============================================================
@@ -130,15 +108,17 @@ export interface IMiddlewareContext<S = Record<string, any>> {
 /**
  * Middleware function signature
  *
- * Middleware functions are executed in sequence (onion pattern) for each action.
- * They receive a context and a next() function to call the next layer.
- *
  * @template S - Type of the shared state object
  */
-export type IMiddleware<S = any> = (
-  context: IMiddlewareContext<S>,
+export type Middleware<S = any> = (
+  c: Context<S>,
   next: NextFunction,
 ) => void | Promise<void>
+
+// Alias for legacy compatibility
+export type IMiddleware<S = any> = Middleware<S>
+export type IMiddlewareContext<S = any> = Context<S>
+export type IMiddlewareManager = IContextManager
 
 // ============================================================
 // MIDDLEWARE MANAGER INTERFACE
@@ -161,7 +141,7 @@ export type IMiddleware<S = any> = (
  * }
  * ```
  */
-export interface IMiddlewareManager extends IMiddlewareContextFactory {
+export interface IContextManager extends IMiddlewareContextFactory {
   /**
    * Register a middleware function
    *
@@ -425,7 +405,7 @@ export type IActionMiddleware<T extends IMiddlewareAction> = (
  *
  * @example
  * ```ts
- * const manager = new MiddlewareManager()
+ * const manager = new ContextManager()
  *
  * // Register middleware
  * manager.use(async (context, next) => {
@@ -438,9 +418,8 @@ export type IActionMiddleware<T extends IMiddlewareAction> = (
  * await manager.executeConnection(client, 'connect')
  * ```
  */
-export declare class MiddlewareManager
-  implements IMiddlewareManager, IMiddlewareContextFactory
-{
+export declare class ContextManager
+  implements IContextManager, IMiddlewareContextFactory {
   protected readonly middlewares: IMiddleware[]
 
   /**

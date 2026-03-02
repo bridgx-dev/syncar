@@ -5,7 +5,7 @@ import type {
   IChannelTransport,
   DataMessage,
   IMiddleware,
-  IMiddlewareManager,
+  IContextManager,
 } from '../types'
 
 import { MessageError, ChannelError } from '../errors'
@@ -17,16 +17,16 @@ export interface MessageHandlerOptions {
 
 export class MessageHandler {
   private readonly registry: IClientRegistry
-  private readonly middleware: IMiddlewareManager
+  private readonly context: IContextManager
   private readonly options: Required<MessageHandlerOptions>
 
   constructor(dependencies: {
     registry: IClientRegistry
-    middleware: IMiddlewareManager
+    context: IContextManager
     options?: MessageHandlerOptions
   }) {
     this.registry = dependencies.registry
-    this.middleware = dependencies.middleware
+    this.context = dependencies.context
 
     // Apply defaults
     this.options = {
@@ -52,7 +52,7 @@ export class MessageHandler {
     }
 
     // Build the middleware pipeline
-    const globalMiddlewares = this.middleware.getMiddlewares()
+    const globalMiddlewares = this.context.getMiddlewares()
     let pipeline = [...globalMiddlewares]
 
     if (channel && 'getMiddlewares' in channel) {
@@ -66,7 +66,7 @@ export class MessageHandler {
     }
 
     // Create Context
-    const ctx = this.middleware.createMessageContext(client, message)
+    const ctx = this.context.createMessageContext(client, message)
 
     // Define Kernel
     const kernel = async () => {
@@ -81,7 +81,7 @@ export class MessageHandler {
     }
 
     // Execute Onion
-    await this.middleware.execute(ctx, pipeline, kernel)
+    await this.context.execute(ctx, pipeline, kernel)
   }
 
   canProcessMessage<T = unknown>(message: DataMessage<T>): boolean {

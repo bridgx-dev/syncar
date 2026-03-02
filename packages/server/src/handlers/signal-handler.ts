@@ -3,7 +3,7 @@ import type {
   IClientConnection,
   IChannelTransport,
   SignalMessage,
-  IMiddlewareManager,
+  IContextManager,
 } from '../types'
 
 import { createSignalMessage } from '../lib'
@@ -21,16 +21,16 @@ export interface SignalHandlerOptions {
 
 export class SignalHandler {
   private readonly registry: IClientRegistry
-  private readonly middleware: IMiddlewareManager
+  private readonly context: IContextManager
   private readonly options: Required<SignalHandlerOptions>
 
   constructor(dependencies: {
     registry: IClientRegistry
-    middleware: IMiddlewareManager
+    context: IContextManager
     options?: SignalHandlerOptions
   }) {
     this.registry = dependencies.registry
-    this.middleware = dependencies.middleware
+    this.context = dependencies.context
 
     // Apply defaults
     this.options = {
@@ -50,11 +50,11 @@ export class SignalHandler {
     let ctx
 
     if (message.signal === SignalType.SUBSCRIBE) {
-      ctx = this.middleware.createSubscribeContext(client, message.channel!)
+      ctx = this.context.createSubscribeContext(client, message.channel!)
     } else if (message.signal === SignalType.UNSUBSCRIBE) {
-      ctx = this.middleware.createUnsubscribeContext(client, message.channel!)
+      ctx = this.context.createUnsubscribeContext(client, message.channel!)
     } else {
-      ctx = this.middleware.createMessageContext(client, message)
+      ctx = this.context.createMessageContext(client, message)
     }
 
     // 3. Define Kernel
@@ -82,7 +82,7 @@ export class SignalHandler {
     }
 
     // 4. Execute Onion (Global Middleware)
-    await this.middleware.execute(ctx, this.middleware.getMiddlewares(), kernel)
+    await this.context.execute(ctx, this.context.getMiddlewares(), kernel)
   }
 
   async handleSubscribe(
@@ -138,7 +138,7 @@ export class SignalHandler {
         undefined,
         message.id,
       )
-      client.socket.send(JSON.stringify(ackMessage), () => {})
+      client.socket.send(JSON.stringify(ackMessage), () => { })
     }
   }
 
@@ -173,7 +173,7 @@ export class SignalHandler {
         undefined,
         message.id,
       )
-      client.socket.send(JSON.stringify(ackMessage), () => {})
+      client.socket.send(JSON.stringify(ackMessage), () => { })
     }
   }
 
@@ -192,7 +192,7 @@ export class SignalHandler {
         undefined,
         message.id,
       )
-      client.socket.send(JSON.stringify(pongMessage), () => {})
+      client.socket.send(JSON.stringify(pongMessage), () => { })
     }
   }
 

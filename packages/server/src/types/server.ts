@@ -356,7 +356,7 @@ export declare class SynnelServer implements ISynnelServer {
   private readonly config
   private transport
   readonly registry: IClientRegistry
-  private readonly middleware
+  private readonly context
   private readonly status
   private connectionHandler
   private messageHandler

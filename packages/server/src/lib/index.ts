@@ -53,3 +53,7 @@ export {
   type LoggerFn,
   type LogLevel,
 } from './logger'
+
+// Composition utilities
+export { compose } from './compose'
+export type { Middleware, NextFunction as ComposeNext } from './compose'

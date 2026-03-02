@@ -68,23 +68,26 @@ export type {
   IBroadcastTransport,
   IMulticastTransport,
 } from './channel'
-export type { BaseChannel, BroadcastChannel, ChannelRef } from './channel'
+export type { BaseChannel, BroadcastChannel, MulticastChannel } from './channel'
 
 // ============================================================
 // MIDDLEWARE TYPES
 // ============================================================
 export type {
   IMiddlewareAction,
+  Context,
+  Middleware,
+  IMiddlewareAction as Action,
   IMiddlewareContext,
   IMiddleware,
-  IMiddlewareManager,
+  IContextManager,
   IMiddlewareRejectionError,
   IMiddlewareContextFactory,
   IMiddlewareChain,
   IComposedMiddleware,
   IActionMiddleware,
 } from './middleware'
-export type { MiddlewareManager } from './middleware'
+export type { ContextManager } from './middleware'
 
 // ============================================================
 // SERVER CONFIG TYPES

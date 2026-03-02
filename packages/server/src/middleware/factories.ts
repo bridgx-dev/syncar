@@ -7,6 +7,7 @@
 
 import type {
   IMiddleware,
+  Context,
   IMiddlewareAction,
   IClientConnection,
   ChannelName,
@@ -48,10 +49,10 @@ export interface AuthMiddlewareOptions {
   /**
    * Extract token from the middleware context
    *
-   * @param context - The middleware context
+   * @param c - The middleware context
    * @returns The token string or undefined if not found
    */
-  getToken?: (context: { message?: unknown }) => string | undefined
+  getToken?: (c: Context) => string | undefined
 
   /**
    * Property name to attach verified user data
@@ -96,46 +97,45 @@ export function createAuthMiddleware(
 ): IMiddleware {
   const {
     verifyToken,
-    getToken = (ctx) => {
+    getToken = (c) => {
       // Default: extract token from message.data.token
-      const msg = ctx.message as { data?: { token?: string } } | undefined
+      const msg = c.req.message as { data?: { token?: string } } | undefined
       return msg?.data?.token
     },
     attachProperty = 'user',
     actions,
   } = options
 
-  return async (context, next) => {
+  return async (c, next) => {
     // Check if this action requires auth
-    if (actions && !actions.includes(context.action)) {
+    if (actions && !actions.includes(c.req.action)) {
       return next()
     }
 
     // Extract token
-    const token = getToken(context as any)
+    const token = getToken(c)
     if (!token) {
-      context.reject('Authentication token required')
-      return
+      c.reject('Authentication token required')
     }
 
     // Verify token
     try {
-      const userData = await verifyToken(token)
+      const userData = await verifyToken(token!)
 
       // Attach user data to client (LEGACY - for compatibility)
-      if (context.client) {
-        ;(context.client as unknown as Record<string, unknown>)[
+      if (c.req.client) {
+        ; (c.req.client as unknown as Record<string, unknown>)[
           attachProperty
         ] = userData
       }
 
-      // Attach to STATE (New Onion Pattern)
-      context.state[attachProperty] = userData
+      // Attach to STATE (Hono-style)
+      c.set(attachProperty, userData)
 
       // PASS TO NEXT LAYER
       await next()
     } catch (error) {
-      context.reject('Authentication failed: Invalid token')
+      c.reject('Authentication failed: Invalid token')
     }
   }
 }
@@ -227,26 +227,23 @@ export function createLoggingMiddleware(
     actions,
   } = options
 
-  return async (context, next) => {
+  return async (c, next) => {
     // Check if this action should be logged
-    if (actions && !actions.includes(context.action)) {
+    if (actions && !actions.includes(c.req.action)) {
       return next()
     }
 
     const start = Date.now()
-
-    // PRE-EXECUTION LOG (Optional or combined with post)
-    // For Onion, we usually want to log the RESULT or DURATION
 
     await next() // Wait for downstream layers
 
     const duration = Date.now() - start
 
     const logData = {
-      action: context.action,
-      clientId: context.client?.id,
-      channel: context.channel,
-      message: includeMessageData ? context.message : undefined,
+      action: c.req.action,
+      clientId: c.req.client?.id,
+      channel: c.req.channel,
+      message: includeMessageData ? c.req.message : undefined,
       duration,
     }
 
@@ -291,10 +288,10 @@ export interface RateLimitMiddlewareOptions {
    * Extract a unique identifier for rate limiting
    * Defaults to client ID
    *
-   * @param context - The middleware context
+   * @param c - The middleware context
    * @returns Unique identifier for rate limiting
    */
-  getMessageId?: (context: { client?: { id: string } }) => string
+  getMessageId?: (c: Context) => string
 
   /**
    * Actions to rate limit
@@ -343,7 +340,7 @@ export function createRateLimitMiddleware(
   const {
     maxRequests = 100,
     windowMs = 60000,
-    getMessageId = (ctx) => ctx.client?.id ?? '',
+    getMessageId = (c) => c.req.client?.id ?? '',
     actions = ['message'],
   } = options
 
@@ -358,13 +355,13 @@ export function createRateLimitMiddleware(
   }, windowMs * 10)
 
   // Return middleware with cleanup
-  const middleware: IMiddleware = async (context, next) => {
+  const middleware: IMiddleware = async (c, next) => {
     // Check if this action should be rate limited
-    if (!actions.includes(context.action)) {
+    if (!actions.includes(c.req.action)) {
       return next()
     }
 
-    const id = getMessageId(context as any)
+    const id = getMessageId(c)
     if (!id) {
       return next() // No ID to rate limit
     }
@@ -389,10 +386,9 @@ export function createRateLimitMiddleware(
 
     // Check limit
     if (currentState.count >= maxRequests) {
-      context.reject(
+      c.reject(
         `Rate limit exceeded. Max ${maxRequests} requests per ${windowMs}ms`,
       )
-      return
     }
 
     // Increment counter
@@ -402,11 +398,11 @@ export function createRateLimitMiddleware(
     await next()
   }
 
-  // Attach cleanup method
-  ;(middleware as { cleanup?: () => void }).cleanup = () => {
-    clearInterval(cleanupInterval)
-    rateLimitStore.clear()
-  }
+    // Attach cleanup method
+    ; (middleware as { cleanup?: () => void }).cleanup = () => {
+      clearInterval(cleanupInterval)
+      rateLimitStore.clear()
+    }
 
   return middleware
 }
@@ -519,34 +515,32 @@ export function createChannelWhitelistMiddleware(
     restrictUnsubscribe = false,
   } = options
 
-  return async (context, next) => {
+  return async (c, next) => {
     // Only check subscribe/unsubscribe actions
-    if (context.action !== 'subscribe' && context.action !== 'unsubscribe') {
+    if (c.req.action !== 'subscribe' && c.req.action !== 'unsubscribe') {
       return next()
     }
 
     // Skip unsubscribe if not restricted
-    if (context.action === 'unsubscribe' && !restrictUnsubscribe) {
+    if (c.req.action === 'unsubscribe' && !restrictUnsubscribe) {
       return next()
     }
 
-    if (!context.channel) {
+    if (!c.req.channel) {
       return next() // No channel to check
     }
 
     // Check dynamic function first
     if (isDynamic) {
-      if (!isDynamic(context.channel, context.client)) {
-        context.reject(`Channel '${context.channel}' is not allowed`)
-        return
+      if (!isDynamic(c.req.channel, c.req.client)) {
+        c.reject(`Channel '${c.req.channel}' is not allowed`)
       }
       return next()
     }
 
     // Check static whitelist
-    if (!allowedChannels.includes(context.channel)) {
-      context.reject(`Channel '${context.channel}' is not allowed`)
-      return
+    if (!allowedChannels.includes(c.req.channel)) {
+      c.reject(`Channel '${c.req.channel}' is not allowed`)
     }
 
     await next()

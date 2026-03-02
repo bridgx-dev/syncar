@@ -10,13 +10,13 @@ import {
     type ChannelName,
     type Message,
     type IMiddleware,
-    type IMiddlewareManager,
+    type IContextManager,
     MessageType,
 } from './types'
 import { MulticastChannel } from './channel/multicast'
 import { BroadcastChannel } from './channel'
 import { ConnectionHandler, MessageHandler, SignalHandler } from './handlers'
-import { MiddlewareManager } from './middleware/middleware-manager'
+import { ContextManager } from './context'
 import { StateError, ConfigError } from './errors'
 import { ClientRegistry } from './registry'
 import { WebSocketServerTransport } from './websocket'
@@ -31,7 +31,7 @@ export class SynnelServer implements ISynnelServer {
     private readonly config: IServerOptions
     private transport: IServerTransport | undefined
     public readonly registry: IClientRegistry
-    private readonly middleware: IMiddlewareManager
+    private readonly context: IContextManager
     private readonly status: ServerState = {
         started: false,
         startedAt: undefined,
@@ -47,13 +47,13 @@ export class SynnelServer implements ISynnelServer {
         // Create or use injected client registry
         this.registry = this.config.registry
 
-        // Create middleware manager
-        this.middleware = new MiddlewareManager()
+        // Create context manager
+        this.context = new ContextManager()
 
         // Register any middleware from config
         if (this.config.middleware) {
             for (const mw of this.config.middleware) {
-                this.middleware.use(mw)
+                this.context.use(mw)
             }
         }
     }
@@ -74,8 +74,8 @@ export class SynnelServer implements ISynnelServer {
 
         // Create handlers
         this.connectionHandler = new ConnectionHandler({ registry: this.registry })
-        this.messageHandler = new MessageHandler({ registry: this.registry, middleware: this.middleware })
-        this.signalHandler = new SignalHandler({ registry: this.registry, middleware: this.middleware })
+        this.messageHandler = new MessageHandler({ registry: this.registry, context: this.context })
+        this.signalHandler = new SignalHandler({ registry: this.registry, context: this.context })
 
         // Set up transport event handlers
         this.setupTransportHandlers()
@@ -145,7 +145,7 @@ export class SynnelServer implements ISynnelServer {
     }
 
     use(middleware: IMiddleware): void {
-        this.middleware.use(middleware)
+        this.context.use(middleware)
     }
 
     getStats(): IServerStats {
@@ -170,7 +170,7 @@ export class SynnelServer implements ISynnelServer {
 
         transport.on('connection', async (connection) => {
             try {
-                await this.middleware.executeConnection(connection, 'connect')
+                await this.context.executeConnection(connection, 'connect')
                 await this.connectionHandler!.handleConnection(connection)
             } catch (error) {
                 console.error('Error handling connection:', error)
@@ -181,7 +181,7 @@ export class SynnelServer implements ISynnelServer {
             try {
                 const client = this.registry.get(clientId)
                 if (client) {
-                    await this.middleware.executeConnection(client, 'disconnect')
+                    await this.context.executeConnection(client, 'disconnect')
                     await this.connectionHandler!.handleDisconnection(clientId)
                 }
             } catch (error) {

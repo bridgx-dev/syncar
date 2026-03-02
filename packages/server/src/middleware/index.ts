@@ -5,7 +5,7 @@
  * @module middleware
  */
 
-export { MiddlewareManager } from './middleware-manager'
+export type { Context, Middleware } from '../types'
 export {
   createAuthMiddleware,
   createLoggingMiddleware,

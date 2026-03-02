@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { MiddlewareManager } from '../src/middleware/index.js'
+import { ContextManager } from '../src/context.js'
 import {
   MiddlewareRejectionError,
   MiddlewareExecutionError,
@@ -33,20 +33,21 @@ const createMockClient = (id: string): IClientConnection => {
   }
 }
 
-describe('MiddlewareManager', () => {
-  let manager: MiddlewareManager
+describe('ContextManager', () => {
+  let manager: ContextManager
   let mockClient: IClientConnection
 
   beforeEach(() => {
-    manager = new MiddlewareManager()
+    manager = new ContextManager()
     mockClient = createMockClient('client-1')
   })
 
   describe('basic operations', () => {
     it('should add and execute middleware', async () => {
       const handler = vi.fn()
-      manager.use(async ({ client }) => {
-        handler(client?.id)
+      manager.use(async (c, next) => {
+        handler(c.req.client?.id)
+        await next()
       })
 
       await manager.executeConnection(mockClient, 'connect')
@@ -55,7 +56,7 @@ describe('MiddlewareManager', () => {
     })
 
     it('should remove middleware', () => {
-      const middleware = async () => {}
+      const middleware = async () => { }
       manager.use(middleware)
 
       expect(manager.remove(middleware)).toBe(true)
@@ -63,8 +64,8 @@ describe('MiddlewareManager', () => {
     })
 
     it('should clear all middleware', async () => {
-      manager.use(async () => {})
-      manager.use(async () => {})
+      manager.use(async (c, next) => { await next() })
+      manager.use(async (c, next) => { await next() })
 
       manager.clear()
 
@@ -75,8 +76,8 @@ describe('MiddlewareManager', () => {
     it('should get middleware count', () => {
       expect(manager.getCount()).toBe(0)
 
-      manager.use(async () => {})
-      manager.use(async () => {})
+      manager.use(async (c, next) => { await next() })
+      manager.use(async (c, next) => { await next() })
 
       expect(manager.getCount()).toBe(2)
     })
@@ -84,7 +85,7 @@ describe('MiddlewareManager', () => {
     it('should check if has middleware', () => {
       expect(manager.hasMiddleware()).toBe(false)
 
-      manager.use(async () => {})
+      manager.use(async (c, next) => { await next() })
 
       expect(manager.hasMiddleware()).toBe(true)
     })
@@ -93,8 +94,9 @@ describe('MiddlewareManager', () => {
   describe('connection actions', () => {
     it('should execute connection middleware on connect', async () => {
       const handler = vi.fn()
-      manager.use(async ({ action }) => {
-        handler(action)
+      manager.use(async (c, next) => {
+        handler(c.req.action)
+        await next()
       })
 
       await manager.executeConnection(mockClient, 'connect')
@@ -104,8 +106,9 @@ describe('MiddlewareManager', () => {
 
     it('should execute connection middleware on disconnect', async () => {
       const handler = vi.fn()
-      manager.use(async ({ action }) => {
-        handler(action)
+      manager.use(async (c, next) => {
+        handler(c.req.action)
+        await next()
       })
 
       await manager.executeConnection(mockClient, 'disconnect')
@@ -117,8 +120,9 @@ describe('MiddlewareManager', () => {
   describe('message actions', () => {
     it('should execute message middleware', async () => {
       const handler = vi.fn()
-      manager.use(async ({ message }) => {
-        handler(message)
+      manager.use(async (c, next) => {
+        handler(c.req.message)
+        await next()
       })
 
       const message: DataMessage = {
@@ -138,8 +142,9 @@ describe('MiddlewareManager', () => {
   describe('subscribe actions', () => {
     it('should execute subscribe middleware', async () => {
       const handler = vi.fn()
-      manager.use(async ({ channel, action }) => {
-        handler(channel, action)
+      manager.use(async (c, next) => {
+        handler(c.req.channel, c.req.action)
+        await next()
       })
 
       await manager.executeSubscribe(mockClient, 'chat')
@@ -151,8 +156,9 @@ describe('MiddlewareManager', () => {
   describe('unsubscribe actions', () => {
     it('should execute unsubscribe middleware', async () => {
       const handler = vi.fn()
-      manager.use(async ({ channel, action }) => {
-        handler(channel, action)
+      manager.use(async (c, next) => {
+        handler(c.req.channel, c.req.action)
+        await next()
       })
 
       await manager.executeUnsubscribe(mockClient, 'chat')
@@ -163,8 +169,8 @@ describe('MiddlewareManager', () => {
 
   describe('rejection', () => {
     it('should reject action when reject() is called', async () => {
-      manager.use(async ({ reject }) => {
-        reject('Not allowed')
+      manager.use(async (c) => {
+        c.reject('Not allowed')
       })
 
       await expect(
@@ -173,8 +179,8 @@ describe('MiddlewareManager', () => {
     })
 
     it('should provide rejection reason', async () => {
-      manager.use(async ({ reject }) => {
-        reject('Custom reason')
+      manager.use(async (c) => {
+        c.reject('Custom reason')
       })
 
       try {
@@ -187,12 +193,22 @@ describe('MiddlewareManager', () => {
       }
     })
 
-    it('should provide getRejectionReason method on context', async () => {
-      let capturedContext: any
+    it('should stop execution on rejection', async () => {
+      const order: string[] = []
 
-      manager.use(async (context) => {
-        capturedContext = context
-        context.reject('Test rejection')
+      manager.use(async (c, next) => {
+        order.push('first')
+        await next()
+      })
+
+      manager.use(async (c) => {
+        order.push('rejected')
+        c.reject('Stop here')
+      })
+
+      manager.use(async (c, next) => {
+        order.push('third')
+        await next()
       })
 
       try {
@@ -201,56 +217,12 @@ describe('MiddlewareManager', () => {
         // Expected rejection
       }
 
-      // getRejectionReason should return the reason
-      expect(capturedContext.getRejectionReason()).toBe('Test rejection')
-    })
-
-    it('should return undefined for getRejectionReason when not rejected', async () => {
-      let capturedContext: any
-
-      manager.use(async (context) => {
-        capturedContext = context
-        // Don't reject
-      })
-
-      await manager.executeConnection(mockClient, 'connect')
-
-      expect(capturedContext.getRejectionReason()).toBeUndefined()
-    })
-
-    it('should expose isRejected method on context', async () => {
-      let capturedContext: any
-
-      manager.use(async (context) => {
-        capturedContext = context
-        context.reject('Test rejection')
-      })
-
-      try {
-        await manager.executeConnection(mockClient, 'connect')
-      } catch {
-        // Expected rejection
-      }
-
-      // isRejected should return true after rejection
-      expect(capturedContext.isRejected()).toBe(true)
-    })
-
-    it('should return false for isRejected when not rejected', async () => {
-      let capturedContext: any
-
-      manager.use(async (context) => {
-        capturedContext = context
-        // Don't reject
-      })
-
-      await manager.executeConnection(mockClient, 'connect')
-
-      expect(capturedContext.isRejected()).toBe(false)
+      expect(order).toEqual(['first', 'rejected'])
+      expect(order).not.toContain('third')
     })
 
     it('should wrap thrown errors in MiddlewareExecutionError', async () => {
-      manager.use(async () => {
+      manager.use(async (c, next) => {
         throw new Error('Test error')
       })
 
@@ -264,7 +236,7 @@ describe('MiddlewareManager', () => {
     })
 
     it('should wrap non-Error thrown values in MiddlewareExecutionError', async () => {
-      manager.use(async () => {
+      manager.use(async (c, next) => {
         throw 'string error' // Throwing a string instead of Error
       })
 
@@ -280,7 +252,7 @@ describe('MiddlewareManager', () => {
     })
 
     it('should wrap number thrown values in MiddlewareExecutionError', async () => {
-      manager.use(async () => {
+      manager.use(async (c, next) => {
         throw 404 // Throwing a number
       })
 
@@ -298,16 +270,19 @@ describe('MiddlewareManager', () => {
     it('should execute middleware in order', async () => {
       const order: string[] = []
 
-      manager.use(async () => {
+      manager.use(async (c, next) => {
         order.push('first')
+        await next()
       })
 
-      manager.use(async () => {
+      manager.use(async (c, next) => {
         order.push('second')
+        await next()
       })
 
-      manager.use(async () => {
+      manager.use(async (c, next) => {
         order.push('third')
+        await next()
       })
 
       await manager.executeConnection(mockClient, 'connect')
@@ -318,17 +293,19 @@ describe('MiddlewareManager', () => {
     it('should stop execution on rejection', async () => {
       const order: string[] = []
 
-      manager.use(async () => {
+      manager.use(async (c, next) => {
         order.push('first')
+        await next()
       })
 
-      manager.use(async ({ reject }) => {
+      manager.use(async (c) => {
         order.push('rejected')
-        reject('Stop here')
+        c.reject('Stop here')
       })
 
-      manager.use(async () => {
+      manager.use(async (c, next) => {
         order.push('third')
+        await next()
       })
 
       try {
@@ -346,10 +323,10 @@ describe('MiddlewareManager', () => {
     it('should create connection context', () => {
       const context = manager.createConnectionContext(mockClient, 'connect')
 
-      expect(context.client).toBe(mockClient)
-      expect(context.action).toBe('connect')
-      expect(context.message).toBeUndefined()
-      expect(context.channel).toBeUndefined()
+      expect(context.req.client).toBe(mockClient)
+      expect(context.req.action).toBe('connect')
+      expect(context.req.message).toBeUndefined()
+      expect(context.req.channel).toBeUndefined()
     })
 
     it('should create message context', () => {
@@ -363,38 +340,38 @@ describe('MiddlewareManager', () => {
 
       const context = manager.createMessageContext(mockClient, message)
 
-      expect(context.client).toBe(mockClient)
-      expect(context.action).toBe('message')
-      expect(context.message).toBe(message)
-      expect(context.channel).toBeUndefined()
+      expect(context.req.client).toBe(mockClient)
+      expect(context.req.action).toBe('message')
+      expect(context.req.message).toBe(message)
+      expect(context.req.channel).toBeUndefined()
     })
 
     it('should create subscribe context', () => {
       const context = manager.createSubscribeContext(mockClient, 'chat')
 
-      expect(context.client).toBe(mockClient)
-      expect(context.action).toBe('subscribe')
-      expect(context.channel).toBe('chat')
-      expect(context.message).toBeUndefined()
+      expect(context.req.client).toBe(mockClient)
+      expect(context.req.action).toBe('subscribe')
+      expect(context.req.channel).toBe('chat')
+      expect(context.req.message).toBeUndefined()
     })
 
     it('should create unsubscribe context', () => {
       const context = manager.createUnsubscribeContext(mockClient, 'chat')
 
-      expect(context.client).toBe(mockClient)
-      expect(context.action).toBe('unsubscribe')
-      expect(context.channel).toBe('chat')
-      expect(context.message).toBeUndefined()
+      expect(context.req.client).toBe(mockClient)
+      expect(context.req.action).toBe('unsubscribe')
+      expect(context.req.channel).toBe('chat')
+      expect(context.req.message).toBeUndefined()
     })
   })
 })
 
 describe('Middleware Factories', () => {
-  let manager: MiddlewareManager
+  let manager: ContextManager
   let mockClient: IClientConnection
 
   beforeEach(() => {
-    manager = new MiddlewareManager()
+    manager = new ContextManager()
     mockClient = createMockClient('client-1')
   })
 
@@ -407,8 +384,8 @@ describe('Middleware Factories', () => {
           }
           throw new Error('Invalid token')
         },
-        getToken: (context) => {
-          return (context.message as any)?.data?.token
+        getToken: (c) => {
+          return (c.req.message as any)?.data?.token
         },
       })
 
@@ -456,8 +433,8 @@ describe('Middleware Factories', () => {
         verifyToken: async () => {
           throw new Error('Should not be called')
         },
-        getToken: (context) => {
-          return (context.message as any)?.data?.token
+        getToken: (c) => {
+          return (c.req.message as any)?.data?.token
         },
       })
 
@@ -481,8 +458,8 @@ describe('Middleware Factories', () => {
         verifyToken: async () => {
           throw new Error('Invalid token')
         },
-        getToken: (context) => {
-          return (context.message as any)?.data?.token
+        getToken: (c) => {
+          return (c.req.message as any)?.data?.token
         },
       })
 
@@ -506,8 +483,8 @@ describe('Middleware Factories', () => {
         verifyToken: async () => {
           return { userId: 'user-123', role: 'admin' }
         },
-        getToken: (context) => {
-          return (context.message as any)?.data?.token
+        getToken: (c) => {
+          return (c.req.message as any)?.data?.token
         },
         attachProperty: 'user',
       })
@@ -834,8 +811,8 @@ describe('Middleware Factories', () => {
         'function',
       )
 
-      // Call cleanup - should not throw
-      ;(middleware as { cleanup?: () => void }).cleanup!()
+        // Call cleanup - should not throw
+        ; (middleware as { cleanup?: () => void }).cleanup!()
 
       // Store should be cleared
       const state = getRateLimitState('client-1')
