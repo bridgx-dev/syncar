@@ -104,14 +104,7 @@ export interface Context<S = Record<string, any>> {
    * @throws MiddlewareRejectionError
    */
   reject(reason: string): never
-
-  /**
-   * Internal reference to the state object
-   * @deprecated Use get/set or var instead
-   */
-  readonly state: S
 }
-
 // ============================================================
 // MIDDLEWARE FUNCTION TYPE
 // ============================================================

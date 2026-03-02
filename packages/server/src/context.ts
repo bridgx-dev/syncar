@@ -44,7 +44,6 @@ export function createContext<S = Record<string, any>>(
         },
 
         var: state,
-        state, // Legacy compatibility
         finalized: false,
 
         get: <K extends keyof S>(key: K): S[K] => {
