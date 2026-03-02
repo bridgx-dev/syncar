@@ -63,7 +63,7 @@ export default function Chat({ username }: ChatProps) {
         const timeoutId = setTimeout(() => {
           setTypingUsers((prev) => prev.filter((u) => u !== data.username))
           typingTimeoutsRef.current.delete(data.username)
-        }, 3000)
+        }, 1000) // Remove typing indicator after 1 second of inactivity
         typingTimeoutsRef.current.set(data.username, timeoutId)
       }
     },
@@ -136,9 +136,28 @@ export default function Chat({ username }: ChatProps) {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setMessage(e.target.value)
-    // Send typing indicator
-    if (e.target.value.length > 0 && e.target.value.length % 5 === 0) {
+    // Send typing indicator immediately on input
+    if (e.target.value.length > 0) {
       presence.send({ userId: client.id, username, status: 'typing' })
+      // Clear any existing timeout
+      const existingTimeout = typingTimeoutsRef.current.get(username)
+      if (existingTimeout) {
+        clearTimeout(existingTimeout)
+      }
+      // Set a timeout to send 'online' after user stops typing for 1s
+      const timeoutId = setTimeout(() => {
+        presence.send({ userId: client.id, username, status: 'online' })
+        typingTimeoutsRef.current.delete(username)
+      }, 1000)
+      typingTimeoutsRef.current.set(username, timeoutId)
+    } else {
+      // If input is cleared, send 'online' immediately
+      presence.send({ userId: client.id, username, status: 'online' })
+      const existingTimeout = typingTimeoutsRef.current.get(username)
+      if (existingTimeout) {
+        clearTimeout(existingTimeout)
+        typingTimeoutsRef.current.delete(username)
+      }
     }
   }
 

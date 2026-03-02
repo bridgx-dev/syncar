@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@synnel/core": "workspace:*",
-    "@synnel/adapter": "workspace:*",
     "@synnel/client": "workspace:*",
     "@synnel/react": "workspace:*",
     "@synnel/server": "workspace:*",

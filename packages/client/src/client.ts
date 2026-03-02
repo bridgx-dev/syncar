@@ -4,14 +4,17 @@
  */
 
 import {
-  generateMessageId,
-  createDataMessage,
   MessageType,
   SignalType,
   type Message,
   type DataMessage,
   type ChannelName,
-} from '@synnel/core'
+} from '@synnel/types'
+import {
+  generateMessageId,
+  createDataMessage,
+  generateClientId,
+} from '@synnel/lib'
 import type {
   ClientConfig,
   ClientStatus,
@@ -60,7 +63,7 @@ export class SynnelClient {
     // Handle auto-connect
     if (config.autoConnect) {
       // Background connect, errors are handled by ConnectionManager
-      void this.connect().catch(() => { })
+      void this.connect().catch(() => {})
     }
   }
 
@@ -413,7 +416,7 @@ export class SynnelClient {
     if (handlers) {
       for (const handler of handlers) {
         try {
-          ; (handler as any)(...args)
+          ;(handler as any)(...args)
         } catch (error) {
           console.error(`Error in ${event} handler:`, error)
         }
@@ -425,7 +428,7 @@ export class SynnelClient {
    * Generate a unique client ID
    */
   private generateClientId(): string {
-    return `client_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
+    return generateClientId()
   }
 
   /**

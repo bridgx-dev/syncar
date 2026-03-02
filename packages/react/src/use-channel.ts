@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSynnelClient } from './use-client.js'
 import type { ChannelSubscription } from '@synnel/client'
 import type { UseChannelOptions, UseChannelReturn } from './types.js'
-import type { DataMessage } from '@synnel/core'
+import type { DataMessage } from '@synnel/types'
 
 /**
  * Hook for subscribing to a channel

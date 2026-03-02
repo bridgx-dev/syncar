@@ -15,8 +15,8 @@
     "paths": {
       "@synnel/core": ["../../packages/core/src/index.ts"],
       "@synnel/client": ["../../packages/client/src/index.ts"],
-      "@synnel/adapter": ["../../packages/adapter/src/index.ts"],
-      "@synnel/server": ["../../packages/server/src/index.ts"]
+      "@synnel/server": ["../../packages/server/src/index.ts"],
+      "@synnel/types": ["../../packages/types/src/index.ts"]
     }
   },
   "include": ["server/**/*"],
@@ -24,7 +24,6 @@
   "references": [
     { "path": "../../packages/core" },
     { "path": "../../packages/client" },
-    { "path": "../../packages/adapter" },
     { "path": "../../packages/server" }
   ]
 }

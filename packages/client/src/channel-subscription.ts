@@ -3,13 +3,13 @@
  * Manages a single channel subscription lifecycle
  */
 
-import type { ChannelName, DataMessage } from '@synnel/core'
-import { SignalType } from '@synnel/core'
+import type { ChannelName, DataMessage } from '@synnel/types'
+import { SignalType } from '@synnel/types'
 import type {
   SubscriptionState,
   SubscribeOptions,
   SubscriptionCallbacks,
-  MessageHandler,
+  ClientMessageHandler as MessageHandler,
 } from './types.js'
 
 /**
@@ -115,7 +115,10 @@ export class ChannelSubscriptionImpl<T = unknown> {
       try {
         handler(message)
       } catch (error) {
-        console.error(`Error in message handler for channel ${this.channel}:`, error)
+        console.error(
+          `Error in message handler for channel ${this.channel}:`,
+          error,
+        )
       }
     }
 
@@ -124,7 +127,10 @@ export class ChannelSubscriptionImpl<T = unknown> {
       try {
         this.callbacks.onMessage(message)
       } catch (error) {
-        console.error(`Error in onMessage callback for channel ${this.channel}:`, error)
+        console.error(
+          `Error in onMessage callback for channel ${this.channel}:`,
+          error,
+        )
       }
     }
   }

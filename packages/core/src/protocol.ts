@@ -134,7 +134,7 @@ export interface AckMessage extends Message {
  * Guard to check if message is a DataMessage
  */
 export function isDataMessage<T = unknown>(
-  message: Message<T>
+  message: Message<T>,
 ): message is DataMessage<T> {
   return message.type === MessageType.DATA
 }
@@ -164,7 +164,7 @@ export function isAckMessage(message: Message): message is AckMessage {
  * Generate a unique message ID
  */
 export function generateMessageId(): MessageId {
-  return `msg_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`
+  return `${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
 }
 
 /**
@@ -173,7 +173,7 @@ export function generateMessageId(): MessageId {
 export function createDataMessage<T>(
   channel: ChannelName,
   data: T,
-  id?: MessageId
+  id?: MessageId,
 ): DataMessage<T> {
   return {
     id: id || generateMessageId(),
@@ -191,7 +191,7 @@ export function createSignalMessage(
   channel: ChannelName,
   signal: SignalType,
   data?: DataPayload,
-  id?: MessageId
+  id?: MessageId,
 ): SignalMessage {
   return {
     id: id || generateMessageId(),
@@ -210,7 +210,7 @@ export function createErrorMessage(
   message: string,
   code?: ErrorCode,
   channel?: ChannelName,
-  id?: MessageId
+  id?: MessageId,
 ): ErrorMessage {
   return {
     id: id || generateMessageId(),

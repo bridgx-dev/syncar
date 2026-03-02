@@ -4,7 +4,7 @@
  */
 
 import type { SynnelClient, ClientStatus } from '@synnel/client'
-import type { ChannelName, DataMessage } from '@synnel/core'
+import type { ChannelName, DataMessage } from '@synnel/types'
 import type { ReactNode } from 'react'
 
 /**

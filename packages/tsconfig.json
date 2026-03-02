@@ -3,7 +3,6 @@
   "references": [
     { "path": "core" },
     { "path": "client" },
-    { "path": "adapter" },
     { "path": "server" },
     { "path": "react" }
   ]

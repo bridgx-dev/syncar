@@ -1,20 +1,10 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "composite": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "types": ["node"],
-    "baseUrl": ".",
-    "paths": {
-      "@synnel/core": ["../core/src"],
-      "@synnel/adapter": ["../adapter/src"]
-    }
+    "outDir": "./dist-ts",
+    "composite": false,
+    "incremental": false,
+    "noEmit": false
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"],
-  "references": [{ "path": "../core" }, { "path": "../adapter" }]
+  "include": ["src"]
 }

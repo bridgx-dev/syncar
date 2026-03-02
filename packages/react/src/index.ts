@@ -5,7 +5,7 @@
  */
 
 // Export provider and context
-export { SynnelProvider } from './provider.js'
+export { SynnelProvider } from './Provider.js'
 export { SynnelContext, useSynnelContext } from './context.js'
 
 // Export hooks
@@ -31,6 +31,5 @@ export type {
   ClientStatus,
   ChannelSubscription,
   SubscriptionState,
+  ChannelName,
 } from '@synnel/client'
-
-export type { ChannelName } from '@synnel/core'

@@ -17,6 +17,9 @@ export type ConnectionStatus =
  */
 export type SubscriberId = string
 
+/** Client identifier (e.g., WebSocket connection ID) */
+export type ClientId = string
+
 /**
  * Channel name
  */
@@ -36,22 +39,6 @@ export type Timestamp = number
  * Generic data payload for messages
  */
 export type DataPayload<T = unknown> = T
-
-/**
- * Transport events for WebSocket-style communication
- */
-export interface TransportEvents {
-  message: (data: string) => void
-  open: () => void
-  close: () => void
-  error: (error: Error) => void
-}
-
-/**
- * Transport event listener type
- */
-export type TransportEventListener<K extends keyof TransportEvents> =
-  (event: TransportEvents[K]) => void
 
 /**
  * Transport configuration options

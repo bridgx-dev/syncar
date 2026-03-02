@@ -15,21 +15,21 @@ This package provides a framework-agnostic client for real-time pub/sub communic
 ## Installation
 
 ```bash
-npm install @synnel/client-v2 @synnel/adapter
+npm install @synnel/client-v2
 # or
-pnpm add @synnel/client-v2 @synnel/adapter
+pnpm add @synnel/client-v2
 # or
-yarn add @synnel/client-v2 @synnel/adapter
+yarn add @synnel/client-v2
 ```
 
 ## Quick Start
 
 ```typescript
 import { createSynnelClient } from '@synnel/client-v2'
-import { createWebSocketClientTransport } from '@synnel/adapter/client'
+import { WebSocketClientTransport } from '@synnel/client-v2'
 
 // Create transport
-const transport = createWebSocketClientTransport({
+const transport = new WebSocketClientTransport({
   url: 'ws://localhost:3000',
   reconnect: true,
 })
@@ -98,15 +98,19 @@ await client.disconnect()
 Subscribe to a channel.
 
 ```typescript
-const subscription = await client.subscribe('chat', {
-  onMessage: (msg) => console.log(msg.data),
-  onSubscribed: () => console.log('Subscribed'),
-  onUnsubscribed: () => console.log('Unsubscribed'),
-  onError: (err) => console.error(err),
-}, {
-  autoResubscribe: true, // Re-subscribe after reconnection
-  data: { token: 'abc' }, // Data sent with subscribe message
-})
+const subscription = await client.subscribe(
+  'chat',
+  {
+    onMessage: (msg) => console.log(msg.data),
+    onSubscribed: () => console.log('Subscribed'),
+    onUnsubscribed: () => console.log('Unsubscribed'),
+    onError: (err) => console.error(err),
+  },
+  {
+    autoResubscribe: true, // Re-subscribe after reconnection
+    data: { token: 'abc' }, // Data sent with subscribe message
+  },
+)
 ```
 
 #### `unsubscribe(channel): Promise<void>`
@@ -165,6 +169,7 @@ unsubscribe()
 ```
 
 **Events:**
+
 - `connecting` - Client is connecting
 - `connected` - Client connected
 - `disconnected` - Client disconnected
@@ -264,9 +269,9 @@ const info = subscription.getInfo()
 
 ```javascript
 import { createSynnelClient } from '@synnel/client-v2'
-import { createWebSocketClientTransport } from '@synnel/adapter/client'
+import { WebSocketClientTransport } from '@synnel/client-v2'
 
-const transport = createWebSocketClientTransport({
+const transport = new WebSocketClientTransport({
   url: 'ws://localhost:3000',
 })
 
@@ -276,7 +281,8 @@ await client.connect()
 
 await client.subscribe('chat', {
   onMessage: (msg) => {
-    document.getElementById('messages').innerHTML += `<div>${msg.data.text}</div>`
+    document.getElementById('messages').innerHTML +=
+      `<div>${msg.data.text}</div>`
   },
 })
 
@@ -293,14 +299,14 @@ document.getElementById('send').onclick = async () => {
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
 import { createSynnelClient } from '@synnel/client-v2'
-import { createWebSocketClientTransport } from '@synnel/adapter/client'
+import { WebSocketClientTransport } from '@synnel/client-v2'
 
 const messages = ref([])
 
 let client
 
 onMounted(async () => {
-  const transport = createWebSocketClientTransport({
+  const transport = new WebSocketClientTransport({
     url: 'ws://localhost:3000',
   })
 
@@ -330,13 +336,13 @@ const sendMessage = async () => {
 <script>
 import { onMount, onDestroy } from 'svelte'
 import { createSynnelClient } from '@synnel/client-v2'
-import { createWebSocketClientTransport } from '@synnel/adapter/client'
+import { WebSocketClientTransport } from '@synnel/client-v2'
 
 let messages = []
 let client
 
 onMount(async () => {
-  const transport = createWebSocketClientTransport({
+  const transport = new WebSocketClientTransport({
     url: 'ws://localhost:3000',
   })
 

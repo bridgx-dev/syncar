@@ -85,7 +85,11 @@ channel.unsubscribe('client-1')
 All messages follow the protocol defined in this package.
 
 ```typescript
-import { createDataMessage, createSignalMessage, createErrorMessage } from '@synnel/core'
+import {
+  createDataMessage,
+  createSignalMessage,
+  createErrorMessage,
+} from '@synnel/core'
 
 // Data message
 const dataMsg = createDataMessage('chat', { text: 'Hello' })
@@ -94,7 +98,10 @@ const dataMsg = createDataMessage('chat', { text: 'Hello' })
 const signalMsg = createSignalMessage('chat', SignalType.SUBSCRIBE)
 
 // Error message
-const errorMsg = createErrorMessage('Channel not found', ErrorCode.CHANNEL_NOT_FOUND)
+const errorMsg = createErrorMessage(
+  'Channel not found',
+  ErrorCode.CHANNEL_NOT_FOUND,
+)
 ```
 
 ## API Reference
@@ -103,32 +110,32 @@ const errorMsg = createErrorMessage('Channel not found', ErrorCode.CHANNEL_NOT_F
 
 #### `MessageBus`
 
-| Method | Description |
-|--------|-------------|
-| `createChannel(name, options?)` | Create a new channel |
-| `getChannel(name)` | Get existing channel |
-| `getOrCreateChannel(name, options?)` | Get or create channel |
-| `subscribe(channel, subscriber)` | Subscribe to channel |
-| `unsubscribe(channel, subscriber)` | Unsubscribe from channel |
-| `publish(channel, message, excludeSender?)` | Publish message |
-| `broadcast(message, excludeSender?)` | Broadcast to all channels |
-| `onMessage(handler)` | Add global message handler |
-| `deleteChannel(name)` | Delete a channel |
-| `getStats()` | Get statistics |
+| Method                                      | Description                |
+| ------------------------------------------- | -------------------------- |
+| `createChannel(name, options?)`             | Create a new channel       |
+| `getChannel(name)`                          | Get existing channel       |
+| `getOrCreateChannel(name, options?)`        | Get or create channel      |
+| `subscribe(channel, subscriber)`            | Subscribe to channel       |
+| `unsubscribe(channel, subscriber)`          | Unsubscribe from channel   |
+| `publish(channel, message, excludeSender?)` | Publish message            |
+| `broadcast(message, excludeSender?)`        | Broadcast to all channels  |
+| `onMessage(handler)`                        | Add global message handler |
+| `deleteChannel(name)`                       | Delete a channel           |
+| `getStats()`                                | Get statistics             |
 
 #### `Channel`
 
-| Method | Description |
-|--------|-------------|
-| `subscribe(subscriber)` | Add subscriber |
-| `unsubscribe(subscriber)` | Remove subscriber |
-| `hasSubscriber(subscriber)` | Check if subscribed |
-| `getSubscribers()` | Get all subscribers |
-| `getSubscriberCount()` | Get subscriber count |
-| `isEmpty()` | Check if empty |
-| `isFull()` | Check if at capacity |
-| `getHistory()` | Get message history |
-| `clear()` | Remove all subscribers |
+| Method                      | Description            |
+| --------------------------- | ---------------------- |
+| `subscribe(subscriber)`     | Add subscriber         |
+| `unsubscribe(subscriber)`   | Remove subscriber      |
+| `hasSubscriber(subscriber)` | Check if subscribed    |
+| `getSubscribers()`          | Get all subscribers    |
+| `getSubscriberCount()`      | Get subscriber count   |
+| `isEmpty()`                 | Check if empty         |
+| `isFull()`                  | Check if at capacity   |
+| `getHistory()`              | Get message history    |
+| `clear()`                   | Remove all subscribers |
 
 ### Type Guards
 

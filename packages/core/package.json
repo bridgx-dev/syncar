@@ -13,6 +13,13 @@
       "development": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./src/index.ts"
+    },
+    "./ws-server": {
+      "types": "./dist/ws-server.d.ts",
+      "bun": "./src/ws-server.ts",
+      "development": "./src/ws-server.ts",
+      "import": "./dist/ws-server.js",
+      "default": "./src/ws-server.ts"
     }
   },
   "files": [
@@ -37,10 +44,14 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.13.10",
+    "@types/ws": "^8.18.1",
     "typescript": "^5.8.2",
     "vitest": "^3.0.7"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "dependencies": {
+    "ws": "^8.19.0"
   }
 }

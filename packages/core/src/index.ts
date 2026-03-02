@@ -18,14 +18,13 @@
 
 // Types
 export type {
+  ClientId,
   ConnectionStatus,
   SubscriberId,
   ChannelName,
   MessageId,
   Timestamp,
   DataPayload,
-  TransportEvents,
-  TransportEventListener,
   TransportConfig,
   ChannelState,
   SubscriptionState,
@@ -54,10 +53,7 @@ export {
 } from './protocol.js'
 
 // Channel
-export {
-  Channel,
-  type ChannelOptions,
-} from './channel.js'
+export { Channel, type ChannelOptions } from './channel.js'
 
 // MessageBus
 export {
@@ -65,3 +61,10 @@ export {
   type MessageHandler,
   type MessageBusOptions,
 } from './message-bus.js'
+
+export {
+  type Transport,
+  type TransportEventMap,
+  type TransportCloseEvent,
+  WebSocketClientTransport,
+} from './ws-client.js'

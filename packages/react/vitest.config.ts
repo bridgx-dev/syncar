@@ -7,16 +7,16 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
-    setupFiles: ['./src/__tests__/setup.ts'],
-    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    setupFiles: ['./__tests__/setup.ts'],
+    include: ['__tests__/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     exclude: ['node_modules', 'dist'],
+    root: './',
   },
   resolve: {
     alias: {
       '@synnel/react': path.resolve(__dirname, './src'),
       '@synnel/client': path.resolve(__dirname, '../client/src'),
       '@synnel/core': path.resolve(__dirname, '../core/src'),
-      '@synnel/adapter': path.resolve(__dirname, '../adapter/src'),
     },
   },
 })
