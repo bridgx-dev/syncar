@@ -5,7 +5,6 @@ import {
     SignalType,
     type ClientId,
     type IServerTransport,
-    type IServerTransportConfig,
     type IClientConnection,
 } from './types'
 import {
@@ -16,18 +15,38 @@ import {
 } from './config'
 
 // Instance types
-type WebSocketInstance = InstanceType<(typeof import('ws'))['default']>
+type WebSocketInstance = any
 type ServerInstance = WsServer
 
-interface WebSocketServerTransportConfig extends IServerTransportConfig {
-    server: unknown
+/**
+ * Server transport configuration options
+ */
+export interface IServerTransportConfig {
+    /** HTTP server to attach WebSocket to */
+    server: any
+
+    /** Path for WebSocket connections */
     path?: string
+
+    /** Maximum message size in bytes */
     maxPayload?: number
+
+    /** Enable client ping/pong */
     enablePing?: boolean
+
+    /** Ping interval in milliseconds */
     pingInterval?: number
+
+    /** Ping timeout in milliseconds */
     pingTimeout?: number
+
+    /** Shared connection map */
+    connections?: Map<ClientId, IClientConnection>
+}
+
+export interface WebSocketServerTransportConfig extends IServerTransportConfig {
     ServerConstructor?: new (config: {
-        server: unknown
+        server: any
         path?: string
         maxPayload?: number
     }) => ServerInstance

@@ -29,7 +29,7 @@ export {
   createChannelWhitelistMiddleware,
 } from './middleware'
 export { ContextManager, createContext } from './context'
-export type { Context, Middleware } from './types'
+
 export {
   SynnelError,
   ConfigError,
@@ -49,14 +49,20 @@ export { BROADCAST_CHANNEL, CLOSE_CODES, ERROR_CODES } from './config'
 
 export type {
   IClientConnection,
-  IChannel,
-  IBroadcastTransport,
-  IMulticastTransport,
   IServerTransport,
-  IServerConfig,
+} from './types'
+
+export type {
   IServerOptions,
   IServerStats,
-} from './types'
+} from './server'
+
+export type {
+  IChannelState,
+  IPublishOptions,
+  IMessageHandler,
+  ILifecycleHandler,
+} from './channel'
 
 export type {
   MessageId,
@@ -72,4 +78,6 @@ export type {
   MessageType,
   SignalType,
   ErrorCode,
+  Context,
+  Middleware,
 } from './types'

@@ -1,8 +1,8 @@
 import type {
   IClientConnection,
-  IChannelTransport,
   SignalMessage,
 } from '../types'
+import { MulticastChannel } from '../channel'
 
 import { createSignalMessage, isReservedChannelName } from '../lib'
 import { SignalType } from '../types'
@@ -115,7 +115,7 @@ export class SignalHandler {
 
     if (channelInstance) {
       try {
-        await (channelInstance as IChannelTransport<unknown>).handleSubscribe(
+        await (channelInstance as MulticastChannel<unknown>).handleSubscribe(
           client,
         )
       } catch (error) {
@@ -159,7 +159,7 @@ export class SignalHandler {
     const channelInstance = this.registry.getChannel(channel)
 
     if (channelInstance) {
-      await (channelInstance as IChannelTransport<unknown>).handleUnsubscribe(
+      await (channelInstance as MulticastChannel<unknown>).handleUnsubscribe(
         client,
       )
     }

@@ -1,10 +1,9 @@
 import type {
     IClientConnection,
-    IChannel,
-    IMulticastTransport,
     ClientId,
     ChannelName,
 } from './types'
+import { BaseChannel, MulticastChannel } from './channel'
 
 /**
  * Client Registry
@@ -14,7 +13,7 @@ export class ClientRegistry {
     public readonly connections: Map<ClientId, IClientConnection> = new Map()
     private readonly subscriptions: Map<ClientId, Set<ChannelName>> = new Map()
     private readonly channels: Map<ChannelName, Set<ClientId>> = new Map()
-    private readonly channelInstances: Map<ChannelName, IMulticastTransport<any>> = new Map()
+    private readonly channelInstances: Map<ChannelName, MulticastChannel<any>> = new Map()
 
     register(connection: IClientConnection): IClientConnection {
         this.connections.set(connection.id, connection)
@@ -53,17 +52,17 @@ export class ClientRegistry {
         return this.connections.size
     }
 
-    registerChannel(channel: IChannel<unknown>): void {
+    registerChannel(channel: BaseChannel<unknown>): void {
         // Create channel in internal map if not exists
         if (!this.channels.has(channel.name)) {
             this.channels.set(channel.name, new Set())
         }
         // Store the channel instance
-        this.channelInstances.set(channel.name, channel as unknown as IMulticastTransport<any>)
+        this.channelInstances.set(channel.name, channel as unknown as MulticastChannel<any>)
     }
 
-    getChannel<T = unknown>(name: ChannelName): IChannel<T> | undefined {
-        return this.channelInstances.get(name) as unknown as IChannel<T> | undefined
+    getChannel<T = unknown>(name: ChannelName): BaseChannel<T> | undefined {
+        return this.channelInstances.get(name) as unknown as BaseChannel<T> | undefined
     }
 
     removeChannel(name: ChannelName): boolean {

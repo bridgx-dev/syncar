@@ -1,10 +1,9 @@
 import type {
   IClientConnection,
-  IChannel,
-  IChannelTransport,
   DataMessage,
   IMiddleware,
 } from '../types'
+import { BaseChannel, MulticastChannel } from '../channel'
 
 import { MessageError, ChannelError } from '../errors'
 import { isDataMessage } from '../lib'
@@ -72,7 +71,7 @@ export class MessageHandler {
     const kernel = async () => {
       // Route to channel for processing (triggers onMessage handlers)
       if (channel) {
-        await (channel as IChannelTransport<T>).receive(
+        await (channel as MulticastChannel<T>).receive(
           message.data,
           client,
           message,
@@ -98,7 +97,7 @@ export class MessageHandler {
 
   getChannelForMessage<T = unknown>(
     message: DataMessage<T>,
-  ): IChannel<T> | undefined {
+  ): BaseChannel<T> | undefined {
     return this.registry.getChannel<T>(message.channel)
   }
 

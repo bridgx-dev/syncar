@@ -1,17 +1,39 @@
 import {
-    type IServerConfig,
-    type IServerOptions,
-    type IServerStats,
-    type IServerTransport,
-    type IBroadcastTransport,
-    type IMulticastTransport,
     type ChannelName,
     type Message,
     type IMiddleware,
+    type IServerTransport,
     MessageType,
 } from './types'
-import { MulticastChannel } from './channel/multicast'
-import { BroadcastChannel } from './channel'
+
+/**
+ * Server configuration options
+ */
+export interface IServerOptions {
+    server?: import('node:http').Server
+    port?: number
+    host?: string
+    path?: string
+    transport?: IServerTransport
+    enablePing?: boolean
+    pingInterval?: number
+    pingTimeout?: number
+    registry?: ClientRegistry
+    middleware?: IMiddleware[]
+    broadcastChunkSize?: number
+}
+
+/**
+ * Server statistics
+ */
+export interface IServerStats {
+    clientCount: number
+    channelCount: number
+    subscriptionCount: number
+    startedAt?: number
+}
+
+import { MulticastChannel, BroadcastChannel } from './channel'
 import { ConnectionHandler, MessageHandler, SignalHandler } from './handlers'
 import { ContextManager } from './context'
 import { StateError, ConfigError } from './errors'
@@ -36,13 +58,13 @@ export class SynnelServer {
     private connectionHandler: ConnectionHandler | undefined
     private messageHandler: MessageHandler | undefined
     private signalHandler: SignalHandler | undefined
-    private broadcastChannel: IBroadcastTransport<unknown> | undefined
+    private broadcastChannel: BroadcastChannel<unknown> | undefined
 
     constructor(config: IServerOptions) {
         this.config = config
 
         // Create or use injected client registry
-        this.registry = this.config.registry
+        this.registry = this.config.registry ?? new ClientRegistry()
 
         // Create context manager
         this.context = new ContextManager()
@@ -105,19 +127,19 @@ export class SynnelServer {
         this.status.startedAt = undefined
     }
 
-    createBroadcast<T = unknown>(): IBroadcastTransport<T> {
+    createBroadcast<T = unknown>(): BroadcastChannel<T> {
         if (!this.status.started || !this.broadcastChannel) {
             throw new StateError('Server must be started before creating channels')
         }
-        return this.broadcastChannel as IBroadcastTransport<T>
+        return this.broadcastChannel as BroadcastChannel<T>
     }
 
-    createMulticast<T = unknown>(name: ChannelName): IMulticastTransport<T> {
+    createMulticast<T = unknown>(name: ChannelName): MulticastChannel<T> {
         if (!this.status.started || !this.transport) {
             throw new StateError('Server must be started before creating channels')
         }
 
-        const existing = this.registry.getChannel<T>(name) as IMulticastTransport<T> | undefined
+        const existing = this.registry.getChannel<T>(name) as MulticastChannel<T> | undefined
         if (existing) return existing
 
         const channel = new MulticastChannel<T>({
@@ -154,7 +176,7 @@ export class SynnelServer {
         }
     }
 
-    getConfig(): Readonly<IServerConfig> {
+    getConfig(): Readonly<IServerOptions> {
         return this.config
     }
 
@@ -219,30 +241,30 @@ export class SynnelServer {
  * await server.start()
  * ```
  */
-export function createSynnelServer(config: IServerConfig = {}): SynnelServer {
-    // Create or use injected client registry
-    const registry = config.registry ?? new ClientRegistry()
-
-    // Merge defaults and use defined registry
+export function createSynnelServer(config: IServerOptions = {}): SynnelServer {
+    // Merge defaults
     const serverConfig: IServerOptions = {
         ...DEFAULT_SERVER_CONFIG,
         middleware: [],
         ...config,
-        registry,
     }
+
+    // Ensure registry exists
+    const registry = serverConfig.registry ?? new ClientRegistry()
+    serverConfig.registry = registry
 
     let transport: IServerTransport
 
     if (serverConfig.transport) {
         transport = serverConfig.transport
     } else {
-        import('node:http').then((http) => {
-            if (!serverConfig.server) {
+        if (!serverConfig.server) {
+            import('node:http').then((http) => {
                 const httpServer = http.createServer()
                 httpServer.listen(serverConfig.port, serverConfig.host)
                 serverConfig.server = httpServer
-            }
-        })
+            })
+        }
 
         transport = new WebSocketServerTransport({
             server: serverConfig.server as unknown,
