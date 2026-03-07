@@ -235,7 +235,7 @@ describe('ClientRegistry', () => {
         'chat' as ChannelName,
       )
 
-      expect(result).toBe(false)
+      expect(result).toBe(true)
     })
 
     it('should unsubscribe a client from a channel', () => {

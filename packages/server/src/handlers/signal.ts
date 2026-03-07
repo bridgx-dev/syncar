@@ -80,8 +80,16 @@ export class SignalHandler {
       }
     }
 
-    // 4. Execute Onion (Global Middleware)
-    await this.context.execute(ctx, this.context.getMiddlewares(), kernel)
+    // 4. Get the unified pipeline (Global + Channel specific if applicable)
+    let channelInstance = undefined
+    if (message.channel && message.channel !== BROADCAST_CHANNEL) {
+      channelInstance = this.registry.getChannel(message.channel)
+    }
+
+    const pipeline = this.context.getPipeline(channelInstance as any)
+
+    // 5. Execute Onion (Global + Channel Middleware)
+    await this.context.execute(ctx, pipeline, kernel)
   }
 
   async handleSubscribe(

@@ -1,7 +1,6 @@
 import type {
   IClientConnection,
   DataMessage,
-  IMiddleware,
 } from '../types'
 import { BaseChannel, MulticastChannel } from '../channel'
 
@@ -51,18 +50,7 @@ export class MessageHandler {
     }
 
     // Build the middleware pipeline
-    const globalMiddlewares = this.context.getMiddlewares()
-    let pipeline = [...globalMiddlewares]
-
-    if (channel && 'getMiddlewares' in channel) {
-      // Append channel-specific middleware securely
-      const channelMiddlewares = (
-        channel as unknown as { getMiddlewares?: () => IMiddleware[] }
-      ).getMiddlewares?.()
-      if (channelMiddlewares) {
-        pipeline = [...pipeline, ...channelMiddlewares]
-      }
-    }
+    const pipeline = this.context.getPipeline(channel as any)
 
     // Create Context
     const ctx = this.context.createMessageContext(client, message)

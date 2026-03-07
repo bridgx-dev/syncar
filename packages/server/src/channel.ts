@@ -62,6 +62,8 @@ export abstract class BaseChannel<
 
     abstract isEmpty(): boolean
 
+    abstract getMiddlewares(): IMiddleware[]
+
     publish(data: T, options?: IPublishOptions): void {
         const clients = this.getTargetClients(options)
         if (clients.length > this.chunkSize) {
@@ -137,6 +139,10 @@ export class BroadcastChannel<T = unknown>
 
     isEmpty(): boolean {
         return this.registry.connections.size === 0
+    }
+
+    getMiddlewares(): IMiddleware[] {
+        return []
     }
 }
 

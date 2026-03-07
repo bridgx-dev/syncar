@@ -85,6 +85,17 @@ export class ContextManager {
         return [...this.middlewares]
     }
 
+    getPipeline(channelInstance?: { getMiddlewares?: () => IMiddleware[] }): IMiddleware[] {
+        let pipeline = this.getMiddlewares()
+        const channelMiddlewares = channelInstance?.getMiddlewares?.()
+
+        if (channelMiddlewares && channelMiddlewares.length > 0) {
+            pipeline = [...pipeline, ...channelMiddlewares]
+        }
+
+        return pipeline
+    }
+
     async executeConnection(
         client: IClientConnection,
         action: 'connect' | 'disconnect',
