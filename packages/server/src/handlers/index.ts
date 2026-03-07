@@ -5,9 +5,9 @@
  * @module handlers
  */
 
-export { SignalHandler } from './signal-handler'
-export { MessageHandler } from './message-handler'
-export { ConnectionHandler } from './connection-handler'
-export type { SignalHandlerOptions } from './signal-handler'
-export type { MessageHandlerOptions } from './message-handler'
-export type { ConnectionHandlerOptions } from './connection-handler'
+export { SignalHandler } from './signal'
+export { MessageHandler } from './messages'
+export { ConnectionHandler } from './connections'
+export type { SignalHandlerOptions } from './signal'
+export type { MessageHandlerOptions } from './messages'
+export type { ConnectionHandlerOptions } from './connections'
