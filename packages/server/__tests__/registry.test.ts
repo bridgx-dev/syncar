@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { ClientRegistry } from '../src/registry/index.js'
+import { ClientRegistry } from '../src/registry.js'
 import type {
   IClientConnection,
   ClientId,
@@ -603,16 +603,6 @@ describe('ClientRegistry', () => {
       expect(registry.getTotalSubscriptionCount()).toBe(0)
     })
 
-    it('should clear all handlers', () => {
-      const handler = vi.fn()
-      registry.handlers.addMessageHandler('test' as ChannelName, handler)
-
-      expect(registry.handlers.getHandlerCount()).toBe(1)
-
-      registry.clear()
-
-      expect(registry.handlers.getHandlerCount()).toBe(0)
-    })
   })
 
   describe('shared connections map', () => {
@@ -626,52 +616,6 @@ describe('ClientRegistry', () => {
     })
   })
 
-  describe('handler registry integration', () => {
-    it('should expose handler registry', () => {
-      expect(registry.handlers).toBeDefined()
-    })
-
-    it('should trigger subscribe handlers when subscribing', () => {
-      const handler = vi.fn()
-
-      registry.handlers.addSubscribeHandler('chat' as ChannelName, handler)
-
-      const connection = createMockConnection('client-1')
-      registry.register(connection)
-
-      registry.subscribe('client-1' as ClientId, 'chat' as ChannelName)
-
-      expect(handler).toHaveBeenCalledWith(connection)
-    })
-
-    it('should trigger unsubscribe handlers when unsubscribing', () => {
-      const handler = vi.fn()
-
-      registry.handlers.addUnsubscribeHandler('chat' as ChannelName, handler)
-
-      const connection = createMockConnection('client-1')
-      registry.register(connection)
-      registry.subscribe('client-1' as ClientId, 'chat' as ChannelName)
-
-      registry.unsubscribe('client-1' as ClientId, 'chat' as ChannelName)
-
-      expect(handler).toHaveBeenCalledWith(connection)
-    })
-
-    it('should trigger unsubscribe handlers when unregistering', () => {
-      const handler = vi.fn()
-
-      registry.handlers.addUnsubscribeHandler('chat' as ChannelName, handler)
-
-      const connection = createMockConnection('client-1')
-      registry.register(connection)
-      registry.subscribe('client-1' as ClientId, 'chat' as ChannelName)
-
-      registry.unregister('client-1' as ClientId)
-
-      expect(handler).toHaveBeenCalledWith(connection)
-    })
-  })
 
   it('should remove channel from all client subscriptions', () => {
     const client1 = createMockConnection('client-1')
@@ -711,22 +655,4 @@ describe('ClientRegistry', () => {
     ).toBe(false)
   })
 
-  it('should clear handlers for removed channel', () => {
-    const connection = createMockConnection('client-1')
-    registry.register(connection)
-    registry.subscribe('client-1' as ClientId, 'chat' as ChannelName)
-
-    const handler = vi.fn()
-    registry.handlers.addMessageHandler('chat' as ChannelName, handler)
-
-    expect(
-      registry.handlers.getMessageHandlers('chat' as ChannelName).size,
-    ).toBe(1)
-
-    registry.removeChannel('chat' as ChannelName)
-
-    expect(
-      registry.handlers.getMessageHandlers('chat' as ChannelName).size,
-    ).toBe(0)
-  })
 })

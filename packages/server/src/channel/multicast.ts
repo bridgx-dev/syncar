@@ -5,11 +5,11 @@ import type {
   IClientConnection,
   IPublishOptions,
   IMiddleware,
-  IClientRegistry,
 } from '../types'
 import type { ChannelName, SubscriberId, ClientId } from '../types'
 import type { DataMessage } from '../types/message'
 import { BaseChannel } from './base.js'
+import { ClientRegistry } from '../registry'
 
 export interface MulticastChannelOptions {
   chunkSize?: number
@@ -26,7 +26,7 @@ export class MulticastChannel<T = unknown>
 
   constructor(config: {
     name: ChannelName
-    registry: IClientRegistry
+    registry: ClientRegistry
     options?: MulticastChannelOptions
   }) {
     super(config.name, config.registry, config.options?.chunkSize)

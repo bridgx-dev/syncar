@@ -7,8 +7,6 @@ import type {
     Message,
     ChannelName,
     IMiddleware,
-    IContextManager,
-    IMiddlewareContextFactory,
 } from './types'
 
 /**
@@ -63,8 +61,7 @@ export function createContext<S = Record<string, any>>(
 /**
  * Context Manager - manages and executes middleware functions
  */
-export class ContextManager
-    implements IContextManager, IMiddlewareContextFactory {
+export class ContextManager {
     protected readonly middlewares: IMiddleware[] = []
 
     use(middleware: IMiddleware): void {

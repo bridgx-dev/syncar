@@ -1,5 +1,4 @@
 import type {
-    IClientRegistry,
     IClientConnection,
     IChannel,
     IMulticastTransport,
@@ -11,7 +10,7 @@ import type {
  * Client Registry
  * Manages connected clients, their subscriptions, and channel instances.
  */
-export class ClientRegistry implements IClientRegistry {
+export class ClientRegistry {
     public readonly connections: Map<ClientId, IClientConnection> = new Map()
     private readonly subscriptions: Map<ClientId, Set<ChannelName>> = new Map()
     private readonly channels: Map<ChannelName, Set<ClientId>> = new Map()
@@ -35,8 +34,8 @@ export class ClientRegistry implements IClientRegistry {
         if (!clientChannels) return
 
         for (const channelName of clientChannels) {
-            this.channels.get(channelName)?.delete(connection.id)
-            this.getChannel(channelName)?.handleUnsubscribe(connection)
+            this.channels.get(channelName)?.delete(connection.id);
+            (this.getChannel(channelName) as any)?.handleUnsubscribe(connection)
         }
 
         this.subscriptions.delete(connection.id)
@@ -60,11 +59,11 @@ export class ClientRegistry implements IClientRegistry {
             this.channels.set(channel.name, new Set())
         }
         // Store the channel instance
-        this.channelInstances.set(channel.name, channel as IMulticastTransport<any>)
+        this.channelInstances.set(channel.name, channel as unknown as IMulticastTransport<any>)
     }
 
-    getChannel(name: ChannelName) {
-        return this.channelInstances.get(name)
+    getChannel<T = unknown>(name: ChannelName): IChannel<T> | undefined {
+        return this.channelInstances.get(name) as unknown as IChannel<T> | undefined
     }
 
     removeChannel(name: ChannelName): boolean {

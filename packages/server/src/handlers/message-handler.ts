@@ -1,28 +1,28 @@
 import type {
-  IClientRegistry,
   IClientConnection,
   IChannel,
   IChannelTransport,
   DataMessage,
   IMiddleware,
-  IContextManager,
 } from '../types'
 
 import { MessageError, ChannelError } from '../errors'
 import { isDataMessage } from '../lib'
+import { ContextManager } from '../context'
+import { ClientRegistry } from '../registry'
 
 export interface MessageHandlerOptions {
   requireChannel?: boolean
 }
 
 export class MessageHandler {
-  private readonly registry: IClientRegistry
-  private readonly context: IContextManager
+  private readonly registry: ClientRegistry
+  private readonly context: ContextManager
   private readonly options: Required<MessageHandlerOptions>
 
   constructor(dependencies: {
-    registry: IClientRegistry
-    context: IContextManager
+    registry: ClientRegistry
+    context: ContextManager
     options?: MessageHandlerOptions
   }) {
     this.registry = dependencies.registry

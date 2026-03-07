@@ -1,16 +1,13 @@
 import {
     type IServerConfig,
     type IServerOptions,
-    type ISynnelServer,
     type IServerStats,
     type IServerTransport,
-    type IClientRegistry,
     type IBroadcastTransport,
     type IMulticastTransport,
     type ChannelName,
     type Message,
     type IMiddleware,
-    type IContextManager,
     MessageType,
 } from './types'
 import { MulticastChannel } from './channel/multicast'
@@ -27,11 +24,11 @@ interface ServerState {
     startedAt: number | undefined
 }
 
-export class SynnelServer implements ISynnelServer {
+export class SynnelServer {
     private readonly config: IServerOptions
     private transport: IServerTransport | undefined
-    public readonly registry: IClientRegistry
-    private readonly context: IContextManager
+    public readonly registry: ClientRegistry
+    private readonly context: ContextManager
     private readonly status: ServerState = {
         started: false,
         startedAt: undefined,
@@ -161,7 +158,7 @@ export class SynnelServer implements ISynnelServer {
         return this.config
     }
 
-    getRegistry(): IClientRegistry {
+    getRegistry(): ClientRegistry {
         return this.registry
     }
 
@@ -222,7 +219,7 @@ export class SynnelServer implements ISynnelServer {
  * await server.start()
  * ```
  */
-export function createSynnelServer(config: IServerConfig = {}): ISynnelServer {
+export function createSynnelServer(config: IServerConfig = {}): SynnelServer {
     // Create or use injected client registry
     const registry = config.registry ?? new ClientRegistry()
 

@@ -56,4 +56,4 @@ export {
 
 // Composition utilities
 export { compose } from './compose'
-export type { Middleware, NextFunction as ComposeNext } from './compose'
+export type { IMiddleware as Middleware, Next } from '../types'

@@ -10,11 +10,12 @@ import {
   SynnelServer,
   createSynnelServer,
   Synnel,
-  MiddlewareManager,
   createAuthMiddleware,
   createLoggingMiddleware,
   createRateLimitMiddleware,
   createChannelWhitelistMiddleware,
+  ContextManager,
+  createContext,
   SynnelError,
   ConfigError,
   TransportError,
@@ -26,22 +27,11 @@ import {
   MiddlewareRejectionError,
   MiddlewareExecutionError,
   WebSocketServerTransport,
-  ChannelRef,
   BroadcastChannel,
-  DEFAULT_PORT,
-  DEFAULT_HOST,
-  DEFAULT_PATH,
-  DEFAULT_PING_TIMEOUT,
-  DEFAULT_MAX_PAYLOAD,
-  DEFAULT_SERVER_CONFIG,
-  DEFAULTS,
+  MulticastChannel,
   BROADCAST_CHANNEL,
   CLOSE_CODES,
   ERROR_CODES,
-  ClientRegistry,
-  ConnectionHandler,
-  MessageHandler,
-  SignalHandler,
 } from '../src/index.js'
 
 describe('index.ts exports', () => {
@@ -59,9 +49,9 @@ describe('index.ts exports', () => {
     expect(Synnel).toBe(SynnelServer)
   })
 
-  it('should export MiddlewareManager', () => {
-    expect(MiddlewareManager).toBeDefined()
-    expect(typeof MiddlewareManager).toBe('function')
+  it('should export ContextManager', () => {
+    expect(ContextManager).toBeDefined()
+    expect(typeof ContextManager).toBe('function')
   })
 
   it('should export middleware factory functions', () => {
@@ -97,21 +87,8 @@ describe('index.ts exports', () => {
   })
 
   it('should export channel classes', () => {
-    expect(ChannelRef).toBeDefined()
+    expect(MulticastChannel).toBeDefined()
     expect(BroadcastChannel).toBeDefined()
-  })
-
-  it('should export default constants', () => {
-    expect(DEFAULT_PORT).toBeDefined()
-    expect(DEFAULT_HOST).toBeDefined()
-    expect(DEFAULT_PATH).toBeDefined()
-    expect(DEFAULT_PING_TIMEOUT).toBeDefined()
-    expect(DEFAULT_MAX_PAYLOAD).toBeDefined()
-  })
-
-  it('should export default config objects', () => {
-    expect(DEFAULT_SERVER_CONFIG).toBeDefined()
-    expect(DEFAULTS).toBeDefined()
   })
 
   it('should export channel constants', () => {
@@ -121,17 +98,6 @@ describe('index.ts exports', () => {
   it('should export close and error codes', () => {
     expect(CLOSE_CODES).toBeDefined()
     expect(ERROR_CODES).toBeDefined()
-  })
-
-  it('should export ClientRegistry', () => {
-    expect(ClientRegistry).toBeDefined()
-    expect(typeof ClientRegistry).toBe('function')
-  })
-
-  it('should export handler classes', () => {
-    expect(ConnectionHandler).toBeDefined()
-    expect(MessageHandler).toBeDefined()
-    expect(SignalHandler).toBeDefined()
   })
 
   it('should export types', () => {

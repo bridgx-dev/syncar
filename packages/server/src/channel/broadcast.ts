@@ -2,15 +2,15 @@ import type {
   ClientId,
   IBroadcastTransport,
   IPublishOptions,
-  IClientRegistry,
 } from '../types'
 import { BaseChannel } from './base'
 import { BROADCAST_CHANNEL } from '../config'
+import { ClientRegistry } from '../registry'
 
 export class BroadcastChannel<T = unknown>
   extends BaseChannel<T, typeof BROADCAST_CHANNEL>
   implements IBroadcastTransport<T> {
-  constructor(registry: IClientRegistry, chunkSize: number = 500) {
+  constructor(registry: ClientRegistry, chunkSize: number = 500) {
     super(BROADCAST_CHANNEL, registry, chunkSize)
   }
 

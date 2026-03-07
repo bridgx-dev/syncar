@@ -56,8 +56,8 @@ export type {
 // ============================================================
 // CLIENT TYPES
 // ============================================================
-export type { IClientRegistry, IDisconnectionEvent } from './client'
-export type { ClientRegistry } from './client'
+export type { IDisconnectionEvent } from './client'
+export { ClientRegistry } from '../registry'
 
 // ============================================================
 // CHANNEL TYPES
@@ -78,17 +78,14 @@ export type {
   Context,
   Middleware,
   IMiddlewareAction as Action,
-  IMiddlewareContext,
   IMiddleware,
-  IContextManager,
   Next,
   IMiddlewareRejectionError,
-  IMiddlewareContextFactory,
   IMiddlewareChain,
   IComposedMiddleware,
   IActionMiddleware,
 } from './middleware'
-export type { ContextManager } from './middleware'
+export { ContextManager } from '../context'
 
 // ============================================================
 // SERVER CONFIG TYPES
@@ -99,9 +96,7 @@ export type {
   IDefaultServerConfig,
   IPartialServerConfig,
   IServerStats,
-  ISynnelServer,
 } from './server'
-export type { SynnelServer } from './server'
 
 // ============================================================
 // HANDLER TYPES

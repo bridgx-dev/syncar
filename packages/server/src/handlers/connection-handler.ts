@@ -1,4 +1,5 @@
-import type { IClientRegistry, IClientConnection } from '../types'
+import type { IClientConnection } from '../types'
+import { ClientRegistry } from '../registry'
 import { CLOSE_CODES } from '../config'
 
 export interface ConnectionHandlerOptions {
@@ -6,11 +7,11 @@ export interface ConnectionHandlerOptions {
 }
 
 export class ConnectionHandler {
-  private readonly registry: IClientRegistry
+  private readonly registry: ClientRegistry
   private readonly options: Required<ConnectionHandlerOptions>
 
   constructor(dependencies: {
-    registry: IClientRegistry
+    registry: ClientRegistry
     options?: ConnectionHandlerOptions
   }) {
     this.registry = dependencies.registry

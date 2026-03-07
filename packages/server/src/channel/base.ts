@@ -3,9 +3,9 @@ import type {
   ChannelName,
   ClientId,
   IPublishOptions,
-  IClientRegistry,
 } from '../types'
 import { createDataMessage } from '../lib'
+import { ClientRegistry } from '../registry'
 
 export abstract class BaseChannel<
   T = unknown,
@@ -13,9 +13,9 @@ export abstract class BaseChannel<
 > implements IChannel<T> {
   constructor(
     public readonly name: N,
-    protected readonly registry: IClientRegistry,
+    protected readonly registry: ClientRegistry,
     protected readonly chunkSize: number = 500,
-  ) {}
+  ) { }
 
   abstract get subscriberCount(): number
 

@@ -13,6 +13,7 @@ import type {
 import type { ChannelName, SubscriberId, Timestamp } from './common'
 import type { DataMessage } from './message'
 import { IMiddleware } from './middleware'
+import { ClientRegistry } from '../registry'
 
 // ============================================================
 // CHANNEL STATE
@@ -286,7 +287,7 @@ export declare abstract class BaseChannel<
    */
   constructor(
     name: N,
-    registry: import('./client').IClientRegistry,
+    registry: ClientRegistry,
     chunkSize?: number,
   )
 
@@ -357,7 +358,7 @@ export declare class BroadcastChannel<T = unknown>
    * @param registry - Client registry for connection lookups
    * @param chunkSize - Maximum number of subscribers to process in a single chunk
    */
-  constructor(registry: import('./client').IClientRegistry, chunkSize?: number)
+  constructor(registry: ClientRegistry, chunkSize?: number)
 
   /**
    * Broadcast channels always have all current connections as targets
@@ -393,7 +394,7 @@ export declare class MulticastChannel<T = unknown>
    */
   constructor(config: {
     name: ChannelName
-    registry: import('./client').IClientRegistry
+    registry: ClientRegistry
     options?: { chunkSize?: number }
   })
 

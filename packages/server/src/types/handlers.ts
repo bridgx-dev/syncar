@@ -4,13 +4,13 @@
  */
 
 import type {
-  IClientRegistry,
   IClientConnection,
   IChannel,
   DataMessage,
   SignalMessage,
-  IContextManager,
 } from './index'
+import { ContextManager } from '../context'
+import { ClientRegistry } from '../registry'
 
 // ============================================================
 // MESSAGE HANDLER
@@ -82,8 +82,8 @@ export declare class MessageHandler {
    * ```
    */
   constructor(dependencies: {
-    registry: IClientRegistry
-    context: IContextManager
+    registry: ClientRegistry
+    context: ContextManager
     options?: MessageHandlerOptions
   })
 
@@ -266,8 +266,8 @@ export declare class SignalHandler {
    * ```
    */
   constructor(dependencies: {
-    registry: IClientRegistry
-    context: IContextManager
+    registry: ClientRegistry
+    context: ContextManager
     options?: SignalHandlerOptions
   })
 
@@ -381,7 +381,7 @@ export declare class ConnectionHandler {
    * ```
    */
   constructor(dependencies: {
-    registry: IClientRegistry
+    registry: ClientRegistry
     options?: ConnectionHandlerOptions
   })
 

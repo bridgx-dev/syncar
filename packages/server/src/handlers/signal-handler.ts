@@ -1,16 +1,15 @@
 import type {
-  IClientRegistry,
   IClientConnection,
   IChannelTransport,
   SignalMessage,
-  IContextManager,
 } from '../types'
 
-import { createSignalMessage } from '../lib'
+import { createSignalMessage, isReservedChannelName } from '../lib'
 import { SignalType } from '../types'
 import { ChannelError, MessageError } from '../errors'
 import { BROADCAST_CHANNEL } from '../config'
-import { isReservedChannelName } from '../lib'
+import { ContextManager } from '../context'
+import { ClientRegistry } from '../registry'
 
 export interface SignalHandlerOptions {
   requireChannel?: boolean
@@ -20,13 +19,13 @@ export interface SignalHandlerOptions {
 }
 
 export class SignalHandler {
-  private readonly registry: IClientRegistry
-  private readonly context: IContextManager
+  private readonly registry: ClientRegistry
+  private readonly context: ContextManager
   private readonly options: Required<SignalHandlerOptions>
 
   constructor(dependencies: {
-    registry: IClientRegistry
-    context: IContextManager
+    registry: ClientRegistry
+    context: ContextManager
     options?: SignalHandlerOptions
   }) {
     this.registry = dependencies.registry
