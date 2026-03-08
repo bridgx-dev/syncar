@@ -35,9 +35,11 @@
     "react-dom": "^18.0.0"
   },
   "dependencies": {
-    "@synca/client": "workspace:*"
+    "@syncar/client": "workspace:*",
+    "@syncar/types": "workspace:*"
   },
   "devDependencies": {
+    "@syncar/lib": "workspace:*",
     "@testing-library/react": "^16.1.0",
     "@testing-library/react-hooks": "^8.0.1",
     "@types/react": "^19.0.6",

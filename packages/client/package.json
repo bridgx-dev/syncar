@@ -38,8 +38,8 @@
   "author": "Synca",
   "license": "MIT",
   "dependencies": {
-    "@synca/types": "workspace:*",
-    "@synca/lib": "workspace:*"
+    "@syncar/types": "workspace:*",
+    "@syncar/lib": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",

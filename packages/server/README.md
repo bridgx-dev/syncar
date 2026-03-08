@@ -1,8 +1,8 @@
-# @synca/server
+# @syncar/server
 
 > Node.js WebSocket server for real-time synchronization with pub/sub broadcasting and composable middleware.
 
-[![npm version](https://badge.fury.io/js/%40synca%2Fserver.svg)](https://www.npmjs.com/package/@synca/server)
+[![npm version](https://badge.fury.io/js/%40synca%2Fserver.svg)](https://www.npmjs.com/package/@syncar/server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Features
@@ -17,13 +17,13 @@
 ## Installation
 
 ```bash
-npm install @synca/server
+npm install @syncar/server
 ```
 
 ## Quick Start
 
 ```typescript
-import { createSyncaServer } from '@synca/server'
+import { createSyncaServer } from '@syncar/server'
 
 const server = createSyncaServer({ port: 3000 })
 
@@ -57,7 +57,7 @@ import {
   createAuthMiddleware, 
   createLoggingMiddleware, 
   createRateLimitMiddleware 
-} from '@synca/server'
+} from '@syncar/server'
 
 // Global Auth
 server.use(createAuthMiddleware({

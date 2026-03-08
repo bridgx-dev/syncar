@@ -1,5 +1,5 @@
 {
-  "name": "@synca/types",
+  "name": "@syncar/types",
   "version": "1.0.0-alpha.1",
   "private": true,
   "description": "Internal shared types for Synca packages (not for publication)",

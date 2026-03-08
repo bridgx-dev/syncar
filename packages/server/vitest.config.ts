@@ -31,7 +31,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@synca/server': path.resolve(__dirname, './src'),
+      '@syncar/server': path.resolve(__dirname, './src'),
     },
   },
 })

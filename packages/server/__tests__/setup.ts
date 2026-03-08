@@ -1,5 +1,5 @@
 /**
- * Test Setup for @synca/server
+ * Test Setup for @syncar/server
  */
 
 import { beforeEach, afterEach, vi } from 'vitest'

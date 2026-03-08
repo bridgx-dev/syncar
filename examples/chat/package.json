@@ -12,10 +12,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@synca/core": "workspace:*",
-    "@synca/client": "workspace:*",
-    "@synca/react": "workspace:*",
-    "@synca/server": "workspace:*",
+    "@syncar/core": "workspace:*",
+    "@syncar/client": "workspace:*",
+    "@syncar/react": "workspace:*",
+    "@syncar/server": "workspace:*",
     "express": "^4.18.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
