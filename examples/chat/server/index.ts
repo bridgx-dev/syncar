@@ -1,20 +1,11 @@
 /**
- * Synnel Chat Server V2 - Express Integration
+ * Synnel Chat Server - Updated API
  *
- * A chat server demonstrating the new V2 API:
- * - Express.js integration with @synnel/server
- * - Channel-based messaging (chat, notifications, presence)
- * - Broadcast functionality
- * - Explicit channel creation (multicast, broadcast)
- * - Connection event handling
- * - Authorization middleware
- *
- * V2 API Changes:
- * - Use `createSynnelServer()` instead of `new Synnel()`
- * - Use `server.createMulticast()` instead of `synnel.multicast()`
- * - Use `server.createBroadcast()` instead of `synnel.broadcast()`
- * - Messages are NOT auto-relayed - call `channel.publish()` explicitly in handlers
- * - Use `channel.onMessage()` or `channel.receive()` for message handling
+ * Demonstrates:
+ * - Auto-relay: presence and presence channels relay automatically (no onMessage needed)
+ * - Intercept pattern: chat channel uses onMessage to enrich messages before relaying
+ * - Middleware for subscribe/unsubscribe lifecycle events
+ * - Correct subscriber counts via channel.subscriberCount
  */
 
 import express from 'express'
@@ -42,64 +33,113 @@ interface NotificationMessage {
   timestamp: number
 }
 
-// Store connected users
+// Store connected users (clientId -> username)
 const users = new Map<string, { username: string; status: string }>()
 
 // Create Express app and HTTP server
 const app = express()
 const httpServer = createServer(app)
 
-// Initialize Synnel V2 server with the Express server
+// Initialize Synnel server
 const server = createSynnelServer({ server: httpServer })
 
-// Global variables for channels (will be initialized after start())
-let chat: ReturnType<typeof server.createMulticast<ChatMessage>>
-let presence: ReturnType<typeof server.createMulticast<PresenceMessage>>
-let notifications: ReturnType<
-  typeof server.createBroadcast<NotificationMessage>
->
-
 async function main() {
-  // Start the server first
   await server.start()
 
-  // Create channels after server is started
-  chat = server.createMulticast<ChatMessage>('chat')
-  presence = server.createMulticast<PresenceMessage>('presence')
-  notifications = server.createBroadcast<NotificationMessage>()
-
   // ============================================================
-  // HANDLE INCOMING CHAT MESSAGES
+  // CHANNELS
   // ============================================================
 
-  // V2: Use channel.onMessage() to handle incoming messages
-  // Messages are NOT auto-relayed in V2, so we explicitly publish
-  chat.onMessage(async (data, client) => {
-    console.log(`[Chat] ${data.user}: ${data.text}`)
+  // Chat - intercept to enrich messages, then relay to all subscribers
+  const chat = server.createMulticast<ChatMessage>('chat')
 
-    // Store the username if not already stored
-    if (!users.has(client.id)) {
-      users.set(client.id, { username: data.user, status: 'online' })
+  // Presence - auto-relay (no onMessage needed)
+  const presence = server.createMulticast<PresenceMessage>('presence')
+
+  // Notifications - broadcast to all connected clients
+  const notifications = server.createBroadcast<NotificationMessage>()
+
+  // ============================================================
+  // SUBSCRIBE / UNSUBSCRIBE LIFECYCLE — via middleware
+  // ============================================================
+
+  chat.use(async (ctx, next) => {
+    const { action, client } = ctx.req
+
+    if (action === 'subscribe' && client) {
+      const memberCount = chat.subscriberCount + 1 // incremented after middleware
+      console.log(`[Chat] ${client.id} joined. Members: ${memberCount}`)
+
+      // Send system welcome message only to the joining client
+      chat.publish(
+        {
+          id: `sys-${Date.now()}`,
+          type: 'system',
+          text: `Welcome!`,
+          user: 'System',
+          timestamp: Date.now(),
+          count: memberCount,
+        } as ChatMessage & { count: number },
+        { to: [client.id] },
+      )
     }
 
-    // V2: Explicitly publish message to all subscribers
-    // The sender will also receive it back (client-side can filter if needed)
-    chat.publish(data)
+    if (action === 'unsubscribe' && client) {
+      const leftCount = Math.max(0, chat.subscriberCount - 1)
+      console.log(
+        `[Chat] ${client.id} left. Members remaining: ${leftCount}`,
+      )
+      users.delete(client.id)
+    }
+
+    await next()
   })
 
   // ============================================================
-  // HANDLE PRESENCE UPDATES
+  // CHAT MESSAGES — intercept to enrich, then relay
   // ============================================================
 
-  presence.onMessage(async (data) => {
-    console.log(`[Presence] ${data.username}: ${data.status}`)
+  chat.onMessage(async (data, client) => {
+    // Store the client's display name
+    users.set(client.id, { username: data.user, status: 'online' })
 
-    // V2: Explicitly publish presence update to all subscribers
-    presence.publish(data)
+    console.log(`[Chat] ${data.user}: ${data.text}`)
+
+    // Relay the enriched message to ALL chat subscribers (including sender)
+    chat.publish({ ...data, timestamp: Date.now() })
+  })
+
+  // Presence channel uses auto-relay — no onMessage handler needed
+  // Messages sent by any client are automatically forwarded to all presence subscribers
+
+  // ============================================================
+  // CONNECTION LIFECYCLE — via global middleware
+  // ============================================================
+
+  server.use(async (ctx, next) => {
+    const { action, client } = ctx.req
+
+    if (action === 'connect' && client) {
+      console.log(`[Server] Client connected: ${client.id}`)
+      // Notify all clients about new connection
+      notifications.publish({
+        type: 'info',
+        message: `A new user connected. Total: ${server.getStats().clientCount}`,
+        timestamp: Date.now(),
+      })
+    }
+
+    if (action === 'disconnect' && client) {
+      const user = users.get(client.id)
+      console.log(`[Server] Client disconnected: ${client.id} (${user?.username ?? 'unknown'})`)
+      users.delete(client.id)
+    }
+
+    await next()
   })
 
   // ============================================================
-  // START HTTP SERVER
+  // HTTP SERVER
   // ============================================================
 
   const PORT = 3001
@@ -107,21 +147,16 @@ async function main() {
   httpServer.listen(PORT, () => {
     console.log('')
     console.log('==================================')
-    console.log(' Synnel Chat Server V2')
+    console.log(' Synnel Chat Server')
     console.log('==================================')
-    console.log(`HTTP: http://localhost:${PORT}`)
+    console.log(`HTTP:      http://localhost:${PORT}`)
     console.log(`WebSocket: ws://localhost:${PORT}/synnel`)
-    console.log(`Client: http://localhost:3000`)
+    console.log(`Client:    http://localhost:3000`)
     console.log('')
-    console.log('Available channels:')
-    console.log('  - chat (multicast)')
-    console.log('  - presence (multicast)')
+    console.log('Channels:')
+    console.log('  - chat         (multicast, intercept mode)')
+    console.log('  - presence     (multicast, auto-relay)')
     console.log('  - notifications (broadcast)')
-    console.log('')
-    console.log('Channels are explicitly created on the server.')
-    console.log(
-      'Clients can ONLY join channels created via createMulticast() or createBroadcast().',
-    )
     console.log('')
   })
 
@@ -132,6 +167,8 @@ async function main() {
       clients: stats.clientCount,
       channels: stats.channelCount,
       subscriptions: stats.subscriptionCount,
+      chatMembers: chat.subscriberCount,
+      presenceMembers: presence.subscriberCount,
       uptime: stats.startedAt
         ? Math.floor((Date.now() - stats.startedAt) / 1000) + 's'
         : 'N/A',
@@ -139,18 +176,10 @@ async function main() {
   }, 30000)
 }
 
-// ============================================================
-// STARTUP
-// ============================================================
-
 main().catch((error) => {
   console.error('Failed to start server:', error)
   process.exit(1)
 })
-
-// ============================================================
-// GRACEFUL SHUTDOWN
-// ============================================================
 
 process.on('SIGINT', async () => {
   console.log('\nShutting down server...')
