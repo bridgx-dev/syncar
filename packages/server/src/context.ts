@@ -1,5 +1,5 @@
 import { MiddlewareRejectionError, MiddlewareExecutionError } from './errors'
-import { compose } from './lib'
+import { compose } from './compose'
 import type {
     Context,
     IMiddlewareAction,

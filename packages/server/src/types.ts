@@ -1,4 +1,5 @@
 import type WebSocket from 'ws'
+import type { IncomingMessage } from 'node:http'
 
 // ============================================================
 // COMMON TYPES
@@ -33,6 +34,26 @@ export type Timestamp = number
  * Generic data payload for messages
  */
 export type DataPayload<T = unknown> = T
+
+/**
+ * Log levels
+ */
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
+
+/**
+ * Logger interface
+ */
+export interface ILogger {
+    debug(message: string, ...args: unknown[]): void
+    info(message: string, ...args: unknown[]): void
+    warn(message: string, ...args: unknown[]): void
+    error(message: string, ...args: unknown[]): void
+}
+
+/**
+ * ID Generator function type
+ */
+export type IdGenerator = (request: IncomingMessage) => ClientId | Promise<ClientId>
 
 // ============================================================
 // BASE TYPES

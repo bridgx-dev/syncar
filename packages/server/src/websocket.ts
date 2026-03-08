@@ -5,6 +5,8 @@ import {
     SignalType,
     type ClientId,
     type IClientConnection,
+    type ILogger,
+    type IdGenerator,
 } from './types'
 import {
     DEFAULT_MAX_PAYLOAD,
@@ -12,6 +14,7 @@ import {
     DEFAULT_PING_TIMEOUT,
     DEFAULT_WS_PATH,
 } from './config'
+import { generateClientId } from './utils'
 
 // Instance types
 type ServerInstance = WsServer
@@ -30,9 +33,12 @@ export interface WebSocketServerTransportConfig extends WsServerOptions {
     connections?: Map<ClientId, IClientConnection>
 
     /** Custom ID generator for new connections */
-    generateId?: (request: import('node:http').IncomingMessage) => string
+    generateId?: IdGenerator // Updated type to IdGenerator
 
     ServerConstructor?: new (config: WsServerOptions) => ServerInstance
+
+    /** Logger instance */
+    logger?: ILogger
 }
 
 /**
@@ -50,7 +56,6 @@ export class WebSocketServerTransport extends EventEmitter {
         enablePing: boolean
     }
     private pingTimer?: ReturnType<typeof setInterval>
-    private nextId = 0
     private authenticator?: (request: import('node:http').IncomingMessage) => string | Promise<string>
 
     constructor(config: WebSocketServerTransportConfig) {
@@ -93,6 +98,7 @@ export class WebSocketServerTransport extends EventEmitter {
         })
 
         this.wsServer.on('error', (error: Error) => {
+            this.config.logger?.error('WebSocket Server Error:', error)
             this.emit('error', error)
         })
     }
@@ -103,8 +109,10 @@ export class WebSocketServerTransport extends EventEmitter {
         try {
             if (this.authenticator) {
                 clientId = (await this.authenticator(request)) as ClientId
+            } else if (this.config.generateId) {
+                clientId = await this.config.generateId(request)
             } else {
-                clientId = `client-${this.nextId++}` as ClientId
+                clientId = generateClientId()
             }
         } catch (error) {
             try {
@@ -162,6 +170,7 @@ export class WebSocketServerTransport extends EventEmitter {
             // Emit message event
             this.emit('message', clientId, message)
         } catch (error) {
+            this.config.logger?.error(`Failed to parse message from ${clientId}:`, error as Error)
             this.emit('error', error as Error)
         }
     }

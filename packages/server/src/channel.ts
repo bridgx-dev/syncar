@@ -40,7 +40,7 @@ export type IMessageHandler<T> = (
 export type ILifecycleHandler = (
     client: IClientConnection,
 ) => void | Promise<void>
-import { createDataMessage } from './lib'
+import { createDataMessage, assertValidChannelName } from './utils'
 import { ClientRegistry } from './registry'
 import { BROADCAST_CHANNEL } from './config'
 
@@ -95,7 +95,7 @@ export abstract class BaseChannel<
                 try {
                     client.socket.send(JSON.stringify(message))
                 } catch (error) {
-                    console.error(`[${this.name}] Failed to send to ${clientId}:`, error)
+                    this.registry.logger?.error(`[${this.name}] Failed to send to ${clientId}:`, error as Error)
                 }
             }
         }
@@ -169,6 +169,7 @@ export class MulticastChannel<T = unknown>
         registry: ClientRegistry
         options?: MulticastChannelOptions
     }) {
+        assertValidChannelName(config.name)
         super(config.name, config.registry, config.options?.chunkSize)
     }
 

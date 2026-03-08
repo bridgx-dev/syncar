@@ -5,7 +5,7 @@ import type {
 import { BaseChannel } from '../channel'
 
 import { MessageError, ChannelError } from '../errors'
-import { isDataMessage } from '../lib'
+import { isDataMessage } from '../utils'
 import { ContextManager } from '../context'
 import { ClientRegistry } from '../registry'
 

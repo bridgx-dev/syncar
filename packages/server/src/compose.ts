@@ -1,4 +1,4 @@
-import type { Context, Middleware, Next } from '../types'
+import type { Context, Middleware, Next } from './types'
 
 /**
  * Compose middleware functions into a single function.

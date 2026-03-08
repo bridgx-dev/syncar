@@ -4,7 +4,7 @@ import type {
 } from '../types'
 
 
-import { createSignalMessage, isReservedChannelName } from '../lib'
+import { createSignalMessage, isReservedChannelName } from '../utils'
 import { SignalType } from '../types'
 import { ChannelError, MessageError } from '../errors'
 import { BROADCAST_CHANNEL } from '../config'

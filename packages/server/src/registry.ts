@@ -2,8 +2,10 @@ import type {
     IClientConnection,
     ClientId,
     ChannelName,
+    ILogger,
 } from './types'
 import { BaseChannel } from './channel'
+import { assertValidChannelName } from './utils'
 
 /**
  * Client Registry
@@ -14,6 +16,11 @@ export class ClientRegistry {
     private readonly subscriptions: Map<ClientId, Set<ChannelName>> = new Map()
     private readonly channels: Map<ChannelName, Set<ClientId>> = new Map()
     private readonly channelInstances: Map<ChannelName, BaseChannel<unknown>> = new Map()
+    public readonly logger?: ILogger
+
+    constructor(logger?: ILogger) {
+        this.logger = logger
+    }
 
     register(connection: IClientConnection): IClientConnection {
         this.connections.set(connection.id, connection)
@@ -88,6 +95,7 @@ export class ClientRegistry {
     }
 
     subscribe(clientId: ClientId, channel: ChannelName): boolean {
+        assertValidChannelName(channel)
         // Verify client exists
         if (!this.connections.has(clientId)) return false
 

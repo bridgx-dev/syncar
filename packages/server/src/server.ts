@@ -4,6 +4,8 @@ import {
     type IMiddleware,
     MessageType,
 } from './types'
+import type { ILogger, IdGenerator } from './types'
+import { createDefaultLogger, assertValidChannelName } from './utils'
 
 
 /**
@@ -36,6 +38,10 @@ interface ServerState {
 export interface IServerOptions {
     /** HTTP or HTTPS server instance */
     server?: import('node:http').Server | import('node:https').Server
+    /** Custom connection ID generator */
+    generateId?: IdGenerator
+    /** Custom logger instance */
+    logger: ILogger
     /** Port to listen on (default: 3000) */
     port: number
     /** Host to bind to (default: '0.0.0.0') */
@@ -141,6 +147,7 @@ export class SynnelServer {
     }
 
     createMulticast<T = unknown>(name: ChannelName): MulticastChannel<T> {
+        assertValidChannelName(name)
         if (!this.status.started || !this.transport) {
             throw new StateError('Server must be started before creating channels')
         }
@@ -182,7 +189,7 @@ export class SynnelServer {
         if (transport && 'setAuthenticator' in transport) {
             ; (transport as any).setAuthenticator(authenticator)
         } else {
-            console.warn('Current transport does not support setting an authenticator.')
+            this.config.logger.warn('Current transport does not support setting an authenticator.')
         }
     }
 
@@ -211,7 +218,7 @@ export class SynnelServer {
                 await this.context.executeConnection(connection, 'connect')
                 await this.connectionHandler!.handleConnection(connection)
             } catch (error) {
-                console.error('Error handling connection:', error)
+                this.config.logger.error('Error handling connection:', error as Error)
             }
         })
 
@@ -223,7 +230,7 @@ export class SynnelServer {
                     await this.connectionHandler!.handleDisconnection(clientId)
                 }
             } catch (error) {
-                console.error('Error handling disconnection:', error)
+                this.config.logger.error('Error handling disconnection:', error as Error)
             }
         })
 
@@ -238,12 +245,12 @@ export class SynnelServer {
                     await this.signalHandler!.handleSignal(client, message)
                 }
             } catch (error) {
-                console.error('Error handling message:', error)
+                this.config.logger.error('Error handling message:', error as Error)
             }
         })
 
         transport.on('error', (error: Error) => {
-            console.error('Transport error:', error)
+            this.config.logger.error('Transport error:', error)
         })
     }
 }
@@ -263,6 +270,7 @@ export class SynnelServer {
 export function createSynnelServer(config: Partial<IServerOptions> = {}): SynnelServer {
     // Ensure registry exists
     const registry = config.registry ?? new ClientRegistry()
+    const logger = config.logger ?? createDefaultLogger()
 
     // Merge defaults
     const serverOptions: IServerOptions = {
@@ -270,6 +278,7 @@ export function createSynnelServer(config: Partial<IServerOptions> = {}): Synnel
         middleware: [],
         ...config,
         registry,
+        logger,
     } as IServerOptions
 
     if (!serverOptions.transport) {
@@ -282,13 +291,15 @@ export function createSynnelServer(config: Partial<IServerOptions> = {}): Synnel
         }
 
         serverOptions.transport = new WebSocketServerTransport({
-            server: serverOptions.server as any,
+            server: serverOptions.server,
             path: serverOptions.path,
             maxPayload: (config as { maxPayload?: number }).maxPayload ?? DEFAULT_MAX_PAYLOAD,
             enablePing: serverOptions.enablePing,
             pingInterval: serverOptions.pingInterval,
             pingTimeout: serverOptions.pingTimeout,
             connections: registry.connections,
+            generateId: serverOptions.generateId,
+            logger: serverOptions.logger,
         })
     }
 
