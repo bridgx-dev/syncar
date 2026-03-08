@@ -19,45 +19,224 @@ import { generateClientId } from './utils'
 // Instance types
 type ServerInstance = WsServer
 
+/**
+ * WebSocket Server Transport Configuration
+ *
+ * @remarks
+ * Configuration options for the WebSocket transport layer. Extends the
+ * standard `ws` library options with Synnel-specific settings.
+ *
+ * @example
+ * ```ts
+ * const config: WebSocketServerTransportConfig = {
+ *   server: httpServer,
+ *   path: '/ws',
+ *   enablePing: true,
+ *   pingInterval: 30000,
+ *   pingTimeout: 5000,
+ *   maxPayload: 1048576,
+ *   connections: new Map(),
+ *   generateId: (request) => extractUserId(request),
+ *   logger: console
+ * }
+ * ```
+ */
 export interface WebSocketServerTransportConfig extends WsServerOptions {
-    /** Enable client ping/pong */
+    /**
+     * Enable client ping/pong
+     *
+     * @remarks
+     * When enabled, the server sends periodic ping frames to detect
+     * dead connections and maintain keep-alive.
+     *
+     * @default true
+     */
     enablePing?: boolean
 
-    /** Ping interval in milliseconds */
+    /**
+     * Ping interval in milliseconds
+     *
+     * @remarks
+     * Time between ping frames when `enablePing` is true.
+     *
+     * @default 30000 (30 seconds)
+     */
     pingInterval?: number
 
-    /** Ping timeout in milliseconds */
+    /**
+     * Ping timeout in milliseconds
+     *
+     * @remarks
+     * Time to wait for pong response before closing connection.
+     *
+     * @default 5000 (5 seconds)
+     */
     pingTimeout?: number
 
-    /** Shared connection map */
+    /**
+     * Shared connection map
+     *
+     * @remarks
+     * Optional map for sharing connections across multiple server instances.
+     * If not provided, a new map will be created.
+     */
     connections?: Map<ClientId, IClientConnection>
 
-    /** Custom ID generator for new connections */
-    generateId?: IdGenerator // Updated type to IdGenerator
+    /**
+     * Custom ID generator for new connections
+     *
+     * @remarks
+     * Function to generate unique client IDs from incoming HTTP requests.
+     * Useful for implementing custom authentication or ID generation strategies.
+     *
+     * @example
+     * ```ts
+     * generateId: async (request) => {
+     *   const token = request.headers.authorization?.split(' ')[1]
+     *   return verifyToken(token).then(user => user.id)
+     * }
+     * ```
+     */
+    generateId?: IdGenerator
 
+    /**
+     * Custom WebSocket Server constructor
+     *
+     * @remarks
+     * Allows using a custom WebSocket server implementation.
+     * Defaults to the standard `ws` WebSocketServer.
+     */
     ServerConstructor?: new (config: WsServerOptions) => ServerInstance
 
-    /** Logger instance */
+    /**
+     * Logger instance
+     *
+     * @remarks
+     * Optional logger for transport-level logging.
+     */
     logger?: ILogger
 }
 
 /**
  * WebSocket Server Transport
- * Handles low-level WebSocket communication using the 'ws' library.
+ *
+ * @remarks
+ * Handles low-level WebSocket communication using the `ws` library.
+ * Manages connections, message parsing, ping/pong keep-alive, and
+ * emits high-level events for the server to consume.
+ *
+ * This transport:
+ * - Wraps the `ws` WebSocketServer
+ * - Generates unique client IDs
+ * - Handles connection lifecycle (connect, disconnect, error)
+ * - Parses incoming messages as JSON
+ * - Manages ping/pong for connection health
+ * - Emits typed events for server consumption
+ *
+ * @example
+ * ### Basic usage
+ * ```ts
+ * import { WebSocketServerTransport } from '@synnel/server'
+ *
+ * const transport = new WebSocketServerTransport({
+ *   server: httpServer,
+ *   path: '/ws',
+ *   enablePing: true,
+ *   pingInterval: 30000,
+ *   pingTimeout: 5000
+ * })
+ *
+ * transport.on('connection', (client) => {
+ *   console.log(`Client connected: ${client.id}`)
+ * })
+ *
+ * transport.on('message', (clientId, message) => {
+ *   console.log(`Message from ${clientId}:`, message)
+ * })
+ *
+ * transport.on('disconnection', (clientId) => {
+ *   console.log(`Client disconnected: ${clientId}`)
+ * })
+ * ```
+ *
+ * @example
+ * ### With custom ID generator
+ * ```ts
+ * const transport = new WebSocketServerTransport({
+ *   server: httpServer,
+ *   generateId: async (request) => {
+ *     const token = request.headers.authorization?.split(' ')[1]
+ *     const user = await verifyJwt(token)
+ *     return user.id
+ *   }
+ * })
+ * ```
+ *
+ * @example
+ * ### With shared connections
+ * ```ts
+ * const sharedConnections = new Map()
+ *
+ * const transport1 = new WebSocketServerTransport({
+ *   connections: sharedConnections
+ * })
+ *
+ * const transport2 = new WebSocketServerTransport({
+ *   connections: sharedConnections
+ * })
+ * ```
+ *
+ * @see {@link EventEmitter} for event methods (on, off, emit, etc.)
  */
 export class WebSocketServerTransport extends EventEmitter {
-    /** Map of connected clients by ID */
+    /**
+     * Map of connected clients by ID
+     *
+     * @remarks
+     * Public map of all active connections. Can be used to look up clients
+     * by ID or iterate over all connections.
+     */
     public readonly connections: Map<ClientId, IClientConnection>
 
+    /** @internal */
     private readonly wsServer: ServerInstance
+    /** @internal */
     private readonly config: WebSocketServerTransportConfig & {
         pingInterval: number
         pingTimeout: number
         enablePing: boolean
     }
+    /** @internal */
     private pingTimer?: ReturnType<typeof setInterval>
+    /** @internal */
     private authenticator?: (request: import('node:http').IncomingMessage) => string | Promise<string>
 
+    /**
+     * Creates a new WebSocket Server Transport instance
+     *
+     * @remarks
+     * Initializes the WebSocket transport layer with the provided configuration.
+     * Sets up the underlying WebSocketServer, configures ping/pong, and
+     * establishes event handlers.
+     *
+     * @param config - Transport configuration options
+     *
+     * @example
+     * ```ts
+     * const transport = new WebSocketServerTransport({
+     *   server: httpServer,
+     *   path: '/ws',
+     *   enablePing: true,
+     *   pingInterval: 30000,
+     *   pingTimeout: 5000
+     * })
+     * ```
+     *
+     * @emits connection When a new client connects
+     * @emits disconnection When a client disconnects
+     * @emits message When a message is received from a client
+     * @emits error When an error occurs
+     */
     constructor(config: WebSocketServerTransportConfig) {
         super()
         this.setMaxListeners(100)
@@ -88,6 +267,28 @@ export class WebSocketServerTransport extends EventEmitter {
         }
     }
 
+    /**
+     * Set a custom authentication handler
+     *
+     * @remarks
+     * Sets an authenticator function that receives the HTTP upgrade request
+     * and returns a client ID. The authenticator can throw to reject the connection.
+     *
+     * @param authenticator - Function that receives the HTTP upgrade request
+     * and returns a client ID (or throws to reject)
+     *
+     * @example
+     * ```ts
+     * transport.setAuthenticator(async (request) => {
+     *   const token = request.headers.authorization?.split(' ')[1]
+     *   if (!token) {
+     *     throw new Error('No token provided')
+     *   }
+     *   const user = await verifyJwt(token)
+     *   return user.id
+     * })
+     * ```
+     */
     setAuthenticator(authenticator: (request: import('node:http').IncomingMessage) => string | Promise<string>): void {
         this.authenticator = authenticator
     }

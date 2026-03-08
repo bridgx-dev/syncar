@@ -23,7 +23,10 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "prepublishOnly": "bun run build"
+    "prepublishOnly": "bun run build",
+    "docs": "typedoc --out docs src",
+    "docs:serve": "typedoc --out docs src && npx serve docs",
+    "docs:json": "typedoc --json docs/api.json src"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

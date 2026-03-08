@@ -2,7 +2,15 @@
  * @synnel/server
  * Node.js server for Synnel real-time synchronization
  *
+ * @description
+ * A WebSocket server providing real-time pub/sub messaging with channels,
+ * middleware support, and connection management. Built with TypeScript
+ * for full type safety.
+ *
+ * @packageDocumentation
+ *
  * @example
+ * ### Quick Start
  * ```ts
  * import { createSynnelServer } from '@synnel/server'
  *
@@ -17,9 +25,85 @@
  * server.on('connection', (client) => {
  *   console.log(`Client connected: ${client.id}`)
  * })
+ *
+ * // Publish messages
+ * broadcast.publish('Hello everyone!')
+ * chat.publish('Welcome to chat!')
  * ```
+ *
+ * @example
+ * ### With Middleware
+ * ```ts
+ * import {
+ *   createSynnelServer,
+ *   createAuthMiddleware,
+ *   createLoggingMiddleware,
+ *   createRateLimitMiddleware
+ * } from '@synnel/server'
+ *
+ * const server = createSynnelServer({
+ *   port: 3000,
+ *   middleware: [
+ *     createAuthMiddleware({
+ *       verifyToken: async (token) => jwt.verify(token, SECRET)
+ *     }),
+ *     createLoggingMiddleware(),
+ *     createRateLimitMiddleware({ maxRequests: 100 })
+ *   ]
+ * })
+ *
+ * await server.start()
+ * ```
+ *
+ * @remarks
+ * ## Features
+ *
+ * - **Real-time WebSocket Communication** - Fast, bidirectional messaging
+ * - **Broadcast & Multicast Channels** - Server-to-all and topic-based messaging
+ * - **Middleware System** - Composable middleware for auth, logging, rate limiting
+ * - **Type-Safe API** - Full TypeScript support with comprehensive types
+ * - **Event-Driven Architecture** - Rich event system for lifecycle events
+ * - **Connection Management** - Automatic tracking, ping/pong, graceful shutdown
+ * - **Flexible Transport Layer** - Pluggable transport interface
+ * - **Chunked Broadcasting** - Configurable chunking for high-volume broadcasts
+ *
+ * ## Installation
+ *
+ * ```bash
+ * npm install @synnel/server ws
+ * ```
+ *
+ * ## Peer Dependencies
+ *
+ * - `ws@^8.0.0` - WebSocket library
+ *
+ * ## Modules
+ *
+ * - **Server** - {@link SynnelServer} | {@link createSynnelServer}
+ * - **Channels** - {@link BroadcastChannel} | {@link MulticastChannel}
+ * - **Middleware** - {@link createAuthMiddleware} | {@link createLoggingMiddleware} | {@link createRateLimitMiddleware}
+ * - **Errors** - {@link SynnelError} | {@link MiddlewareRejectionError}
+ * - **Types** - {@link IClientConnection} | {@link Message} | {@link Context} | {@link Middleware}
+ *
+ * @see {@link https://github.com/yourusername/synnel | GitHub Repository}
+ * @see {@link https://www.npmjs.com/package/@synnel/server | npm Package}
  */
 
+// ============================================================
+// SERVER EXPORTS
+// ============================================================
+
+/**
+ * Synnel Server class and factory
+ *
+ * @example
+ * ```ts
+ * import { createSynnelServer, SynnelServer } from '@synnel/server'
+ *
+ * const server = createSynnelServer({ port: 3000 })
+ * await server.start()
+ * ```
+ */
 export { SynnelServer, createSynnelServer } from './server'
 export { SynnelServer as Synnel } from './server'
 export {

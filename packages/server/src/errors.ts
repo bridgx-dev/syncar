@@ -1,6 +1,60 @@
 /**
  * Errors Module
- * Custom error classes for the Synnel server.
+ *
+ * @description
+ * Custom error classes for the Synnel server. All errors extend from
+ * {@link SynnelError} and include error codes for programmatic handling.
+ *
+ * @remarks
+ * The error hierarchy:
+ *
+ * - {@link SynnelError} - Base error class
+ *   - {@link ConfigError} - Server configuration issues
+ *   - {@link TransportError} - WebSocket transport issues
+ *   - {@link ChannelError} - Channel operation failures
+ *   - {@link ClientError} - Client operation failures
+ *   - {@link MessageError} - Message processing failures
+ *   - {@link ValidationError} - Input validation failures
+ *   - {@link StateError} - Invalid state operations
+ * - {@link MiddlewareRejectionError} - Explicit middleware rejections
+ * - {@link MiddlewareExecutionError} - Unexpected middleware errors
+ *
+ * @example
+ * ### Throwing errors
+ * ```ts
+ * import { StateError, ValidationError } from '@synnel/server'
+ *
+ * function createChannel(name: string) {
+ *   if (!name) {
+ *     throw new ValidationError('Channel name is required')
+ *   }
+ *   if (!server.started) {
+ *     throw new StateError('Server must be started first')
+ *   }
+ * }
+ * ```
+ *
+ * @example
+ * ### Catching errors
+ * ```ts
+ * import {
+ *   SynnelError,
+ *   MiddlewareRejectionError,
+ *   StateError
+ * } from '@synnel/server'
+ *
+ * try {
+ *   await server.start()
+ * } catch (error) {
+ *   if (error instanceof StateError) {
+ *     console.error('Invalid state:', error.message)
+ *   } else if (error instanceof MiddlewareRejectionError) {
+ *     console.error(`Action rejected: ${error.reason}`)
+ *   } else if (error instanceof SynnelError) {
+ *     console.error(`[${error.code}] ${error.message}`)
+ *   }
+ * }
+ * ```
  *
  * @module errors
  */
@@ -13,19 +67,60 @@ import type { IMiddlewareRejectionError, IMiddlewareAction } from './types'
 
 /**
  * Base Synnel error class
- * All custom errors in the Synnel server should extend this class.
+ *
+ * @remarks
+ * All custom errors in the Synnel server extend this class. Provides
+ * consistent error handling with error codes, context, and serialization.
+ *
+ * @property code - Error code for programmatic handling
+ * @property context - Optional additional error context
+ *
+ * @example
+ * ```ts
+ * throw new SynnelError('Something went wrong', 'CUSTOM_ERROR', { userId: '123' })
+ * ```
+ *
+ * @example
+ * ### Error handling
+ * ```ts
+ * try {
+ *   // ...
+ * } catch (error) {
+ *   if (error instanceof SynnelError) {
+ *     console.log(error.code)        // 'CUSTOM_ERROR'
+ *     console.log(error.message)     // 'Something went wrong'
+ *     console.log(error.context)     // { userId: '123' }
+ *     console.log(error.toJSON())    // Serialized error
+ *   }
+ * }
+ * ```
  */
 export class SynnelError extends Error {
     /**
      * Error code for programmatic error handling
+     *
+     * @remarks
+     * Machine-readable error code that can be used for conditional
+     * error handling and error response generation.
      */
     public readonly code: string
 
     /**
      * Additional error context (optional)
+     *
+     * @remarks
+     * Arbitrary data attached to the error for debugging or logging.
+     * Common uses include user IDs, request IDs, or validation details.
      */
     public readonly context?: Record<string, unknown>
 
+    /**
+     * Creates a new SynnelError
+     *
+     * @param message - Human-readable error message
+     * @param code - Error code for programmatic handling (default: 'SYNNEL_ERROR')
+     * @param context - Optional additional error context
+     */
     constructor(
         message: string,
         code: string = 'SYNNEL_ERROR',
@@ -44,6 +139,21 @@ export class SynnelError extends Error {
 
     /**
      * Convert error to JSON for logging/serialization
+     *
+     * @returns JSON representation of the error
+     *
+     * @example
+     * ```ts
+     * const error = new SynnelError('Failed', 'FAIL', { id: 123 })
+     * console.log(JSON.stringify(error.toJSON(), null, 2))
+     * // {
+     * //   "name": "SynnelError",
+     * //   "message": "Failed",
+     * //   "code": "FAIL",
+     * //   "context": { "id": 123 },
+     * //   "stack": "..."
+     * // }
+     * ```
      */
     toJSON(): {
         name: string
@@ -63,6 +173,15 @@ export class SynnelError extends Error {
 
     /**
      * Get a summary of the error for logging
+     *
+     * @returns Formatted error summary string
+     *
+     * @example
+     * ```ts
+     * const error = new SynnelError('Failed', 'FAIL')
+     * console.log(error.toString())
+     * // "[SynnelError:FAIL] Failed"
+     * ```
      */
     override toString(): string {
         return `[${this.name}:${this.code}] ${this.message}`
@@ -75,7 +194,16 @@ export class SynnelError extends Error {
 
 /**
  * Configuration error
- * Thrown when server configuration is invalid
+ *
+ * @remarks
+ * Thrown when server configuration is invalid or missing required values.
+ *
+ * @example
+ * ```ts
+ * if (!config.port) {
+ *   throw new ConfigError('Port is required', { config })
+ * }
+ * ```
  */
 export class ConfigError extends SynnelError {
     constructor(message: string, context?: Record<string, unknown>) {
@@ -86,7 +214,16 @@ export class ConfigError extends SynnelError {
 
 /**
  * Transport error
- * Thrown when transport layer fails (WebSocket connection issues, etc.)
+ *
+ * @remarks
+ * Thrown when the transport layer fails (WebSocket connection issues, etc.).
+ *
+ * @example
+ * ```ts
+ * if (!wsServer) {
+ *   throw new TransportError('WebSocket server not initialized')
+ * }
+ * ```
  */
 export class TransportError extends SynnelError {
     constructor(message: string, context?: Record<string, unknown>) {
@@ -97,7 +234,16 @@ export class TransportError extends SynnelError {
 
 /**
  * Channel error
- * Thrown when channel operations fail
+ *
+ * @remarks
+ * Thrown when channel operations fail (invalid channel name, etc.).
+ *
+ * @example
+ * ```ts
+ * if (channelName.startsWith('__')) {
+ *   throw new ChannelError('Reserved channel name', { channelName })
+ * }
+ * ```
  */
 export class ChannelError extends SynnelError {
     constructor(message: string, context?: Record<string, unknown>) {
@@ -108,7 +254,16 @@ export class ChannelError extends SynnelError {
 
 /**
  * Client error
- * Thrown when client operations fail
+ *
+ * @remarks
+ * Thrown when client operations fail (client not found, etc.).
+ *
+ * @example
+ * ```ts
+ * if (!registry.has(clientId)) {
+ *   throw new ClientError('Client not found', { clientId })
+ * }
+ * ```
  */
 export class ClientError extends SynnelError {
     constructor(message: string, context?: Record<string, unknown>) {
@@ -119,7 +274,16 @@ export class ClientError extends SynnelError {
 
 /**
  * Message error
- * Thrown when message processing fails
+ *
+ * @remarks
+ * Thrown when message processing fails (invalid format, etc.).
+ *
+ * @example
+ * ```ts
+ * if (!message.type) {
+ *   throw new MessageError('Invalid message format', { message })
+ * }
+ * ```
  */
 export class MessageError extends SynnelError {
     constructor(message: string, context?: Record<string, unknown>) {
@@ -130,7 +294,16 @@ export class MessageError extends SynnelError {
 
 /**
  * Validation error
- * Thrown when input validation fails
+ *
+ * @remarks
+ * Thrown when input validation fails.
+ *
+ * @example
+ * ```ts
+ * if (!isValidChannelName(name)) {
+ *   throw new ValidationError('Invalid channel name', { name })
+ * }
+ * ```
  */
 export class ValidationError extends SynnelError {
     constructor(message: string, context?: Record<string, unknown>) {
@@ -141,7 +314,20 @@ export class ValidationError extends SynnelError {
 
 /**
  * State error
- * Thrown when an operation is invalid for the current state
+ *
+ * @remarks
+ * Thrown when an operation is invalid for the current state.
+ *
+ * @example
+ * ```ts
+ * if (server.started) {
+ *   throw new StateError('Server is already started')
+ * }
+ *
+ * if (!server.started) {
+ *   throw new StateError('Server must be started first')
+ * }
+ * ```
  */
 export class StateError extends SynnelError {
     constructor(message: string, context?: Record<string, unknown>) {
@@ -156,18 +342,62 @@ export class StateError extends SynnelError {
 
 /**
  * Middleware rejection error
- * Thrown when middleware rejects an action using the `reject()` function.
+ *
+ * @remarks
+ * Thrown when middleware explicitly rejects an action using the
+ * `context.reject()` function. This is an expected error type that
+ * indicates intentional rejection rather than a failure.
+ *
+ * @property reason - Human-readable reason for the rejection
+ * @property action - The action that was rejected
+ * @property code - Optional error code for programmatic handling
+ * @property context - Additional context about the rejection
+ *
+ * @example
+ * ### Throwing from middleware
+ * ```ts
+ * const middleware: Middleware = async (context, next) => {
+ *   if (!context.req.client) {
+ *     context.reject('Client is required')
+ *     // Function never returns (throws MiddlewareRejectionError)
+ *   }
+ *   await next()
+ * }
+ * ```
+ *
+ * @example
+ * ### Catching rejections
+ * ```ts
+ * try {
+ *   await manager.executeConnection(client, 'connect')
+ * } catch (error) {
+ *   if (error instanceof MiddlewareRejectionError) {
+ *     console.log(`Action '${error.action}' rejected: ${error.reason}`)
+ *     // Send error to client
+ *     client.socket.send(JSON.stringify({
+ *       type: 'error',
+ *       data: { message: error.reason, code: error.code }
+ *     }))
+ *   }
+ * }
+ * ```
  */
 export class MiddlewareRejectionError
     extends Error
     implements IMiddlewareRejectionError {
     /**
      * The reason for rejection
+     *
+     * @remarks
+     * Human-readable explanation of why the action was rejected.
      */
     public readonly reason: string
 
     /**
      * The action that was rejected
+     *
+     * @remarks
+     * One of: 'connect', 'disconnect', 'message', 'subscribe', 'unsubscribe'
      */
     public readonly action: string
 
@@ -178,14 +408,28 @@ export class MiddlewareRejectionError
 
     /**
      * Optional error code for programmatic handling
+     *
+     * @remarks
+     * Can be used for mapping to client-facing error codes.
      */
     public readonly code?: string
 
     /**
      * Additional context about the rejection
+     *
+     * @remarks
+     * Arbitrary data for debugging or logging.
      */
     public readonly context?: Record<string, unknown>
 
+    /**
+     * Creates a new MiddlewareRejectionError
+     *
+     * @param reason - Human-readable reason for the rejection
+     * @param action - The action that was rejected
+     * @param code - Optional error code for programmatic handling
+     * @param context - Additional context about the rejection
+     */
     constructor(
         reason: string,
         action: IMiddlewareAction | string,
@@ -211,6 +455,22 @@ export class MiddlewareRejectionError
 
     /**
      * Convert error to JSON for logging/serialization
+     *
+     * @returns JSON representation of the rejection error
+     *
+     * @example
+     * ```ts
+     * const error = new MiddlewareRejectionError('Not allowed', 'subscribe', 'FORBIDDEN')
+     * console.log(JSON.stringify(error.toJSON(), null, 2))
+     * // {
+     * //   "name": "MiddlewareRejectionError",
+     * //   "reason": "Not allowed",
+     * //   "action": "subscribe",
+     * //   "code": "FORBIDDEN",
+     * //   "message": "Action 'subscribe' rejected: Not allowed",
+     * //   "stack": "..."
+     * // }
+     * ```
      */
     toJSON(): {
         name: string
@@ -234,6 +494,15 @@ export class MiddlewareRejectionError
 
     /**
      * Get a summary of the rejection for logging
+     *
+     * @returns Formatted error summary string
+     *
+     * @example
+     * ```ts
+     * const error = new MiddlewareRejectionError('Not allowed', 'subscribe')
+     * console.log(error.toString())
+     * // "[MiddlewareRejectionError:subscribe] Not allowed"
+     * ```
      */
     override toString(): string {
         return `[${this.name}:${this.action}] ${this.reason}`
@@ -246,7 +515,39 @@ export class MiddlewareRejectionError
 
 /**
  * Middleware execution error
+ *
+ * @remarks
  * Thrown when a middleware function throws an unexpected error
+ * (not using `context.reject()`). This indicates a bug or failure
+ * in the middleware rather than an intentional rejection.
+ *
+ * @property action - The action being processed when the error occurred
+ * @property middleware - The name/index of the middleware that failed
+ * @property cause - The original error thrown by the middleware
+ *
+ * @example
+ * ### Error scenario
+ * ```ts
+ * const buggyMiddleware: Middleware = async (context, next) => {
+ *   // This throws an unexpected error
+ *   JSON.parse(context.req.message as string)
+ *   await next()
+ * }
+ * // Results in MiddlewareExecutionError
+ * ```
+ *
+ * @example
+ * ### Catching execution errors
+ * ```ts
+ * try {
+ *   await manager.execute(context)
+ * } catch (error) {
+ *   if (error instanceof MiddlewareExecutionError) {
+ *     console.error(`${error.middleware} failed during ${error.action}:`)
+ *     console.error(error.cause)
+ *   }
+ * }
+ * ```
  */
 export class MiddlewareExecutionError extends Error {
     /**
@@ -264,6 +565,13 @@ export class MiddlewareExecutionError extends Error {
      */
     public override readonly cause: Error
 
+    /**
+     * Creates a new MiddlewareExecutionError
+     *
+     * @param action - The action being processed
+     * @param middleware - The name/index of the middleware
+     * @param cause - The original error
+     */
     constructor(action: string, middleware: string, cause: Error) {
         super(
             `Middleware execution error in ${middleware} during ${action}: ${cause.message}`,
@@ -281,11 +589,33 @@ export class MiddlewareExecutionError extends Error {
 
     /**
      * Get the original error cause
+     *
+     * @returns The original error thrown by the middleware
+     *
+     * @example
+     * ```ts
+     * if (error instanceof MiddlewareExecutionError) {
+     *   const originalError = error.getCause()
+     *   console.error('Original error:', originalError.message)
+     * }
+     * ```
      */
     getCause(): Error {
         return this.cause
     }
 
+    /**
+     * Get a summary of the error for logging
+     *
+     * @returns Formatted error summary string
+     *
+     * @example
+     * ```ts
+     * const error = new MiddlewareExecutionError('message', 'auth', originalError)
+     * console.log(error.toString())
+     * // "[MiddlewareExecutionError] auth failed during message: Invalid token"
+     * ```
+     */
     override toString(): string {
         return `[${this.name}] ${this.middleware} failed during ${this.action}: ${this.cause.message}`
     }
