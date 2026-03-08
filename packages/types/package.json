@@ -1,8 +1,8 @@
 {
-  "name": "@synnel/types",
+  "name": "@synca/types",
   "version": "1.0.0-alpha.1",
   "private": true,
-  "description": "Internal shared types for Synnel packages (not for publication)",
+  "description": "Internal shared types for Synca packages (not for publication)",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",

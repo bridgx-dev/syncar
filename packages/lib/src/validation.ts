@@ -2,7 +2,7 @@
  * Validation utilities
  */
 
-import type { ChannelName } from '@synnel/types'
+import type { ChannelName } from '@synca/types'
 
 const CHANNEL_NAME_MIN_LENGTH = 1
 const CHANNEL_NAME_MAX_LENGTH = 128

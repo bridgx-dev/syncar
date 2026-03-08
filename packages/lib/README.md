@@ -1,4 +1,4 @@
-# @synnel/lib
+# @synca/lib
 
 **INTERNAL PACKAGE - NOT FOR PUBLICATION**
 
@@ -10,7 +10,7 @@ Common utility functions for Synnel real-time synchronization packages.
 
 ```bash
 # This package is automatically available via workspace protocol
-bun add @synnel/lib
+bun add @synca/lib
 ```
 
 ## Usage
@@ -21,7 +21,7 @@ import {
   isValidChannelName,
   createDefaultLogger,
   calculateBackoff,
-} from '@synnel/lib'
+} from '@synca/lib'
 
 // Generate a unique message ID
 const messageId = generateMessageId()

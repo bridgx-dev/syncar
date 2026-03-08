@@ -5,7 +5,7 @@
 
 import type { Transport } from './types.js'
 import type { ClientStatus, ClientConfig } from './types.js'
-import { createDefaultLogger, type LoggerFn, type LogLevel } from '@synnel/lib'
+import { createDefaultLogger, type LoggerFn, type LogLevel } from '@synca/lib'
 
 /**
  * Reconnection state

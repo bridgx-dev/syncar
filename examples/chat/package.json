@@ -1,8 +1,8 @@
 {
-  "name": "synnel-chat-example",
+  "name": "synca-chat-example",
   "version": "1.0.0",
   "type": "module",
-  "description": "Synnel Chat Example - Full stack demo with server and React client",
+  "description": "Synca Chat Example - Full stack demo with server and React client",
   "scripts": {
     "dev": "concurrently \"bun run server\" \"bun run client\"",
     "server": "bun run server/index.ts",
@@ -12,10 +12,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@synnel/core": "workspace:*",
-    "@synnel/client": "workspace:*",
-    "@synnel/react": "workspace:*",
-    "@synnel/server": "workspace:*",
+    "@synca/core": "workspace:*",
+    "@synca/client": "workspace:*",
+    "@synca/react": "workspace:*",
+    "@synca/server": "workspace:*",
     "express": "^4.18.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

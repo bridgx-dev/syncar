@@ -1,6 +1,6 @@
 /**
  * Client Types
- * Type definitions for the @synnel/client package
+ * Type definitions for the @synca/client package
  */
 
 import type {
@@ -10,9 +10,9 @@ import type {
   SubscriberId,
   MessageType,
   SignalType,
-} from '@synnel/types'
+} from '@synca/types'
 
-// Re-export common types from @synnel/types for convenience
+// Re-export common types from @synca/types for convenience
 export type {
   Message,
   DataMessage,

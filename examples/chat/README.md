@@ -19,15 +19,15 @@ A full-stack chat application demonstrating the Synnel V2 real-time messaging fr
 
 ### Server
 
-- `@synnel/server` - WebSocket server V2 with Express integration
-- `@synnel/types` - Core types and protocols
+- `@synca/server` - WebSocket server V2 with Express integration
+- `@synca/types` - Core types and protocols
 - Express.js - HTTP server
 - Node.js + TypeScript
 
 ### Client
 
-- `@synnel/react` - React hooks and provider
-- `@synnel/client` - Core client
+- `@synca/react` - React hooks and provider
+- `@synca/client` - Core client
 - React 19 + Vite
 
 ## Project Structure
@@ -114,7 +114,7 @@ The server has been updated to use the new V2 API:
 ```typescript
 import express from 'express'
 import { createServer } from 'http'
-import { createSynnelServer } from '@synnel/server'
+import { createSynnelServer } from '@synca/server'
 
 const app = express()
 const httpServer = createServer(app)
@@ -180,7 +180,7 @@ server.onMessage((client, message) => {
 2. **Start Before Channels**: Must call `server.start()` before creating channels
 3. **Explicit Message Publishing**: Messages are NOT auto-relayed - call `channel.publish()` explicitly
 4. **Handler Registration**: Use `channel.onMessage()` or `channel.receive()` to handle incoming messages
-5. **Proper Types**: All types from `@synnel/types` and `@synnel/server` directories
+5. **Proper Types**: All types from `@synca/types` and `@synca/server` directories
 
 ### Message Flow in V2:
 

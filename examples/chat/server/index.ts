@@ -10,7 +10,7 @@
 
 import express from 'express'
 import { createServer } from 'http'
-import { createSynnelServer } from '@synnel/server'
+import { createSyncaServer } from '@synca/server'
 
 // Message types
 interface ChatMessage {
@@ -36,28 +36,28 @@ interface NotificationMessage {
 // Store connected users (clientId -> username)
 const users = new Map<string, { username: string; status: string }>()
 
-// Create Express app and HTTP server
+// Create Express app and HTTP synca
 const app = express()
 const httpServer = createServer(app)
 
-// Initialize Synnel server
-const server = createSynnelServer({ server: httpServer })
+// Initialize Synnel synca
+const synca = createSyncaServer({ server: httpServer })
 
 async function main() {
-  await server.start()
+  await synca.start()
 
   // ============================================================
   // CHANNELS
   // ============================================================
 
   // Chat - intercept to enrich messages, then relay to all subscribers
-  const chat = server.createMulticast<ChatMessage>('chat')
+  const chat = synca.createMulticast<ChatMessage>('chat')
 
   // Presence - auto-relay (no onMessage needed)
-  const presence = server.createMulticast<PresenceMessage>('presence')
+  const presence = synca.createMulticast<PresenceMessage>('presence')
 
   // Notifications - broadcast to all connected clients
-  const notifications = server.createBroadcast<NotificationMessage>()
+  const notifications = synca.createBroadcast<NotificationMessage>()
 
   // ============================================================
   // SUBSCRIBE / UNSUBSCRIBE LIFECYCLE — via middleware
@@ -116,7 +116,7 @@ async function main() {
   // CONNECTION LIFECYCLE — via global middleware
   // ============================================================
 
-  server.use(async (ctx, next) => {
+  synca.use(async (ctx, next) => {
     const { action, client } = ctx.req
 
     if (action === 'connect' && client) {
@@ -124,7 +124,7 @@ async function main() {
       // Notify all clients about new connection
       notifications.publish({
         type: 'info',
-        message: `A new user connected. Total: ${server.getStats().clientCount}`,
+        message: `A new user connected. Total: ${synca.getStats().clientCount}`,
         timestamp: Date.now(),
       })
     }
@@ -160,9 +160,9 @@ async function main() {
     console.log('')
   })
 
-  // Print server stats every 30 seconds
+  // Print synca stats every 30 seconds
   setInterval(() => {
-    const stats = server.getStats()
+    const stats = synca.getStats()
     console.log('[Stats]', {
       clients: stats.clientCount,
       channels: stats.channelCount,
@@ -177,13 +177,13 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error('Failed to start server:', error)
+  console.error('Failed to start synca:', error)
   process.exit(1)
 })
 
 process.on('SIGINT', async () => {
-  console.log('\nShutting down server...')
-  await server.stop()
+  console.log('\nShutting down synca...')
+  await synca.stop()
   httpServer.close()
   console.log('Server stopped')
   process.exit(0)

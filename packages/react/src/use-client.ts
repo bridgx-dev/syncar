@@ -6,7 +6,7 @@
 
 import { useSyncExternalStore } from 'react'
 import { useSynnelContext } from './context.js'
-import type { SynnelClient } from '@synnel/client'
+import type { SynnelClient } from '@synca/client'
 
 /**
  * Subscribe to client state changes

@@ -1,11 +1,11 @@
 /**
- * @synnel/client
+ * @synca/client
  *
  * Framework-agnostic client for Synnel real-time synchronization
  *
  * @example
  * ```ts
- * import { createSynnelClient, WebSocketClientTransport } from '@synnel/client'
+ * import { createSynnelClient, WebSocketClientTransport } from '@synca/client'
  *
  * const transport = new WebSocketClientTransport({
  *   url: 'ws://localhost:3000',
@@ -51,7 +51,7 @@ export type {
   SubscribeOptions,
   SubscriptionCallbacks,
 
-  // Core types (re-exported from @synnel/types)
+  // Core types (re-exported from @synca/types)
   Transport,
   ClientStatus,
   SubscriptionState,
@@ -76,7 +76,7 @@ export type {
   TransportCloseEvent,
   ConnectionStatus,
 
-  // Message types (re-exported from @synnel/types)
+  // Message types (re-exported from @synca/types)
   Message,
   DataMessage,
   MessageType,

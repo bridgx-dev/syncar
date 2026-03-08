@@ -29,7 +29,7 @@ Think of it as the real-time layer of platforms like Convex or Supabase, but com
 ```typescript
 import express from 'express'
 import { createServer } from 'http'
-import { Synnel } from '@synnel/server'
+import { Synnel } from '@synca/server'
 
 const app = express()
 const httpServer = createServer(app)
@@ -53,7 +53,7 @@ httpServer.listen(3000)
 ### 2. Standalone Server (no Express)
 
 ```typescript
-import { Synnel } from '@synnel/server'
+import { Synnel } from '@synca/server'
 
 // Creates HTTP server on port 3000
 const synnel = new Synnel({ port: 3000 })
@@ -69,9 +69,9 @@ chat.send({ text: 'Welcome!' })
 Wrap your application in the `SynnelProvider`:
 
 ```tsx
-import { SynnelProvider } from '@synnel/react'
-import { createSynnelClient } from '@synnel/client'
-import { WebSocketClientTransport } from '@synnel/adapter'
+import { SynnelProvider } from '@synca/react'
+import { createSynnelClient } from '@synca/client'
+import { WebSocketClientTransport } from '@synca/client'
 
 const client = createSynnelClient({
   transport: new WebSocketClientTransport({
@@ -91,7 +91,7 @@ function Root() {
 ### 4. Usage in Hooks
 
 ```tsx
-import { useChannel } from '@synnel/react'
+import { useChannel } from '@synca/react'
 
 function ChatRoom() {
   const chat = useChannel<{ text: string }>('chat', {

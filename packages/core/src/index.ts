@@ -1,11 +1,11 @@
 /**
- * @synnel/core
+ * @synca/core
  *
  * Platform-agnostic core for Synnel real-time synchronization
  *
  * @example
  * ```ts
- * import { MessageBus, Channel, createDataMessage } from '@synnel/core'
+ * import { MessageBus, Channel, createDataMessage } from '@synca/core'
  *
  * const bus = new MessageBus()
  * const channel = bus.createChannel('chat')

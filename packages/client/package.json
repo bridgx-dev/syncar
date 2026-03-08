@@ -1,7 +1,7 @@
 {
-  "name": "@synnel/client",
+  "name": "@synca/client",
   "version": "1.0.0-alpha.1",
-  "description": "Framework-agnostic client for Synnel real-time synchronization",
+  "description": "Framework-agnostic client for Synca real-time synchronization",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -35,11 +35,11 @@
     "pubsub",
     "client"
   ],
-  "author": "Synnel",
+  "author": "Synca",
   "license": "MIT",
   "dependencies": {
-    "@synnel/types": "workspace:*",
-    "@synnel/lib": "workspace:*"
+    "@synca/types": "workspace:*",
+    "@synca/lib": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.13.10",

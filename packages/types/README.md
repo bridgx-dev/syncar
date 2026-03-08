@@ -1,4 +1,4 @@
-# @synnel/types
+# @synca/types
 
 **INTERNAL PACKAGE - NOT FOR PUBLICATION**
 
@@ -10,7 +10,7 @@ Shared TypeScript type definitions for Synnel real-time synchronization packages
 
 ```bash
 # This package is automatically available via workspace protocol
-bun add @synnel/types
+bun add @synca/types
 ```
 
 ## Usage
@@ -22,7 +22,7 @@ import type {
   ChannelName,
   ConnectionStatus,
   TransportConfig,
-} from '@synnel/types'
+} from '@synca/types'
 
 // Use the types in your code
 const channel: ChannelName = 'chat'

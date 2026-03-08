@@ -13,17 +13,37 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "@synnel/core": ["../../packages/core/src/index.ts"],
-      "@synnel/client": ["../../packages/client/src/index.ts"],
-      "@synnel/server": ["../../packages/server/src/index.ts"],
-      "@synnel/types": ["../../packages/types/src/index.ts"]
+      "@synca/core": [
+        "../../packages/core/src/index.ts"
+      ],
+      "@synca/client": [
+        "../../packages/client/src/index.ts"
+      ],
+      "@synca/server": [
+        "../../packages/server/src/index.ts"
+      ],
+      "@synca/types": [
+        "../../packages/types/src/index.ts"
+      ]
     }
   },
-  "include": ["server/**/*"],
-  "exclude": ["node_modules", "dist", "client"],
+  "include": [
+    "server/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "client"
+  ],
   "references": [
-    { "path": "../../packages/core" },
-    { "path": "../../packages/client" },
-    { "path": "../../packages/server" }
+    {
+      "path": "../../packages/core"
+    },
+    {
+      "path": "../../packages/client"
+    },
+    {
+      "path": "../../packages/server"
+    }
   ]
 }

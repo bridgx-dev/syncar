@@ -1,4 +1,4 @@
-# @synnel/client-v2
+# @synca/client-v2
 
 Framework-agnostic client for Synnel real-time synchronization. Works with any JavaScript framework or vanilla JS.
 
@@ -15,18 +15,18 @@ This package provides a framework-agnostic client for real-time pub/sub communic
 ## Installation
 
 ```bash
-npm install @synnel/client-v2
+npm install @synca/client-v2
 # or
-pnpm add @synnel/client-v2
+pnpm add @synca/client-v2
 # or
-yarn add @synnel/client-v2
+yarn add @synca/client-v2
 ```
 
 ## Quick Start
 
 ```typescript
-import { createSynnelClient } from '@synnel/client-v2'
-import { WebSocketClientTransport } from '@synnel/client-v2'
+import { createSynnelClient } from '@synca/client-v2'
+import { WebSocketClientTransport } from '@synca/client-v2'
 
 // Create transport
 const transport = new WebSocketClientTransport({
@@ -60,7 +60,7 @@ await client.publish('chat', { text: 'Hello!' })
 Creates a new Synnel client instance.
 
 ```typescript
-import { createSynnelClient } from '@synnel/client-v2'
+import { createSynnelClient } from '@synca/client-v2'
 
 const client = createSynnelClient({
   transport: myTransport,

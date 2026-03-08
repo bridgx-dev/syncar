@@ -1,4 +1,4 @@
-# @synnel/core
+# @synca/core
 
 Platform-agnostic core for Synnel real-time synchronization.
 
@@ -14,17 +14,17 @@ This package provides the foundational abstractions for real-time pub/sub commun
 ## Installation
 
 ```bash
-npm install @synnel/core
+npm install @synca/core
 # or
-pnpm add @synnel/core
+pnpm add @synca/core
 # or
-yarn add @synnel/core
+yarn add @synca/core
 ```
 
 ## Quick Start
 
 ```typescript
-import { MessageBus, createDataMessage } from '@synnel/core'
+import { MessageBus, createDataMessage } from '@synca/core'
 
 // Create a message bus
 const bus = new MessageBus()
@@ -48,7 +48,7 @@ bus.publish('chat', message, 'client-1') // Exclude sender
 The central hub for managing channels and routing messages.
 
 ```typescript
-import { MessageBus } from '@synnel/core'
+import { MessageBus } from '@synca/core'
 
 const bus = new MessageBus({
   autoCreateChannels: true,
@@ -62,7 +62,7 @@ const bus = new MessageBus({
 Represents a named topic with subscribers.
 
 ```typescript
-import { Channel } from '@synnel/core'
+import { Channel } from '@synca/core'
 
 const channel = new Channel('chat', {
   maxSubscribers: 100,
@@ -89,7 +89,7 @@ import {
   createDataMessage,
   createSignalMessage,
   createErrorMessage,
-} from '@synnel/core'
+} from '@synca/core'
 
 // Data message
 const dataMsg = createDataMessage('chat', { text: 'Hello' })
@@ -140,7 +140,7 @@ const errorMsg = createErrorMessage(
 ### Type Guards
 
 ```typescript
-import { isDataMessage, isSignalMessage, isErrorMessage } from '@synnel/core'
+import { isDataMessage, isSignalMessage, isErrorMessage } from '@synca/core'
 
 if (isDataMessage(message)) {
   // message.data is typed

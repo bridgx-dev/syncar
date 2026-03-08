@@ -2,7 +2,7 @@
  * ID generation utilities
  */
 
-import type { MessageId, ClientId, SubscriberId } from '@synnel/types'
+import type { MessageId, ClientId, SubscriberId } from '@synca/types'
 
 /**
  * Generate a unique message ID

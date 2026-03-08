@@ -3,7 +3,7 @@
  * Client-side WebSocket transport for browser and Node.js environments
  */
 
-import type { ConnectionStatus, Message } from '@synnel/types'
+import type { ConnectionStatus, Message } from '@synca/types'
 import type {
   Transport,
   TransportEventType,
@@ -330,7 +330,7 @@ export class WebSocketClientTransport implements Transport {
     if (handlers) {
       for (const handler of handlers) {
         try {
-          ;(handler as any)(...args)
+          ; (handler as any)(...args)
         } catch (error) {
           console.error(`Error in ${event} handler:`, error)
         }

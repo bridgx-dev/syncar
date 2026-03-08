@@ -9,12 +9,12 @@ import {
   type Message,
   type DataMessage,
   type ChannelName,
-} from '@synnel/types'
+} from '@synca/types'
 import {
   generateMessageId,
   createDataMessage,
   generateClientId,
-} from '@synnel/lib'
+} from '@synca/lib'
 import type {
   ClientConfig,
   ClientStatus,
@@ -63,7 +63,7 @@ export class SynnelClient {
     // Handle auto-connect
     if (config.autoConnect) {
       // Background connect, errors are handled by ConnectionManager
-      void this.connect().catch(() => {})
+      void this.connect().catch(() => { })
     }
   }
 
@@ -416,7 +416,7 @@ export class SynnelClient {
     if (handlers) {
       for (const handler of handlers) {
         try {
-          ;(handler as any)(...args)
+          ; (handler as any)(...args)
         } catch (error) {
           console.error(`Error in ${event} handler:`, error)
         }

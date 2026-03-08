@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSynnelClient } from './use-client.js'
 import type { UseBroadcastOptions, UseBroadcastReturn } from './types.js'
-import type { Message, DataMessage } from '@synnel/types'
+import type { Message, DataMessage } from '@synca/types'
 
 /**
  * Broadcast channel name (special reserved channel)

@@ -1,7 +1,7 @@
 {
-  "name": "@synnel/react",
+  "name": "@synca/react",
   "version": "1.0.0-alpha.1",
-  "description": "React integration for Synnel - Real-time synchronization with hooks",
+  "description": "React integration for Synca - Real-time synchronization with hooks",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -35,7 +35,7 @@
     "react-dom": "^18.0.0"
   },
   "dependencies": {
-    "@synnel/client": "workspace:*"
+    "@synca/client": "workspace:*"
   },
   "devDependencies": {
     "@testing-library/react": "^16.1.0",
@@ -55,7 +55,7 @@
     "node": ">=18.0.0"
   },
   "keywords": [
-    "synnel",
+    "synca",
     "websocket",
     "realtime",
     "react",

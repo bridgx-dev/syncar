@@ -1,12 +1,12 @@
 /**
- * @synnel/lib
+ * @synca/lib
  *
  * Internal utility functions for Synnel real-time synchronization
  * This package is private and should NOT be published to npm.
  *
  * @example
  * ```ts
- * import { generateMessageId, isValidChannelName, createDefaultLogger } from '@synnel/lib'
+ * import { generateMessageId, isValidChannelName, createDefaultLogger } from '@synca/lib'
  * ```
  */
 

@@ -1,10 +1,10 @@
 /**
  * React Integration Types
- * Types for @synnel/react package
+ * Types for @synca/react package
  */
 
-import type { SynnelClient, ClientStatus } from '@synnel/client'
-import type { ChannelName, DataMessage } from '@synnel/types'
+import type { SynnelClient, ClientStatus } from '@synca/client'
+import type { ChannelName, DataMessage } from '@synca/types'
 import type { ReactNode } from 'react'
 
 /**
@@ -50,10 +50,10 @@ export interface UseChannelState<T = unknown> {
    * Subscription state
    */
   subscriptionState:
-    | 'unsubscribed'
-    | 'subscribing'
-    | 'subscribed'
-    | 'unsubscribing'
+  | 'unsubscribed'
+  | 'subscribing'
+  | 'subscribed'
+  | 'unsubscribing'
 }
 
 /**
@@ -193,7 +193,7 @@ export class MissingProviderError extends Error {
   constructor() {
     super(
       'Synnel hooks must be used within a SynnelProvider. ' +
-        'Wrap your component tree with <SynnelProvider client={client}>.',
+      'Wrap your component tree with <SynnelProvider client={client}>.',
     )
     this.name = 'MissingProviderError'
   }

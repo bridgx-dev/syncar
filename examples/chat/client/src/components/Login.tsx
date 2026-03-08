@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSynnelClient } from '@synnel/react'
+import { useSynnelClient } from '@synca/react'
 
 interface LoginProps {
   onLogin: (username: string) => void

@@ -1,5 +1,5 @@
 /**
- * @synnel/react
+ * @synca/react
  *
  * React integration for Synnel v2 - Real-time synchronization with hooks
  */
@@ -32,4 +32,4 @@ export type {
   ChannelSubscription,
   SubscriptionState,
   ChannelName,
-} from '@synnel/client'
+} from '@synca/client'

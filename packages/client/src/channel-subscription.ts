@@ -3,8 +3,8 @@
  * Manages a single channel subscription lifecycle
  */
 
-import type { ChannelName, DataMessage } from '@synnel/types'
-import { SignalType } from '@synnel/types'
+import type { ChannelName, DataMessage } from '@synca/types'
+import { SignalType } from '@synca/types'
 import type {
   SubscriptionState,
   SubscribeOptions,

@@ -6,9 +6,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSynnelClient } from './use-client.js'
-import type { ChannelSubscription } from '@synnel/client'
+import type { ChannelSubscription } from '@synca/client'
 import type { UseChannelOptions, UseChannelReturn } from './types.js'
-import type { DataMessage } from '@synnel/types'
+import type { DataMessage } from '@synca/types'
 
 /**
  * Hook for subscribing to a channel
@@ -211,7 +211,7 @@ export function useChannel<T = unknown>(
         // But the example uses it in useEffect which should be fine after initial mount.
         // For simplicity, we'll try to use the subscription if it exists.
         console.warn('onMessage called before subscription was established')
-        return () => {}
+        return () => { }
       }
 
       return subscriptionRef.current.onMessage((msg) => {
