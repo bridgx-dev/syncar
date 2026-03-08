@@ -118,23 +118,6 @@ export class SignalHandler {
       )
     }
 
-    // Trigger channel subscribe handlers (if channel exists)
-    const channelInstance = this.registry.getChannel(channel)
-
-    if (channelInstance?.handleSubscribe) {
-      try {
-        await channelInstance.handleSubscribe(client)
-      } catch (error) {
-        // If handler throws, unsubscribe and rethrow
-        this.registry.unsubscribe(client.id, channel)
-        throw error
-      }
-    } else if (this.options.requireChannel) {
-      // If channel is required but not found, unsubscribe and throw
-      this.registry.unsubscribe(client.id, channel)
-      throw new ChannelError(`Channel "${channel}" not found`)
-    }
-
     // Send acknowledgment
     if (this.options.sendAcknowledgments) {
       const ackMessage = createSignalMessage(
@@ -160,13 +143,6 @@ export class SignalHandler {
 
     // Unsubscribe from channel via registry
     this.registry.unsubscribe(client.id, channel)
-
-    // Trigger channel unsubscribe handlers (if channel exists)
-    const channelInstance = this.registry.getChannel(channel)
-
-    if (channelInstance?.handleUnsubscribe) {
-      await channelInstance.handleUnsubscribe(client)
-    }
 
     // Send acknowledgment
     if (this.options.sendAcknowledgments) {

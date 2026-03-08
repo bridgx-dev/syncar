@@ -57,13 +57,8 @@ export class MessageHandler {
 
     // Define Kernel
     const kernel = async () => {
-      // Route to channel for processing (triggers onMessage handlers)
-      if (channel && 'receive' in channel && typeof channel.receive === 'function') {
-        await channel.receive(
-          message.data,
-          client,
-          message,
-        )
+      if (channel) {
+        await channel.dispatch(message.data, client, message)
       }
     }
 

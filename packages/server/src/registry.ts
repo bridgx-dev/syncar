@@ -41,10 +41,6 @@ export class ClientRegistry {
 
         for (const channelName of clientChannels) {
             this.channels.get(channelName)?.delete(connection.id);
-            const channel = this.getChannel(channelName)
-            if (channel?.handleUnsubscribe) {
-                channel.handleUnsubscribe(connection)
-            }
         }
 
         this.subscriptions.delete(connection.id)

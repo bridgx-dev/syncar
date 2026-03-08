@@ -34,12 +34,6 @@ export type IMessageHandler<T> = (
     message: DataMessage<T>,
 ) => void | Promise<void>
 
-/**
- * Base lifecycle handler signature
- */
-export type ILifecycleHandler = (
-    client: IClientConnection,
-) => void | Promise<void>
 import { createDataMessage, assertValidChannelName } from './utils'
 import { ClientRegistry } from './registry'
 import { BROADCAST_CHANNEL } from './config'
@@ -64,9 +58,6 @@ export abstract class BaseChannel<
 
     abstract getMiddlewares(): IMiddleware[]
 
-    handleSubscribe?(client: IClientConnection): Promise<void>
-    handleUnsubscribe?(client: IClientConnection): Promise<void>
-
     publish(data: T, options?: IPublishOptions): void {
         const clients = this.getTargetClients(options)
         if (clients.length > this.chunkSize) {
@@ -75,6 +66,13 @@ export abstract class BaseChannel<
             this.publishToClients(data, clients, options)
         }
     }
+
+    /**
+     * Dispatch an incoming client message. Override in subclasses.
+     * Default: no-op (e.g. BroadcastChannel doesn't receive messages).
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    async dispatch(_data: T, _client: IClientConnection, _message: DataMessage<T>): Promise<void> { }
 
     protected abstract getTargetClients(options?: IPublishOptions): ClientId[]
 
@@ -161,8 +159,6 @@ export class MulticastChannel<T = unknown>
     private readonly middlewares: IMiddleware[] = []
 
     private readonly messageHandlers: Set<IMessageHandler<T>> = new Set()
-    private readonly subscribeHandlers: Set<ILifecycleHandler> = new Set()
-    private readonly unsubscribeHandlers: Set<ILifecycleHandler> = new Set()
 
     constructor(config: {
         name: ChannelName
@@ -202,58 +198,31 @@ export class MulticastChannel<T = unknown>
         return this.registry.unsubscribe(subscriber, this.name)
     }
 
-    async receive(
+    /**
+     * Dispatch an incoming message.
+     * - If `onMessage` handlers are registered → run them (full control, manual publish).
+     * - If no handlers → auto-relay to all channel subscribers, excluding the sender.
+     */
+    override async dispatch(
         data: T,
         client: IClientConnection,
         message: DataMessage<T>,
     ): Promise<void> {
-        for (const handler of this.messageHandlers) {
-            try {
-                await handler(data, client, message)
-            } catch (error) {
-                console.error(
-                    `Error in message handler for channel ${this.name}:`,
-                    error,
-                )
+        if (this.messageHandlers.size > 0) {
+            // Intercept mode: developer handles everything manually
+            for (const handler of this.messageHandlers) {
+                try {
+                    await handler(data, client, message)
+                } catch (error) {
+                    this.registry.logger?.error(
+                        `[${this.name}] Error in message handler:`,
+                        error as Error,
+                    )
+                }
             }
-        }
-    }
-
-    onSubscribe(handler: ILifecycleHandler): () => void {
-        this.subscribeHandlers.add(handler)
-        return () => this.subscribeHandlers.delete(handler)
-    }
-
-    onUnsubscribe(handler: ILifecycleHandler): () => void {
-        this.unsubscribeHandlers.add(handler)
-        return () => this.unsubscribeHandlers.delete(handler)
-    }
-
-    override async handleSubscribe(client: IClientConnection): Promise<void> {
-        for (const handler of this.subscribeHandlers) {
-            try {
-                await handler(client)
-            } catch (error) {
-                console.error(
-                    `Error in subscribe handler for channel ${this.name}:`,
-                    error,
-                )
-                // Re-throw to allow blocking subscription on handler error
-                throw error
-            }
-        }
-    }
-
-    override async handleUnsubscribe(client: IClientConnection): Promise<void> {
-        for (const handler of this.unsubscribeHandlers) {
-            try {
-                await handler(client)
-            } catch (error) {
-                console.error(
-                    `Error in unsubscribe handler for channel ${this.name}:`,
-                    error,
-                )
-            }
+        } else {
+            // Auto-relay mode: forward to all subscribers, excluding sender
+            this.publish(data, { exclude: [client.id] })
         }
     }
 

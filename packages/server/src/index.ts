@@ -60,7 +60,6 @@ export type {
   IChannelState,
   IPublishOptions,
   IMessageHandler,
-  ILifecycleHandler,
 } from './channel'
 
 export type {
