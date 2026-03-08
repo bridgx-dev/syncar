@@ -7,16 +7,16 @@ import { describe, it, expect } from 'vitest'
 
 // Import all exports from index.ts
 import {
-  SynnelServer,
-  createSynnelServer,
-  Synnel,
+  SyncaServer,
+  createSyncaServer,
+  Synca,
   createAuthMiddleware,
   createLoggingMiddleware,
   createRateLimitMiddleware,
   createChannelWhitelistMiddleware,
   ContextManager,
   createContext,
-  SynnelError,
+  SyncaError,
   ConfigError,
   TransportError,
   ChannelError,
@@ -35,18 +35,18 @@ import {
 } from '../src/index.js'
 
 describe('index.ts exports', () => {
-  it('should export SynnelServer', () => {
-    expect(SynnelServer).toBeDefined()
-    expect(typeof SynnelServer).toBe('function')
+  it('should export SyncaServer', () => {
+    expect(SyncaServer).toBeDefined()
+    expect(typeof SyncaServer).toBe('function')
   })
 
-  it('should export createSynnelServer factory', () => {
-    expect(createSynnelServer).toBeDefined()
-    expect(typeof createSynnelServer).toBe('function')
+  it('should export createSyncaServer factory', () => {
+    expect(createSyncaServer).toBeDefined()
+    expect(typeof createSyncaServer).toBe('function')
   })
 
-  it('should export Synnel alias', () => {
-    expect(Synnel).toBe(SynnelServer)
+  it('should export Synca alias', () => {
+    expect(Synca).toBe(SyncaServer)
   })
 
   it('should export ContextManager', () => {
@@ -69,7 +69,7 @@ describe('index.ts exports', () => {
   })
 
   it('should export all error classes', () => {
-    expect(SynnelError).toBeDefined()
+    expect(SyncaError).toBeDefined()
     expect(ConfigError).toBeDefined()
     expect(TransportError).toBeDefined()
     expect(ChannelError).toBeDefined()

@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest'
 import {
-  SynnelError,
+  SyncaError,
   ConfigError,
   TransportError,
   ChannelError,
@@ -18,45 +18,45 @@ import {
   MiddlewareExecutionError,
 } from '../src/errors'
 
-describe('SynnelError', () => {
+describe('SyncaError', () => {
   describe('constructor', () => {
     it('should create error with message and default code', () => {
-      const error = new SynnelError('Something went wrong')
+      const error = new SyncaError('Something went wrong')
 
       expect(error).toBeInstanceOf(Error)
       expect(error.message).toBe('Something went wrong')
       expect(error.code).toBe('SYNNEL_ERROR')
-      expect(error.name).toBe('SynnelError')
+      expect(error.name).toBe('SyncaError')
     })
 
     it('should create error with custom code', () => {
-      const error = new SynnelError('Failed', 'CUSTOM_ERROR')
+      const error = new SyncaError('Failed', 'CUSTOM_ERROR')
 
       expect(error.code).toBe('CUSTOM_ERROR')
     })
 
     it('should accept context object', () => {
       const context = { userId: '123', requestId: 'abc' }
-      const error = new SynnelError('Failed', 'FAILED', context)
+      const error = new SyncaError('Failed', 'FAILED', context)
 
       expect(error.context).toEqual(context)
     })
 
     it('should have proper stack trace', () => {
-      const error = new SynnelError('Test error')
+      const error = new SyncaError('Test error')
 
       expect(error.stack).toBeDefined()
-      expect(error.stack).toContain('SynnelError')
+      expect(error.stack).toContain('SyncaError')
     })
   })
 
   describe('toJSON()', () => {
     it('should serialize error to JSON', () => {
-      const error = new SynnelError('Test error', 'TEST', { key: 'value' })
+      const error = new SyncaError('Test error', 'TEST', { key: 'value' })
       const json = error.toJSON()
 
       expect(json).toEqual({
-        name: 'SynnelError',
+        name: 'SyncaError',
         message: 'Test error',
         code: 'TEST',
         context: { key: 'value' },
@@ -65,11 +65,11 @@ describe('SynnelError', () => {
     })
 
     it('should handle error without context', () => {
-      const error = new SynnelError('Test error')
+      const error = new SyncaError('Test error')
       const json = error.toJSON()
 
       expect(json).toEqual({
-        name: 'SynnelError',
+        name: 'SyncaError',
         message: 'Test error',
         code: 'SYNNEL_ERROR',
         stack: error.stack,
@@ -79,9 +79,9 @@ describe('SynnelError', () => {
 
   describe('toString()', () => {
     it('should format error as string', () => {
-      const error = new SynnelError('Test error', 'TEST')
+      const error = new SyncaError('Test error', 'TEST')
 
-      expect(error.toString()).toBe('[SynnelError:TEST] Test error')
+      expect(error.toString()).toBe('[SyncaError:TEST] Test error')
     })
   })
 })
@@ -90,7 +90,7 @@ describe('ConfigError', () => {
   it('should create error with correct code and name', () => {
     const error = new ConfigError('Invalid port')
 
-    expect(error).toBeInstanceOf(SynnelError)
+    expect(error).toBeInstanceOf(SyncaError)
     expect(error.name).toBe('ConfigError')
     expect(error.code).toBe('CONFIG_ERROR')
     expect(error.message).toBe('Invalid port')
@@ -115,7 +115,7 @@ describe('TransportError', () => {
   it('should create error with correct code and name', () => {
     const error = new TransportError('WebSocket error')
 
-    expect(error).toBeInstanceOf(SynnelError)
+    expect(error).toBeInstanceOf(SyncaError)
     expect(error.name).toBe('TransportError')
     expect(error.code).toBe('TRANSPORT_ERROR')
   })
@@ -131,7 +131,7 @@ describe('ChannelError', () => {
   it('should create error with correct code and name', () => {
     const error = new ChannelError('Channel not found')
 
-    expect(error).toBeInstanceOf(SynnelError)
+    expect(error).toBeInstanceOf(SyncaError)
     expect(error.name).toBe('ChannelError')
     expect(error.code).toBe('CHANNEL_ERROR')
   })
@@ -141,7 +141,7 @@ describe('ClientError', () => {
   it('should create error with correct code and name', () => {
     const error = new ClientError('Client not found')
 
-    expect(error).toBeInstanceOf(SynnelError)
+    expect(error).toBeInstanceOf(SyncaError)
     expect(error.name).toBe('ClientError')
     expect(error.code).toBe('CLIENT_ERROR')
   })
@@ -151,7 +151,7 @@ describe('MessageError', () => {
   it('should create error with correct code and name', () => {
     const error = new MessageError('Invalid message')
 
-    expect(error).toBeInstanceOf(SynnelError)
+    expect(error).toBeInstanceOf(SyncaError)
     expect(error.name).toBe('MessageError')
     expect(error.code).toBe('MESSAGE_ERROR')
   })
@@ -161,7 +161,7 @@ describe('ValidationError', () => {
   it('should create error with correct code and name', () => {
     const error = new ValidationError('Invalid input')
 
-    expect(error).toBeInstanceOf(SynnelError)
+    expect(error).toBeInstanceOf(SyncaError)
     expect(error.name).toBe('ValidationError')
     expect(error.code).toBe('VALIDATION_ERROR')
   })
@@ -171,7 +171,7 @@ describe('StateError', () => {
   it('should create error with correct code and name', () => {
     const error = new StateError('Invalid state')
 
-    expect(error).toBeInstanceOf(SynnelError)
+    expect(error).toBeInstanceOf(SyncaError)
     expect(error.name).toBe('StateError')
     expect(error.code).toBe('STATE_ERROR')
   })
@@ -317,16 +317,16 @@ describe('MiddlewareExecutionError', () => {
 
 describe('Error inheritance chain', () => {
   it('should maintain instanceof checks', () => {
-    const synnelError = new SynnelError('Test')
+    const syncaError = new SyncaError('Test')
     const configError = new ConfigError('Test')
     const rejectionError = new MiddlewareRejectionError('Test', 'test')
     const executionError = new MiddlewareExecutionError('test', 'test', new Error('cause'))
 
-    expect(synnelError).toBeInstanceOf(Error)
-    expect(synnelError).toBeInstanceOf(SynnelError)
+    expect(syncaError).toBeInstanceOf(Error)
+    expect(syncaError).toBeInstanceOf(SyncaError)
 
     expect(configError).toBeInstanceOf(Error)
-    expect(configError).toBeInstanceOf(SynnelError)
+    expect(configError).toBeInstanceOf(SyncaError)
     expect(configError).toBeInstanceOf(ConfigError)
 
     expect(rejectionError).toBeInstanceOf(Error)
@@ -339,13 +339,13 @@ describe('Error inheritance chain', () => {
 
 describe('Error context edge cases', () => {
   it('should handle empty context', () => {
-    const error = new SynnelError('Test', 'TEST', {})
+    const error = new SyncaError('Test', 'TEST', {})
 
     expect(error.context).toEqual({})
   })
 
   it('should handle undefined context', () => {
-    const error = new SynnelError('Test', 'TEST', undefined)
+    const error = new SyncaError('Test', 'TEST', undefined)
 
     expect(error.context).toBeUndefined()
   })
@@ -355,7 +355,7 @@ describe('Error context edge cases', () => {
       user: { id: '123', name: 'Test' },
       metadata: { key: 'value', nested: { deep: 'value' } },
     }
-    const error = new SynnelError('Test', 'TEST', context)
+    const error = new SyncaError('Test', 'TEST', context)
 
     expect(error.context).toEqual(context)
   })
@@ -363,7 +363,7 @@ describe('Error context edge cases', () => {
 
 describe('Error serialization edge cases', () => {
   it('should handle error without stack trace', () => {
-    const error = new SynnelError('Test')
+    const error = new SyncaError('Test')
     const stack = error.stack
     error.stack = undefined
 

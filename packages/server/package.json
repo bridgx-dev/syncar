@@ -1,7 +1,7 @@
 {
-  "name": "@synnel/server",
+  "name": "@synca/server",
   "version": "1.0.0-alpha.1",
-  "description": "Node.js server for Synnel real-time synchronization",
+  "description": "Node.js server for Synca real-time synchronization",
   "author": "M16BAPPI - [m16bappi@gmail.com]",
   "type": "module",
   "main": "./dist/index.js",
@@ -28,6 +28,9 @@
     "docs:serve": "typedoc --out docs src && npx serve docs",
     "docs:json": "typedoc --json docs/api.json src"
   },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
   "devDependencies": {
     "@types/node": "^20.10.0",
     "@types/ws": "^8.18.1",
@@ -36,9 +39,6 @@
     "typescript": "^5",
     "vitest": "^1.1.0"
   },
-  "peerDependencies": {
-    "ws": "^8.0.0"
-  },
   "engines": {
     "node": ">=18.0.0"
   },
@@ -46,7 +46,7 @@
     "websocket",
     "realtime",
     "server",
-    "synnel",
+    "synca",
     "pubsub",
     "broadcast"
   ],

@@ -61,7 +61,7 @@ describe('config', () => {
       expect(CLOSE_CODES.TRY_AGAIN_LATER).toBe(1013)
     })
 
-    it('should contain custom Synnel close codes', () => {
+    it('should contain custom Synca close codes', () => {
       expect(CLOSE_CODES.REJECTED).toBe(4001)
       expect(CLOSE_CODES.RATE_LIMITED).toBe(4002)
       expect(CLOSE_CODES.CHANNEL_NOT_FOUND).toBe(4003)
@@ -96,7 +96,7 @@ describe('config', () => {
 
   describe('Default WebSocket Settings', () => {
     it('should have correct default WebSocket path', () => {
-      expect(DEFAULT_WS_PATH).toBe('/synnel')
+      expect(DEFAULT_WS_PATH).toBe('/synca')
     })
 
     it('should have correct default max payload (1MB)', () => {
@@ -122,7 +122,7 @@ describe('config', () => {
     })
 
     it('should have correct default path', () => {
-      expect(DEFAULT_PATH).toBe('/synnel')
+      expect(DEFAULT_PATH).toBe('/synca')
     })
 
     it('should have ping enabled by default', () => {
@@ -133,7 +133,7 @@ describe('config', () => {
       expect(DEFAULT_SERVER_CONFIG).toEqual({
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         enablePing: true,
         pingInterval: 30000,
         pingTimeout: 5000,

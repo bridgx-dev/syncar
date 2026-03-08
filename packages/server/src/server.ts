@@ -22,7 +22,7 @@ import { createDefaultLogger, assertValidChannelName } from './utils'
  *
  * @example
  * ```ts
- * const server = createSynnelServer({ port: 3000 })
+ * const server = createSyncaServer({ port: 3000 })
  * await server.start()
  *
  * const stats = server.getStats()
@@ -59,15 +59,15 @@ interface ServerState {
  * Server configuration options
  *
  * @remarks
- * Complete configuration interface for the Synnel server. These options
+ * Complete configuration interface for the Synca server. These options
  * control the WebSocket transport layer, connection handling, middleware,
  * and performance tuning parameters.
  *
  * @example
  * ```ts
- * import { createSynnelServer } from '@synnel/server'
+ * import { createSyncaServer } from '@synca/server'
  *
- * const server = createSynnelServer({
+ * const server = createSyncaServer({
  *   port: 3000,
  *   host: '0.0.0.0',
  *   path: '/ws',
@@ -135,7 +135,7 @@ export interface IServerOptions {
     host: string
 
     /**
-     * WebSocket path (default: '/synnel')
+     * WebSocket path (default: '/synca')
      *
      * @remarks
      * The URL path for WebSocket connections. Clients must connect to
@@ -218,7 +218,7 @@ export interface IServerOptions {
 }
 
 /**
- * Synnel Server - Real-time WebSocket server with pub/sub channels
+ * Synca Server - Real-time WebSocket server with pub/sub channels
  *
  * @remarks
  * The main server class providing WebSocket communication with broadcast
@@ -226,9 +226,9 @@ export interface IServerOptions {
  *
  * @example
  * ```ts
- * import { createSynnelServer } from '@synnel/server'
+ * import { createSyncaServer } from '@synca/server'
  *
- * const server = createSynnelServer({ port: 3000 })
+ * const server = createSyncaServer({ port: 3000 })
  * await server.start()
  *
  * // Create channels
@@ -245,9 +245,9 @@ export interface IServerOptions {
  * chat.publish({ text: 'Welcome!' })
  * ```
  *
- * @see {@link createSynnelServer} for factory function
+ * @see {@link createSyncaServer} for factory function
  */
-export class SynnelServer {
+export class SyncaServer {
     private readonly config: IServerOptions
     private transport: WebSocketServerTransport | undefined
     public readonly registry: ClientRegistry
@@ -289,7 +289,7 @@ export class SynnelServer {
      *
      * @example
      * ```ts
-     * const server = createSynnelServer({ port: 3000 })
+     * const server = createSyncaServer({ port: 3000 })
      * await server.start()
      * console.log('Server is running')
      * ```
@@ -500,7 +500,7 @@ export class SynnelServer {
      *
      * @example
      * ```ts
-     * import { createAuthMiddleware } from '@synnel/server'
+     * import { createAuthMiddleware } from '@synca/server'
      *
      * server.use(createAuthMiddleware({
      *   verifyToken: async (token) => jwt.verify(token, SECRET)
@@ -660,31 +660,31 @@ export class SynnelServer {
 }
 
 /**
- * Create a Synnel server with automatic WebSocket transport setup
+ * Create a Synca server with automatic WebSocket transport setup
  *
  * @remarks
- * Factory function that creates a configured SynnelServer instance.
+ * Factory function that creates a configured SyncaServer instance.
  * Automatically sets up the WebSocket transport layer if not provided,
  * merges user configuration with defaults, and creates the client registry.
  *
  * @param config - Optional partial server configuration. All properties are optional
  * and will be merged with {@link DEFAULT_SERVER_CONFIG}.
  *
- * @returns Configured Synnel server instance ready to be started
+ * @returns Configured Synca server instance ready to be started
  *
  * @example
  * ### Basic usage
  * ```ts
- * import { createSynnelServer } from '@synnel/server'
+ * import { createSyncaServer } from '@synca/server'
  *
- * const server = createSynnelServer({ port: 3000 })
+ * const server = createSyncaServer({ port: 3000 })
  * await server.start()
  * ```
  *
  * @example
  * ### With custom configuration
  * ```ts
- * const server = createSynnelServer({
+ * const server = createSyncaServer({
  *   port: 8080,
  *   host: 'localhost',
  *   path: '/ws',
@@ -700,14 +700,14 @@ export class SynnelServer {
  * ### With existing HTTP server
  * ```ts
  * import { createServer } from 'node:http'
- * import { createSynnelServer } from '@synnel/server'
+ * import { createSyncaServer } from '@synca/server'
  *
  * const httpServer = createServer((req, res) => {
  *   res.writeHead(200)
  *   res.end('OK')
  * })
  *
- * const server = createSynnelServer({
+ * const server = createSyncaServer({
  *   server: httpServer,
  *   path: '/ws',
  * })
@@ -719,12 +719,12 @@ export class SynnelServer {
  * ### With Express
  * ```ts
  * import express from 'express'
- * import { createSynnelServer } from '@synnel/server'
+ * import { createSyncaServer } from '@synca/server'
  *
  * const app = express()
  * const httpServer = app.listen(3000)
  *
- * const server = createSynnelServer({
+ * const server = createSyncaServer({
  *   server: httpServer,
  *   path: '/ws',
  * })
@@ -735,9 +735,9 @@ export class SynnelServer {
  * @example
  * ### With custom logger
  * ```ts
- * import { createSynnelServer } from '@synnel/server'
+ * import { createSyncaServer } from '@synca/server'
  *
- * const server = createSynnelServer({
+ * const server = createSyncaServer({
  *   port: 3000,
  *   logger: {
  *     debug: (msg, ...args) => console.debug('[DEBUG]', msg, ...args),
@@ -751,9 +751,9 @@ export class SynnelServer {
  * @example
  * ### With middleware
  * ```ts
- * import { createSynnelServer, createLoggingMiddleware } from '@synnel/server'
+ * import { createSyncaServer, createLoggingMiddleware } from '@synca/server'
  *
- * const server = createSynnelServer({
+ * const server = createSyncaServer({
  *   port: 3000,
  *   middleware: [
  *     createLoggingMiddleware(),
@@ -763,10 +763,10 @@ export class SynnelServer {
  * await server.start()
  * ```
  *
- * @see {@link SynnelServer} for server class API
+ * @see {@link SyncaServer} for server class API
  * @see {@link DEFAULT_SERVER_CONFIG} for default configuration values
  */
-export function createSynnelServer(config: Partial<IServerOptions> = {}): SynnelServer {
+export function createSyncaServer(config: Partial<IServerOptions> = {}): SyncaServer {
     // Ensure registry exists
     const registry = config.registry ?? new ClientRegistry()
     const logger = config.logger ?? createDefaultLogger()
@@ -802,5 +802,5 @@ export function createSynnelServer(config: Partial<IServerOptions> = {}): Synnel
         })
     }
 
-    return new SynnelServer(serverOptions)
+    return new SyncaServer(serverOptions)
 }

@@ -141,7 +141,7 @@ export function createContext<S = Record<string, unknown>>(
  *
  * @example
  * ```ts
- * import { ContextManager } from '@synnel/server'
+ * import { ContextManager } from '@synca/server'
  *
  * const manager = new ContextManager()
  *
@@ -155,7 +155,7 @@ export function createContext<S = Record<string, unknown>>(
  * const context = await manager.executeConnection(client, 'connect')
  * ```
  *
- * @see {@link createSynnelServer} for server-level context management
+ * @see {@link createSyncaServer} for server-level context management
  */
 export class ContextManager {
     /** Registered middleware functions */

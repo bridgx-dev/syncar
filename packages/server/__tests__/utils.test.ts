@@ -282,7 +282,7 @@ describe('utils', () => {
         const logger = createDefaultLogger()
         logger.info('test message')
         const loggedString = consoleSpies.log.mock.calls[0][0]
-        expect(loggedString).toContain('[Synnel')
+        expect(loggedString).toContain('[Synca')
         expect(loggedString).toContain('test message')
       })
 
@@ -324,7 +324,7 @@ describe('utils', () => {
         logger.info('message', obj, 'extra')
         const calls = consoleSpies.log.mock.calls
         // First arg is formatted string, rest are additional args
-        expect(calls[0][0]).toContain('[Synnel')
+        expect(calls[0][0]).toContain('[Synca')
         expect(calls[0][0]).toContain('message')
         expect(calls[0][1]).toBe(obj)
         expect(calls[0][2]).toBe('extra')
@@ -337,7 +337,7 @@ describe('utils', () => {
       })
 
       it('should enable debug logs when configured', () => {
-        const logger = createDefaultLogger('Synnel', { debug: true })
+        const logger = createDefaultLogger('Synca', { debug: true })
         logger.debug('debug message')
         const loggedString = consoleSpies.log.mock.calls[0][0]
         expect(loggedString).toContain('[DEBUG]')
@@ -345,7 +345,7 @@ describe('utils', () => {
       })
 
       it('should allow selective log level enabling', () => {
-        const logger = createDefaultLogger('Synnel', {
+        const logger = createDefaultLogger('Synca', {
           debug: false,
           info: true,
           warn: false,

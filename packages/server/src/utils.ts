@@ -164,7 +164,7 @@ export function createLogTimestamp(): string {
  * Logs to console with timestamp and level
  */
 export function createDefaultLogger(
-    prefix = 'Synnel',
+    prefix = 'Synca',
     enabled: { [K in LogLevel]?: boolean } = {},
 ): ILogger {
     const logEnabled = {

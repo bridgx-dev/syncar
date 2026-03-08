@@ -31,7 +31,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@synnel/server': path.resolve(__dirname, './src'),
+      '@synca/server': path.resolve(__dirname, './src'),
     },
   },
 })

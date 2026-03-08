@@ -251,7 +251,7 @@ export interface IClientConnection {
  * Message types for protocol communication
  *
  * @remarks
- * Enum defining all message types supported by the Synnel protocol.
+ * Enum defining all message types supported by the Synca protocol.
  *
  * @example
  * ```ts
@@ -348,7 +348,7 @@ export enum ErrorCode {
  * Base message interface
  *
  * @remarks
- * All messages in the Synnel protocol extend this interface with
+ * All messages in the Synca protocol extend this interface with
  * common fields like ID, timestamp, and optional channel.
  *
  * @property id - Unique message identifier
@@ -603,7 +603,7 @@ export type Message<T = unknown> =
  *
  * @example
  * ```ts
- * import type { IMiddlewareAction } from '@synnel/server'
+ * import type { IMiddlewareAction } from '@synca/server'
  *
  * function handleAction(action: IMiddlewareAction) {
  *   switch (action) {
@@ -763,7 +763,7 @@ export interface Context<S = Record<string, unknown>> {
  *
  * @example
  * ```ts
- * import type { Middleware } from '@synnel/server'
+ * import type { Middleware } from '@synca/server'
  *
  * const authMiddleware: Middleware = async (context, next) => {
  *   const token = context.req.message?.data?.token

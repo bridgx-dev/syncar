@@ -1,5 +1,5 @@
 /**
- * Test Setup for @synnel/server
+ * Test Setup for @synca/server
  */
 
 import { beforeEach, afterEach, vi } from 'vitest'

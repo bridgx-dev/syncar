@@ -6,8 +6,8 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
-  SynnelServer,
-  createSynnelServer,
+  SyncaServer,
+  createSyncaServer,
   type IServerOptions,
   type IServerStats,
 } from '../src/server'
@@ -38,7 +38,7 @@ class MockWebSocket {
   }
 }
 
-describe('SynnelServer', () => {
+describe('SyncaServer', () => {
   let registry: ClientRegistry
   let transport: WebSocketServerTransport
   let mockHttpServer: any
@@ -74,7 +74,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -83,9 +83,9 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
 
-      expect(server).toBeInstanceOf(SynnelServer)
+      expect(server).toBeInstanceOf(SyncaServer)
       expect(server.registry).toBe(registry)
       expect(server.getStats().clientCount).toBe(0)
     })
@@ -98,7 +98,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -107,9 +107,9 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
       server.use(middleware)
-      expect(server).toBeInstanceOf(SynnelServer)
+      expect(server).toBeInstanceOf(SyncaServer)
     })
   })
 
@@ -120,7 +120,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -129,7 +129,7 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
       await server.start()
 
       const stats = server.getStats()
@@ -143,7 +143,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -152,7 +152,7 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
       await server.start()
 
       await expect(server.start()).rejects.toThrow(StateError)
@@ -165,7 +165,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -174,7 +174,7 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
       await server.start()
 
       const broadcast = server.createBroadcast<string>()
@@ -190,7 +190,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -199,7 +199,7 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
       await server.start()
       await server.stop()
 
@@ -213,7 +213,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -222,7 +222,7 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
       await server.start()
 
       // Create a channel
@@ -242,7 +242,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -251,7 +251,7 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
       await server.start()
 
       const broadcast = server.createBroadcast<string>()
@@ -265,7 +265,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -274,7 +274,7 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
 
       expect(() => server.createBroadcast()).toThrow(StateError)
       expect(() => server.createBroadcast()).toThrow('Server must be started before creating channels')
@@ -286,7 +286,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -295,7 +295,7 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
       await server.start()
 
       const broadcast1 = server.createBroadcast<string>()
@@ -312,7 +312,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -321,7 +321,7 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
       await server.start()
 
       const chat = server.createMulticast<{ text: string }>('chat')
@@ -335,7 +335,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -344,7 +344,7 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
 
       expect(() => server.createMulticast('chat')).toThrow(StateError)
     })
@@ -355,7 +355,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -364,7 +364,7 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
       await server.start()
 
       // __private__ starts with __ which is reserved
@@ -377,7 +377,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -386,7 +386,7 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
       await server.start()
 
       const chat1 = server.createMulticast('chat')
@@ -403,7 +403,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -412,7 +412,7 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
       expect(server.hasChannel('chat')).toBe(false)
     })
 
@@ -422,7 +422,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -431,7 +431,7 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
       await server.start()
 
       server.createMulticast('chat')
@@ -446,7 +446,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -455,7 +455,7 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
       expect(server.getChannels()).toEqual([])
     })
 
@@ -465,7 +465,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -474,7 +474,7 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
       await server.start()
 
       server.createMulticast('chat')
@@ -498,7 +498,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -507,13 +507,13 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
       const middleware = vi.fn(async (_ctx, next) => next())
 
       server.use(middleware)
 
       // No direct way to verify, but should not throw
-      expect(server).toBeInstanceOf(SynnelServer)
+      expect(server).toBeInstanceOf(SyncaServer)
     })
   })
 
@@ -524,7 +524,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -533,7 +533,7 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
       await server.start()
 
       const authenticator = vi.fn(async (request) => {
@@ -543,7 +543,7 @@ describe('SynnelServer', () => {
       server.authenticate(authenticator)
 
       // Should not throw - authenticator is set on transport
-      expect(server).toBeInstanceOf(SynnelServer)
+      expect(server).toBeInstanceOf(SyncaServer)
     })
   })
 
@@ -554,7 +554,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -563,7 +563,7 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
 
       const stats = server.getStats()
       expect(stats.clientCount).toBe(0)
@@ -584,7 +584,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -593,7 +593,7 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
       await server.start()
 
       // Add a mock client
@@ -616,7 +616,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -625,12 +625,12 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
       const retrievedConfig = server.getConfig()
 
       expect(retrievedConfig.port).toBe(3000)
       expect(retrievedConfig.host).toBe('0.0.0.0')
-      expect(retrievedConfig.path).toBe('/synnel')
+      expect(retrievedConfig.path).toBe('/synca')
     })
   })
 
@@ -641,7 +641,7 @@ describe('SynnelServer', () => {
         logger: createDefaultLogger(),
         port: 3000,
         host: '0.0.0.0',
-        path: '/synnel',
+        path: '/synca',
         transport,
         enablePing: false,
         pingInterval: 30000,
@@ -650,7 +650,7 @@ describe('SynnelServer', () => {
         broadcastChunkSize: 500,
       }
 
-      const server = new SynnelServer(config)
+      const server = new SyncaServer(config)
       const retrievedRegistry = server.getRegistry()
 
       expect(retrievedRegistry).toBe(registry)
@@ -658,7 +658,7 @@ describe('SynnelServer', () => {
   })
 })
 
-describe('createSynnelServer', () => {
+describe('createSyncaServer', () => {
   let mockHttpServer: any
 
   beforeEach(() => {
@@ -675,16 +675,16 @@ describe('createSynnelServer', () => {
   })
 
   it('should create server with defaults and mock server', () => {
-    const server = createSynnelServer({
+    const server = createSyncaServer({
       server: mockHttpServer,
     })
 
-    expect(server).toBeInstanceOf(SynnelServer)
+    expect(server).toBeInstanceOf(SyncaServer)
     expect(server.getRegistry()).toBeInstanceOf(ClientRegistry)
   })
 
   it('should merge provided config with defaults', () => {
-    const server = createSynnelServer({
+    const server = createSyncaServer({
       server: mockHttpServer,
       port: 8080,
       host: 'localhost',
@@ -697,7 +697,7 @@ describe('createSynnelServer', () => {
 
   it('should use provided registry', () => {
     const customRegistry = new ClientRegistry()
-    const server = createSynnelServer({
+    const server = createSyncaServer({
       server: mockHttpServer,
       registry: customRegistry,
     })
@@ -713,7 +713,7 @@ describe('createSynnelServer', () => {
       error: vi.fn(),
     }
 
-    const server = createSynnelServer({
+    const server = createSyncaServer({
       server: mockHttpServer,
       logger: customLogger as any,
     })
@@ -722,7 +722,7 @@ describe('createSynnelServer', () => {
   })
 
   it('should create WebSocketServerTransport when not provided', () => {
-    const server = createSynnelServer({
+    const server = createSyncaServer({
       server: mockHttpServer,
     })
 
@@ -741,7 +741,7 @@ describe('createSynnelServer', () => {
       logger: createDefaultLogger(),
     })
 
-    const server = createSynnelServer({
+    const server = createSyncaServer({
       transport: customTransport,
     })
 
@@ -751,12 +751,12 @@ describe('createSynnelServer', () => {
   it('should register middleware from config', () => {
     const middleware = vi.fn(async (_ctx, next) => next())
 
-    const server = createSynnelServer({
+    const server = createSyncaServer({
       server: mockHttpServer,
       middleware: [middleware],
     })
 
     // Middleware should be registered via context
-    expect(server).toBeInstanceOf(SynnelServer)
+    expect(server).toBeInstanceOf(SyncaServer)
   })
 })

@@ -1,6 +1,6 @@
 /**
- * @synnel/server
- * Node.js server for Synnel real-time synchronization
+ * @synca/server
+ * Node.js server for Synca real-time synchronization
  *
  * @description
  * A WebSocket server providing real-time pub/sub messaging with channels,
@@ -12,9 +12,9 @@
  * @example
  * ### Quick Start
  * ```ts
- * import { createSynnelServer } from '@synnel/server'
+ * import { createSyncaServer } from '@synca/server'
  *
- * const server = createSynnelServer({ port: 3000 })
+ * const server = createSyncaServer({ port: 3000 })
  * await server.start()
  *
  * // Create channels
@@ -35,13 +35,13 @@
  * ### With Middleware
  * ```ts
  * import {
- *   createSynnelServer,
+ *   createSyncaServer,
  *   createAuthMiddleware,
  *   createLoggingMiddleware,
  *   createRateLimitMiddleware
- * } from '@synnel/server'
+ * } from '@synca/server'
  *
- * const server = createSynnelServer({
+ * const server = createSyncaServer({
  *   port: 3000,
  *   middleware: [
  *     createAuthMiddleware({
@@ -70,7 +70,7 @@
  * ## Installation
  *
  * ```bash
- * npm install @synnel/server ws
+ * npm install @synca/server ws
  * ```
  *
  * ## Peer Dependencies
@@ -79,14 +79,14 @@
  *
  * ## Modules
  *
- * - **Server** - {@link SynnelServer} | {@link createSynnelServer}
+ * - **Server** - {@link SyncaServer} | {@link createSyncaServer}
  * - **Channels** - {@link BroadcastChannel} | {@link MulticastChannel}
  * - **Middleware** - {@link createAuthMiddleware} | {@link createLoggingMiddleware} | {@link createRateLimitMiddleware}
- * - **Errors** - {@link SynnelError} | {@link MiddlewareRejectionError}
+ * - **Errors** - {@link SyncaError} | {@link MiddlewareRejectionError}
  * - **Types** - {@link IClientConnection} | {@link Message} | {@link Context} | {@link Middleware}
  *
- * @see {@link https://github.com/yourusername/synnel | GitHub Repository}
- * @see {@link https://www.npmjs.com/package/@synnel/server | npm Package}
+ * @see {@link https://github.com/yourusername/synca | GitHub Repository}
+ * @see {@link https://www.npmjs.com/package/@synca/server | npm Package}
  */
 
 // ============================================================
@@ -94,18 +94,18 @@
 // ============================================================
 
 /**
- * Synnel Server class and factory
+ * Synca Server class and factory
  *
  * @example
  * ```ts
- * import { createSynnelServer, SynnelServer } from '@synnel/server'
+ * import { createSyncaServer, SyncaServer } from '@synca/server'
  *
- * const server = createSynnelServer({ port: 3000 })
+ * const server = createSyncaServer({ port: 3000 })
  * await server.start()
  * ```
  */
-export { SynnelServer, createSynnelServer } from './server'
-export { SynnelServer as Synnel } from './server'
+export { SyncaServer, createSyncaServer } from './server'
+export { SyncaServer as Synca } from './server'
 export {
   createAuthMiddleware,
   createLoggingMiddleware,
@@ -115,7 +115,7 @@ export {
 export { ContextManager, createContext } from './context'
 
 export {
-  SynnelError,
+  SyncaError,
   ConfigError,
   TransportError,
   ChannelError,
