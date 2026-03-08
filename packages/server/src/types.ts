@@ -1,4 +1,3 @@
-import type { EventEmitter } from 'node:events'
 import type WebSocket from 'ws'
 
 // ============================================================
@@ -170,18 +169,6 @@ export type Message<T = unknown> =
     | SignalMessage
     | ErrorMessage
     | AckMessage
-
-// ============================================================
-// TRANSPORT TYPES
-// ============================================================
-
-/**
- * Server transport interface
- */
-export interface IServerTransport extends EventEmitter {
-    /** Map of connected clients by ID */
-    connections: Map<ClientId, IClientConnection>
-}
 
 // ============================================================
 // MIDDLEWARE TYPES

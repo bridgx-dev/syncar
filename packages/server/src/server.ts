@@ -2,38 +2,9 @@ import {
     type ChannelName,
     type Message,
     type IMiddleware,
-    type IServerTransport,
     MessageType,
 } from './types'
 
-/**
- * Server configuration options with all fields required for internal use.
- * These are the options stored and used by the SynnelServer class.
- */
-export interface IServerOptions {
-    /** HTTP server instance */
-    server?: import('node:http').Server
-    /** Port to listen on (default: 3000) */
-    port: number
-    /** Host to bind to (default: '0.0.0.0') */
-    host: string
-    /** WebSocket path (default: '/synnel') */
-    path: string
-    /** Transport implementation */
-    transport: IServerTransport
-    /** Enable automatic ping/pong (default: true) */
-    enablePing: boolean
-    /** Ping interval in ms (default: 30000) */
-    pingInterval: number
-    /** Ping timeout in ms (default: 5000) */
-    pingTimeout: number
-    /** Client registry instance */
-    registry: ClientRegistry
-    /** Global middleware chain */
-    middleware: IMiddleware[]
-    /** Chunk size for large broadcasts (default: 500) */
-    broadcastChunkSize: number
-}
 
 /**
  * Server statistics
@@ -58,9 +29,38 @@ interface ServerState {
     startedAt: number | undefined
 }
 
+/**
+ * Server configuration options with all fields required for internal use.
+ * These are the options stored and used by the SynnelServer class.
+ */
+export interface IServerOptions {
+    /** HTTP server instance */
+    server?: import('node:http').Server
+    /** Port to listen on (default: 3000) */
+    port: number
+    /** Host to bind to (default: '0.0.0.0') */
+    host: string
+    /** WebSocket path (default: '/synnel') */
+    path: string
+    /** Transport implementation */
+    transport: WebSocketServerTransport
+    /** Enable automatic ping/pong (default: true) */
+    enablePing: boolean
+    /** Ping interval in ms (default: 30000) */
+    pingInterval: number
+    /** Ping timeout in ms (default: 5000) */
+    pingTimeout: number
+    /** Client registry instance */
+    registry: ClientRegistry
+    /** Global middleware chain */
+    middleware: IMiddleware[]
+    /** Chunk size for large broadcasts (default: 500) */
+    broadcastChunkSize: number
+}
+
 export class SynnelServer {
     private readonly config: IServerOptions
-    private transport: IServerTransport | undefined
+    private transport: WebSocketServerTransport | undefined
     public readonly registry: ClientRegistry
     private readonly context: ContextManager
     private readonly status: ServerState = {
@@ -173,6 +173,19 @@ export class SynnelServer {
         this.context.use(middleware)
     }
 
+    /**
+     * Set a custom authentication handler to validate connections and resolve Client IDs dynamically.
+     * @param authenticator A function that receives the HTTP upgrade request and returns a ClientId (or throws to reject the connection).
+     */
+    authenticate(authenticator: (request: import('node:http').IncomingMessage) => string | Promise<string>): void {
+        const transport = this.transport || this.config.transport
+        if (transport && 'setAuthenticator' in transport) {
+            ; (transport as any).setAuthenticator(authenticator)
+        } else {
+            console.warn('Current transport does not support setting an authenticator.')
+        }
+    }
+
     getStats(): IServerStats {
         return {
             startedAt: this.status.startedAt,
@@ -269,7 +282,7 @@ export function createSynnelServer(config: Partial<IServerOptions> = {}): Synnel
         }
 
         serverOptions.transport = new WebSocketServerTransport({
-            server: serverOptions.server as unknown,
+            server: serverOptions.server as any,
             path: serverOptions.path,
             maxPayload: (config as { maxPayload?: number }).maxPayload ?? DEFAULT_MAX_PAYLOAD,
             enablePing: serverOptions.enablePing,

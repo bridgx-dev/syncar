@@ -49,7 +49,6 @@ export { BROADCAST_CHANNEL, CLOSE_CODES, ERROR_CODES } from './config'
 
 export type {
   IClientConnection,
-  IServerTransport,
 } from './types'
 
 export type {

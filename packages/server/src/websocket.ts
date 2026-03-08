@@ -1,10 +1,9 @@
 import { EventEmitter } from 'node:events'
-import { WebSocketServer as WsServer } from 'ws'
+import { WebSocketServer as WsServer, type ServerOptions as WsServerOptions } from 'ws'
 import {
     MessageType,
     SignalType,
     type ClientId,
-    type IServerTransport,
     type IClientConnection,
 } from './types'
 import {
@@ -18,19 +17,7 @@ import {
 type WebSocketInstance = any
 type ServerInstance = WsServer
 
-/**
- * Server transport configuration options
- */
-export interface IServerTransportConfig {
-    /** HTTP server to attach WebSocket to */
-    server: any
-
-    /** Path for WebSocket connections */
-    path?: string
-
-    /** Maximum message size in bytes */
-    maxPayload?: number
-
+export interface WebSocketServerTransportConfig extends WsServerOptions {
     /** Enable client ping/pong */
     enablePing?: boolean
 
@@ -42,32 +29,30 @@ export interface IServerTransportConfig {
 
     /** Shared connection map */
     connections?: Map<ClientId, IClientConnection>
-}
 
-export interface WebSocketServerTransportConfig extends IServerTransportConfig {
-    ServerConstructor?: new (config: {
-        server: any
-        path?: string
-        maxPayload?: number
-    }) => ServerInstance
+    /** Custom ID generator for new connections */
+    generateId?: (request: import('node:http').IncomingMessage) => string
+
+    ServerConstructor?: new (config: WsServerOptions) => ServerInstance
 }
 
 /**
  * WebSocket Server Transport
  * Handles low-level WebSocket communication using the 'ws' library.
  */
-export class WebSocketServerTransport
-    extends EventEmitter
-    implements IServerTransport {
+export class WebSocketServerTransport extends EventEmitter {
     /** Map of connected clients by ID */
     public readonly connections: Map<ClientId, IClientConnection>
 
     private readonly wsServer: ServerInstance
-    private readonly config: Required<
-        Omit<WebSocketServerTransportConfig, 'ServerConstructor'>
-    >
+    private readonly config: WebSocketServerTransportConfig & {
+        pingInterval: number
+        pingTimeout: number
+        enablePing: boolean
+    }
     private pingTimer?: ReturnType<typeof setInterval>
     private nextId = 0
+    private authenticator?: (request: import('node:http').IncomingMessage) => string | Promise<string>
 
     constructor(config: WebSocketServerTransportConfig) {
         super()
@@ -76,7 +61,7 @@ export class WebSocketServerTransport
         this.connections = config.connections ?? new Map()
 
         this.config = {
-            server: config.server,
+            ...config,
             path: config.path ?? DEFAULT_WS_PATH,
             maxPayload: config.maxPayload ?? DEFAULT_MAX_PAYLOAD,
             enablePing: config.enablePing ?? true,
@@ -99,9 +84,13 @@ export class WebSocketServerTransport
         }
     }
 
+    setAuthenticator(authenticator: (request: import('node:http').IncomingMessage) => string | Promise<string>): void {
+        this.authenticator = authenticator
+    }
+
     private setupEventHandlers(): void {
-        this.wsServer.on('connection', (socket: WebSocketInstance) => {
-            this.handleConnection(socket)
+        this.wsServer.on('connection', (socket: WebSocketInstance, request: import('node:http').IncomingMessage) => {
+            this.handleConnection(socket, request)
         })
 
         this.wsServer.on('error', (error: Error) => {
@@ -109,8 +98,24 @@ export class WebSocketServerTransport
         })
     }
 
-    private handleConnection(socket: WebSocketInstance): void {
-        const clientId = `client-${this.nextId++}` as ClientId
+    private async handleConnection(socket: WebSocketInstance, request: import('node:http').IncomingMessage): Promise<void> {
+        let clientId: ClientId
+
+        try {
+            if (this.authenticator) {
+                clientId = (await this.authenticator(request)) as ClientId
+            } else {
+                clientId = `client-${this.nextId++}` as ClientId
+            }
+        } catch (error) {
+            try {
+                socket.close(4001, error instanceof Error ? error.message : 'Unauthorized')
+            } catch (e) {
+                // Ignore close error
+            }
+            return
+        }
+
         const connectedAt = Date.now()
 
         const connection: IClientConnection = {
