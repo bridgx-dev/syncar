@@ -5,9 +5,9 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useSynnelClient } from './use-client.js'
+import { useSyncarClient } from './use-client.js'
 import type { UseBroadcastOptions, UseBroadcastReturn } from './types.js'
-import type { Message, DataMessage } from '@synca/types'
+import type { Message, DataMessage } from '@syncar/types'
 
 /**
  * Broadcast channel name (special reserved channel)
@@ -59,7 +59,7 @@ const BROADCAST_CHANNEL = '__broadcast__'
 export function useBroadcast<T = unknown>(
   options?: UseBroadcastOptions<T>,
 ): UseBroadcastReturn<T> {
-  const client = useSynnelClient()
+  const client = useSyncarClient()
   const enabled = options?.enabled ?? true
 
   // State for broadcast data and error

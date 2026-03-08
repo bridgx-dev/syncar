@@ -1,7 +1,7 @@
 {
-  "name": "@synca/react",
+  "name": "@syncar/react",
   "version": "1.0.0-alpha.1",
-  "description": "React integration for Synca - Real-time synchronization with hooks",
+  "description": "React integration for Syncar - Real-time synchronization with hooks",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -57,7 +57,7 @@
     "node": ">=18.0.0"
   },
   "keywords": [
-    "synca",
+    "syncar",
     "websocket",
     "realtime",
     "react",

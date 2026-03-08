@@ -1,16 +1,16 @@
-# @synca/lib
+# @syncar/lib
 
 **INTERNAL PACKAGE - NOT FOR PUBLICATION**
 
-Common utility functions for Synnel real-time synchronization packages.
+Common utility functions for Syncarr real-time synchronization packages.
 
-> **WARNING:** This package is marked as `private: true` and should NOT be published to npm. It is intended for internal use within the Synnel monorepo only.
+> **WARNING:** This package is marked as `private: true` and should NOT be published to npm. It is intended for internal use within the Syncarr monorepo only.
 
 ## Installation
 
 ```bash
 # This package is automatically available via workspace protocol
-bun add @synca/lib
+bun add @syncar/lib
 ```
 
 ## Usage
@@ -21,7 +21,7 @@ import {
   isValidChannelName,
   createDefaultLogger,
   calculateBackoff,
-} from '@synca/lib'
+} from '@syncar/lib'
 
 // Generate a unique message ID
 const messageId = generateMessageId()

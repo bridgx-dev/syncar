@@ -1,13 +1,13 @@
 /**
- * SynnelProvider Tests
+ * SyncarProvider Tests
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, cleanup } from '@testing-library/react'
 import { StrictMode } from 'react'
-import { SynnelProvider, useSynnelClient } from '../index.js'
-import { createSynnelClient } from '@synnel/client'
-import type { Transport, Message } from '@synnel/client'
+import { SyncarProvider, useSyncarClient } from '../index.js'
+import { createSyncarClient } from '@syncar/client'
+import type { Transport, Message } from '@syncar/client'
 
 // Mock transport
 class MockTransport implements Transport {
@@ -70,13 +70,13 @@ class MockTransport implements Transport {
   }
 }
 
-describe('SynnelProvider', () => {
-  let client: ReturnType<typeof createSynnelClient>
+describe('SyncarProvider', () => {
+  let client: ReturnType<typeof createSyncarClient>
   let transport: MockTransport
 
   beforeEach(() => {
     transport = new MockTransport()
-    client = createSynnelClient({
+    client = createSyncarClient({
       transport,
       autoConnect: false,
       autoReconnect: false,
@@ -91,9 +91,9 @@ describe('SynnelProvider', () => {
   describe('basic rendering', () => {
     it('should render children', () => {
       const { getByText } = render(
-        <SynnelProvider client={client}>
+        <SyncarProvider client={client}>
           <div>Test Child</div>
-        </SynnelProvider>,
+        </SyncarProvider>,
       )
 
       expect(getByText('Test Child')).toBeDefined()
@@ -101,16 +101,16 @@ describe('SynnelProvider', () => {
 
     it('should provide client to children', () => {
       function TestComponent() {
-        const retrievedClient = useSynnelClient()
+        const retrievedClient = useSyncarClient()
         return (
           <div data-testid="client-id">{retrievedClient.getStats().id}</div>
         )
       }
 
       const { getByTestId } = render(
-        <SynnelProvider client={client}>
+        <SyncarProvider client={client}>
           <TestComponent />
-        </SynnelProvider>,
+        </SyncarProvider>,
       )
 
       expect(getByTestId('client-id').textContent).toBe(client.getStats().id)
@@ -123,7 +123,7 @@ describe('SynnelProvider', () => {
 
       function TestComponent() {
         renderCount++
-        const retrievedClient = useSynnelClient()
+        const retrievedClient = useSyncarClient()
         return (
           <div data-testid="client-id">{retrievedClient.getStats().id}</div>
         )
@@ -131,9 +131,9 @@ describe('SynnelProvider', () => {
 
       render(
         <StrictMode>
-          <SynnelProvider client={client}>
+          <SyncarProvider client={client}>
             <TestComponent />
-          </SynnelProvider>
+          </SyncarProvider>
         </StrictMode>,
       )
 
@@ -146,15 +146,15 @@ describe('SynnelProvider', () => {
       const onMessage = vi.fn()
 
       function TestComponent() {
-        useSynnelClient()
+        useSyncarClient()
         return <div>Test</div>
       }
 
       render(
         <StrictMode>
-          <SynnelProvider client={client}>
+          <SyncarProvider client={client}>
             <TestComponent />
-          </SynnelProvider>
+          </SyncarProvider>
         </StrictMode>,
       )
 
@@ -170,7 +170,7 @@ describe('SynnelProvider', () => {
       console.error = vi.fn()
 
       function TestComponent() {
-        useSynnelClient()
+        useSyncarClient()
         return <div>Test</div>
       }
 
@@ -188,7 +188,7 @@ describe('SynnelProvider', () => {
       let secondClientId: string | undefined
 
       function TestComponent() {
-        const retrievedClient = useSynnelClient()
+        const retrievedClient = useSyncarClient()
         if (!firstClientId) {
           firstClientId = retrievedClient.getStats().id
         } else {
@@ -198,16 +198,16 @@ describe('SynnelProvider', () => {
       }
 
       const { rerender } = render(
-        <SynnelProvider client={client}>
+        <SyncarProvider client={client}>
           <TestComponent />
-        </SynnelProvider>,
+        </SyncarProvider>,
       )
 
       // Force re-render
       rerender(
-        <SynnelProvider client={client}>
+        <SyncarProvider client={client}>
           <TestComponent />
-        </SynnelProvider>,
+        </SyncarProvider>,
       )
 
       expect(firstClientId).toBe(secondClientId)

@@ -1,17 +1,17 @@
 /**
- * @synca/types
+ * @syncar/types
  *
- * Shared types for Synnel real-time synchronization
+ * Shared types for Syncar real-time synchronization
  * This package contains only shared/common types used across all packages.
  *
  * Package-specific types are in their respective packages:
- * - Client types: @synca/client
- * - Server types: @synca/server
+ * - Client types: @syncar/client
+ * - Server types: @syncar/server
  *
  * @example
  * ```ts
- * import type { Message, ChannelName, ConnectionStatus } from '@synca/types'
- * import type { MergeTypes, DeepPartial } from '@synca/types/utilities'
+ * import type { Message, ChannelName, ConnectionStatus } from '@syncar/types'
+ * import type { MergeTypes, DeepPartial } from '@syncar/types/utilities'
  * ```
  */
 

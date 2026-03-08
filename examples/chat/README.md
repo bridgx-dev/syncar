@@ -1,11 +1,11 @@
-# Synnel Chat Example V2
+# Syncar Chat Example V2
 
-A full-stack chat application demonstrating the Synnel V2 real-time messaging framework with Express.js integration.
+A full-stack chat application demonstrating the Syncar V2 real-time messaging framework with Express.js integration.
 
 ## Features
 
 - **Real-time messaging** using WebSockets
-- **Express.js integration** - Synnel V2 attaches to your existing HTTP server
+- **Express.js integration** - Syncar V2 attaches to your existing HTTP server
 - **Channel-based communication** (chat, notifications, presence)
 - **Multicast channels** - Many-to-many messaging for chat and presence
 - **Broadcast channel** - Server-to-all notifications
@@ -19,15 +19,15 @@ A full-stack chat application demonstrating the Synnel V2 real-time messaging fr
 
 ### Server
 
-- `@synca/server` - WebSocket server V2 with Express integration
-- `@synca/types` - Core types and protocols
+- `@syncar/server` - WebSocket server V2 with Express integration
+- `@syncar/types` - Core types and protocols
 - Express.js - HTTP server
 - Node.js + TypeScript
 
 ### Client
 
-- `@synca/react` - React hooks and provider
-- `@synca/client` - Core client
+- `@syncar/react` - React hooks and provider
+- `@syncar/client` - Core client
 - React 19 + Vite
 
 ## Project Structure
@@ -57,7 +57,7 @@ chat/
 ### Installation
 
 ```bash
-# From the Synnel root directory
+# From the Syncar root directory
 cd examples/chat
 bun install
 ```
@@ -103,9 +103,9 @@ The server has been updated to use the new V2 API:
 
 | V1                             | V2                                                      |
 | ------------------------------ | ------------------------------------------------------- |
-| `new Synnel({ server })`       | `createSynnelServer({ server })`                        |
-| `await synnel.multicast(name)` | `server.createMulticast(name)` (after `server.start()`) |
-| `synnel.broadcast()`           | `server.createBroadcast()` (after `server.start()`)     |
+| `new Syncar({ server })`       | `createSyncarServer({ server })`                        |
+| `await syncar.multicast(name)` | `server.createMulticast(name)` (after `server.start()`) |
+| `syncar.broadcast()`           | `server.createBroadcast()` (after `server.start()`)     |
 | `channel.receive()`            | `channel.onMessage()` or `channel.receive()`            |
 | Messages auto-relayed          | **Must explicitly call** `channel.publish()`            |
 
@@ -114,13 +114,13 @@ The server has been updated to use the new V2 API:
 ```typescript
 import express from 'express'
 import { createServer } from 'http'
-import { createSynnelServer } from '@synca/server'
+import { createSyncarServer } from '@syncar/server'
 
 const app = express()
 const httpServer = createServer(app)
 
-// Initialize Synnel V2 server
-const server = createSynnelServer({ server: httpServer })
+// Initialize Syncar V2 server
+const server = createSyncarServer({ server: httpServer })
 
 // Start server first (required before creating channels)
 await server.start()
@@ -176,11 +176,11 @@ server.onMessage((client, message) => {
 
 ### Key Changes in V2:
 
-1. **Factory Pattern**: Use `createSynnelServer()` instead of `new Synnel()`
+1. **Factory Pattern**: Use `createSyncarServer()` instead of `new Syncar()`
 2. **Start Before Channels**: Must call `server.start()` before creating channels
 3. **Explicit Message Publishing**: Messages are NOT auto-relayed - call `channel.publish()` explicitly
 4. **Handler Registration**: Use `channel.onMessage()` or `channel.receive()` to handle incoming messages
-5. **Proper Types**: All types from `@synca/types` and `@synca/server` directories
+5. **Proper Types**: All types from `@syncar/types` and `@syncar/server` directories
 
 ### Message Flow in V2:
 

@@ -1,35 +1,35 @@
 /**
- * @synca/react
+ * @syncar/react
  *
- * React integration for Synnel v2 - Real-time synchronization with hooks
+ * React integration for Syncar v2 - Real-time synchronization with hooks
  */
 
 // Export provider and context
-export { SynnelProvider } from './Provider.js'
-export { SynnelContext, useSynnelContext } from './context.js'
+export { SyncarProvider } from './Provider.js'
+export { SyncarContext, useSyncarContext } from './context.js'
 
 // Export hooks
-export { useSynnelClient } from './use-client.js'
+export { useSyncarClient } from './use-client.js'
 export { useChannel } from './use-channel.js'
 export { useBroadcast } from './use-broadcast.js'
 
 // Export types
 export type {
-  SynnelContextValue,
+  SyncarContextValue,
   UseChannelState,
   UseChannelOptions,
   UseChannelReturn,
   UseBroadcastOptions,
   UseBroadcastReturn,
-  SynnelProviderProps,
+  SyncarProviderProps,
   MissingProviderError,
 } from './types.js'
 
 // Re-export client types for convenience
 export type {
-  SynnelClient,
+  SyncarClient,
   ClientStatus,
   ChannelSubscription,
   SubscriptionState,
   ChannelName,
-} from '@synca/client'
+} from '@syncar/client'

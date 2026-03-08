@@ -5,10 +5,10 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useSynnelClient } from './use-client.js'
-import type { ChannelSubscription } from '@synca/client'
+import { useSyncarClient } from './use-client.js'
+import type { ChannelSubscription } from '@syncar/client'
 import type { UseChannelOptions, UseChannelReturn } from './types.js'
-import type { DataMessage } from '@synca/types'
+import type { DataMessage } from '@syncar/types'
 
 /**
  * Hook for subscribing to a channel
@@ -51,7 +51,7 @@ export function useChannel<T = unknown>(
   channel: string,
   options?: UseChannelOptions<T>,
 ): UseChannelReturn<T> {
-  const client = useSynnelClient()
+  const client = useSyncarClient()
   const enabled = options?.enabled ?? true
 
   // State for channel data, error, and subscription state

@@ -1,5 +1,5 @@
 /**
- * Test Setup for @synnel/react
+ * Test Setup for @syncar/react
  */
 
 import { afterEach, vi } from 'vitest'

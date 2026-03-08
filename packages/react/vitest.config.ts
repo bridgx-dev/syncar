@@ -14,9 +14,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@synnel/react': path.resolve(__dirname, './src'),
-      '@synnel/client': path.resolve(__dirname, '../client/src'),
-      '@synnel/core': path.resolve(__dirname, '../core/src'),
+      '@syncar/react': path.resolve(__dirname, './src'),
+      '@syncar/client': path.resolve(__dirname, '../client/src'),
+      '@syncar/core': path.resolve(__dirname, '../core/src'),
     },
   },
 })

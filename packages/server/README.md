@@ -2,7 +2,7 @@
 
 > Node.js WebSocket server for real-time synchronization with pub/sub broadcasting and composable middleware.
 
-[![npm version](https://badge.fury.io/js/%40synca%2Fserver.svg)](https://www.npmjs.com/package/@syncar/server)
+[![npm version](https://badge.fury.io/js/%40syncar%2Fserver.svg)](https://www.npmjs.com/package/@syncar/server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## Features
@@ -23,9 +23,9 @@ npm install @syncar/server
 ## Quick Start
 
 ```typescript
-import { createSyncaServer } from '@syncar/server'
+import { createSyncarrServer } from '@syncar/server'
 
-const server = createSyncaServer({ port: 3000 })
+const server = createSyncarrServer({ port: 3000 })
 
 // 1. Add Middleware
 server.use(async (c, next) => {
@@ -48,7 +48,7 @@ await server.start()
 
 ## Middleware
 
-Synca uses a powerful middleware system inspired by Hono. Middleware can intercept `connect`, `disconnect`, `message`, `subscribe`, and `unsubscribe` actions.
+Syncarr uses a powerful middleware system inspired by Hono. Middleware can intercept `connect`, `disconnect`, `message`, `subscribe`, and `unsubscribe` actions.
 
 ### Built-in Middleware
 

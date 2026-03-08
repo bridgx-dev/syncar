@@ -13,16 +13,16 @@
     "sourceMap": true,
     "baseUrl": ".",
     "paths": {
-      "@synca/core": [
+      "@syncar/core": [
         "../../packages/core/src/index.ts"
       ],
-      "@synca/client": [
+      "@syncar/client": [
         "../../packages/client/src/index.ts"
       ],
-      "@synca/server": [
+      "@syncar/server": [
         "../../packages/server/src/index.ts"
       ],
-      "@synca/types": [
+      "@syncar/types": [
         "../../packages/types/src/index.ts"
       ]
     }

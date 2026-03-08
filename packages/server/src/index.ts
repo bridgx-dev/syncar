@@ -1,6 +1,6 @@
 /**
- * @synca/server
- * Node.js server for Synca real-time synchronization
+ * @syncar/server
+ * Node.js server for Syncar real-time synchronization
  *
  * @description
  * A WebSocket server providing real-time pub/sub messaging with channels,
@@ -12,9 +12,9 @@
  * @example
  * ### Quick Start
  * ```ts
- * import { createSyncaServer } from '@synca/server'
+ * import { createSyncarServer } from '@syncar/server'
  *
- * const server = createSyncaServer({ port: 3000 })
+ * const server = createSyncarServer({ port: 3000 })
  * await server.start()
  *
  * // Create channels
@@ -35,13 +35,13 @@
  * ### With Middleware
  * ```ts
  * import {
- *   createSyncaServer,
+ *   createSyncarServer,
  *   createAuthMiddleware,
  *   createLoggingMiddleware,
  *   createRateLimitMiddleware
- * } from '@synca/server'
+ * } from '@syncar/server'
  *
- * const server = createSyncaServer({
+ * const server = createSyncarServer({
  *   port: 3000,
  *   middleware: [
  *     createAuthMiddleware({
@@ -70,7 +70,7 @@
  * ## Installation
  *
  * ```bash
- * npm install @synca/server ws
+ * npm install @syncar/server ws
  * ```
  *
  * ## Peer Dependencies
@@ -79,14 +79,14 @@
  *
  * ## Modules
  *
- * - **Server** - {@link SyncaServer} | {@link createSyncaServer}
+ * - **Server** - {@link SyncarServer} | {@link createSyncarServer}
  * - **Channels** - {@link BroadcastChannel} | {@link MulticastChannel}
  * - **Middleware** - {@link createAuthMiddleware} | {@link createLoggingMiddleware} | {@link createRateLimitMiddleware}
- * - **Errors** - {@link SyncaError} | {@link MiddlewareRejectionError}
+ * - **Errors** - {@link SyncarError} | {@link MiddlewareRejectionError}
  * - **Types** - {@link IClientConnection} | {@link Message} | {@link Context} | {@link Middleware}
  *
- * @see {@link https://github.com/yourusername/synca | GitHub Repository}
- * @see {@link https://www.npmjs.com/package/@synca/server | npm Package}
+ * @see {@link https://github.com/yourusername/syncar | GitHub Repository}
+ * @see {@link https://www.npmjs.com/package/@syncar/server | npm Package}
  */
 
 // ============================================================
@@ -94,18 +94,18 @@
 // ============================================================
 
 /**
- * Synca Server class and factory
+ * Syncar Server class and factory
  *
  * @example
  * ```ts
- * import { createSyncaServer, SyncaServer } from '@synca/server'
+ * import { createSyncarServer, SyncarServer } from '@syncar/server'
  *
- * const server = createSyncaServer({ port: 3000 })
+ * const server = createSyncarServer({ port: 3000 })
  * await server.start()
  * ```
  */
-export { SyncaServer, createSyncaServer } from './server'
-export { SyncaServer as Synca } from './server'
+export { SyncarServer, createSyncarServer } from './server'
+export { SyncarServer as Syncar } from './server'
 export {
   createAuthMiddleware,
   createLoggingMiddleware,
@@ -115,7 +115,7 @@ export {
 export { ContextManager, createContext } from './context'
 
 export {
-  SyncaError,
+  SyncarError,
   ConfigError,
   TransportError,
   ChannelError,

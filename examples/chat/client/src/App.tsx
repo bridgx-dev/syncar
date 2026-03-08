@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { SynnelProvider } from '@synca/react'
-import { createSynnelClient } from '@synca/client'
-import { WebSocketClientTransport } from '@synca/client'
+import { SyncarProvider } from '@syncar/react'
+import { createSyncarClient } from '@syncar/client'
+import { WebSocketClientTransport } from '@syncar/client'
 import Login from './components/Login'
 import Chat from './components/Chat'
 import Notifications from './components/Notifications'
@@ -13,9 +13,9 @@ export type Notification = {
 }
 
 // Create client outside component to prevent multiple instances in React StrictMode
-const client = createSynnelClient({
+const client = createSyncarClient({
   transport: new WebSocketClientTransport({
-    url: 'ws://localhost:3001/synnel',
+    url: 'ws://localhost:3001/syncar',
   }),
   autoConnect: true,
 })
@@ -39,7 +39,7 @@ function App() {
   }
 
   return (
-    <SynnelProvider client={client}>
+    <SyncarProvider client={client}>
       <div className="app">
         <Notifications notifications={notifications} />
 
@@ -49,7 +49,7 @@ function App() {
           <Chat username={username} onNotification={addNotification} />
         )}
       </div>
-    </SynnelProvider>
+    </SyncarProvider>
   )
 }
 

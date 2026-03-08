@@ -23,16 +23,16 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@synca/core": [
+      "@syncar/core": [
         "../../packages/core/src"
       ],
-      "@synca/client": [
+      "@syncar/client": [
         "../../packages/client/src"
       ],
-      "@synca/react": [
+      "@syncar/react": [
         "../../packages/react/src"
       ],
-      "@synca/server": [
+      "@syncar/server": [
         "../../packages/server/src"
       ]
     }

@@ -78,7 +78,7 @@ export interface AuthMiddlewareOptions {
  *
  * @example
  * ```ts
- * import { createAuthMiddleware } from '@synca/server/middleware'
+ * import { createAuthMiddleware } from '@syncar/server/middleware'
  *
  * const authMiddleware = createAuthMiddleware({
  *   verifyToken: async (token) => {
@@ -206,7 +206,7 @@ export interface LoggingMiddlewareOptions {
  *
  * @example
  * ```ts
- * import { createLoggingMiddleware } from '@synca/server/middleware'
+ * import { createLoggingMiddleware } from '@syncar/server/middleware'
  *
  * const loggingMiddleware = createLoggingMiddleware({
  *   logger: console,
@@ -325,7 +325,7 @@ const rateLimitStore = new Map<string, RateLimitState>()
  *
  * @example
  * ```ts
- * import { createRateLimitMiddleware } from '@synca/server/middleware'
+ * import { createRateLimitMiddleware } from '@syncar/server/middleware'
  *
  * const rateLimitMiddleware = createRateLimitMiddleware({
  *   maxRequests: 100,
@@ -414,7 +414,7 @@ export function createRateLimitMiddleware(
  *
  * @example
  * ```ts
- * import { clearRateLimitStore } from '@synca/server/middleware'
+ * import { clearRateLimitStore } from '@syncar/server/middleware'
  *
  * clearRateLimitStore()
  * ```
@@ -431,7 +431,7 @@ export function clearRateLimitStore(): void {
  *
  * @example
  * ```ts
- * import { getRateLimitState } from '@synca/server/middleware'
+ * import { getRateLimitState } from '@syncar/server/middleware'
  *
  * const state = getRateLimitState('client-123')
  * console.log(`Requests: ${state?.count ?? 0}/${maxRequests}`)
@@ -498,7 +498,7 @@ export interface ChannelWhitelistMiddlewareOptions {
  *
  * @example
  * ```ts
- * import { createChannelWhitelistMiddleware } from '@synca/server/middleware'
+ * import { createChannelWhitelistMiddleware } from '@syncar/server/middleware'
  *
  * const whitelistMiddleware = createChannelWhitelistMiddleware({
  *   allowedChannels: ['chat', 'notifications']

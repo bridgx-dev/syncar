@@ -1,6 +1,6 @@
 /**
  * Type Utilities
- * Reusable type manipulation utilities for the Synnel ecosystem.
+ * Reusable type manipulation utilities for the Syncar ecosystem.
  */
 
 // ============================================================

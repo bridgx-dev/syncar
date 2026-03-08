@@ -1,7 +1,7 @@
 {
   "name": "@syncar/server",
   "version": "1.0.0-alpha.1",
-  "description": "Node.js server for Synca real-time synchronization",
+  "description": "Node.js server for Syncar real-time synchronization",
   "author": "M16BAPPI - [m16bappi@gmail.com]",
   "type": "module",
   "main": "./dist/index.js",
@@ -46,7 +46,7 @@
     "websocket",
     "realtime",
     "server",
-    "synca",
+    "syncar",
     "pubsub",
     "broadcast"
   ],

@@ -1,5 +1,5 @@
 /**
- * Synnel Chat Server - Updated API
+ * Syncar Chat Server - Updated API
  *
  * Demonstrates:
  * - Auto-relay: presence and presence channels relay automatically (no onMessage needed)
@@ -10,7 +10,7 @@
 
 import express from 'express'
 import { createServer } from 'http'
-import { createSyncaServer } from '@synca/server'
+import { createSyncaServer } from '@syncar/server'
 
 // Message types
 interface ChatMessage {
@@ -40,7 +40,7 @@ const users = new Map<string, { username: string; status: string }>()
 const app = express()
 const httpServer = createServer(app)
 
-// Initialize Synnel synca
+// Initialize Syncar synca
 const synca = createSyncaServer({ server: httpServer })
 
 async function main() {
@@ -147,10 +147,10 @@ async function main() {
   httpServer.listen(PORT, () => {
     console.log('')
     console.log('==================================')
-    console.log(' Synnel Chat Server')
+    console.log(' Syncar Chat Server')
     console.log('==================================')
     console.log(`HTTP:      http://localhost:${PORT}`)
-    console.log(`WebSocket: ws://localhost:${PORT}/synnel`)
+    console.log(`WebSocket: ws://localhost:${PORT}/syncar`)
     console.log(`Client:    http://localhost:3000`)
     console.log('')
     console.log('Channels:')

@@ -1,13 +1,13 @@
 /**
- * useSynnelClient Tests
+ * useSyncarClient Tests
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { renderHook, cleanup } from '@testing-library/react'
 import { StrictMode } from 'react'
-import { SynnelProvider, useSynnelClient } from '../index.js'
-import { createSynnelClient } from '@synnel/client'
-import type { Transport } from '@synnel/client'
+import { SyncarProvider, useSyncarClient } from '../index.js'
+import { createSyncarClient } from '@syncar/client'
+import type { Transport } from '@syncar/client'
 
 // Mock transport
 class MockTransport implements Transport {
@@ -70,19 +70,19 @@ class MockTransport implements Transport {
   }
 }
 
-function wrapper(client: ReturnType<typeof createSynnelClient>) {
+function wrapper(client: ReturnType<typeof createSyncarClient>) {
   return function Wrapper({ children }: { children: React.ReactNode }) {
-    return <SynnelProvider client={client}>{children}</SynnelProvider>
+    return <SyncarProvider client={client}>{children}</SyncarProvider>
   }
 }
 
-describe('useSynnelClient', () => {
-  let client: ReturnType<typeof createSynnelClient>
+describe('useSyncarClient', () => {
+  let client: ReturnType<typeof createSyncarClient>
   let transport: MockTransport
 
   beforeEach(() => {
     transport = new MockTransport()
-    client = createSynnelClient({
+    client = createSyncarClient({
       transport,
       autoConnect: false,
       autoReconnect: false,
@@ -96,7 +96,7 @@ describe('useSynnelClient', () => {
 
   describe('basic functionality', () => {
     it('should return the client instance', () => {
-      const { result } = renderHook(() => useSynnelClient(), {
+      const { result } = renderHook(() => useSyncarClient(), {
         wrapper: wrapper(client),
       })
 
@@ -104,7 +104,7 @@ describe('useSynnelClient', () => {
     })
 
     it('should allow accessing client methods', async () => {
-      const { result } = renderHook(() => useSynnelClient(), {
+      const { result } = renderHook(() => useSyncarClient(), {
         wrapper: wrapper(client),
       })
 
@@ -116,7 +116,7 @@ describe('useSynnelClient', () => {
     })
 
     it('should have correct initial status', () => {
-      const { result } = renderHook(() => useSynnelClient(), {
+      const { result } = renderHook(() => useSyncarClient(), {
         wrapper: wrapper(client),
       })
 
@@ -124,7 +124,7 @@ describe('useSynnelClient', () => {
     })
 
     it('should update status on connect', async () => {
-      const { result } = renderHook(() => useSynnelClient(), {
+      const { result } = renderHook(() => useSyncarClient(), {
         wrapper: wrapper(client),
       })
 
@@ -137,7 +137,7 @@ describe('useSynnelClient', () => {
     })
 
     it('should update stats correctly', () => {
-      const { result } = renderHook(() => useSynnelClient(), {
+      const { result } = renderHook(() => useSyncarClient(), {
         wrapper: wrapper(client),
       })
 
@@ -158,7 +158,7 @@ describe('useSynnelClient', () => {
       const { result } = renderHook(
         () => {
           renderCount++
-          return useSynnelClient()
+          return useSyncarClient()
         },
         { wrapper: wrapper(client) },
       )
@@ -179,7 +179,7 @@ describe('useSynnelClient', () => {
       renderHook(
         () => {
           renderCount++
-          return useSynnelClient()
+          return useSyncarClient()
         },
         {
           wrapper: function StrictModeWrapper({
@@ -189,7 +189,7 @@ describe('useSynnelClient', () => {
           }) {
             return (
               <StrictMode>
-                <SynnelProvider client={client}>{children}</SynnelProvider>
+                <SyncarProvider client={client}>{children}</SyncarProvider>
               </StrictMode>
             )
           },
@@ -208,7 +208,7 @@ describe('useSynnelClient', () => {
       console.error = vi.fn()
 
       expect(() => {
-        renderHook(() => useSynnelClient())
+        renderHook(() => useSyncarClient())
       }).toThrow()
 
       console.error = originalError

@@ -1,8 +1,8 @@
 {
-  "name": "@synca/lib",
+  "name": "@syncar/lib",
   "version": "1.0.0-alpha.1",
   "private": true,
-  "description": "Internal utility functions for Synca packages (not for publication)",
+  "description": "Internal utility functions for Syncar packages (not for publication)",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -33,7 +33,7 @@
     "helpers",
     "internal"
   ],
-  "author": "Synca",
+  "author": "Syncar",
   "license": "MIT",
   "dependencies": {
     "@syncar/types": "workspace:*"

@@ -1,6 +1,6 @@
-# Synnel ⚡️
+# Syncar ⚡️
 
-Synnel is a high-performance, developer-friendly real-time synchronization engine. It provides a simple, isomorphic bridge to keep your frontend and backend in perfect sync with zero configuration.
+Syncar is a high-performance, developer-friendly real-time synchronization engine. It provides a simple, isomorphic bridge to keep your frontend and backend in perfect sync with zero configuration.
 
 Think of it as the real-time layer of platforms like Convex or Supabase, but completely database-agnostic and self-hosted on any Node.js server.
 
@@ -17,7 +17,7 @@ Think of it as the real-time layer of platforms like Convex or Supabase, but com
 ## 🏗️ Workspace Structure
 
 - `packages/core`: The isomorphic transport layer.
-- `packages/server`: Node.js server for Synnel with Express integration.
+- `packages/server`: Node.js server for Syncar with Express integration.
 - `packages/client`: Framework-agnostic real-time client.
 - `packages/adapter`: WebSocket transport adapters.
 - `packages/react`: React components and hooks for state synchronization.
@@ -29,61 +29,64 @@ Think of it as the real-time layer of platforms like Convex or Supabase, but com
 ```typescript
 import express from 'express'
 import { createServer } from 'http'
-import { Synnel } from '@synca/server'
+import { Syncar } from '@syncar/server'
 
 const app = express()
 const httpServer = createServer(app)
 
-// Initialize Synnel with Express server
-const synnel = new Synnel({ server: httpServer })
+// Initialize Syncar with Express server
+const syncar = new Syncar({ server: httpServer })
 
-// Create a multicast channel (returns a Promise)
-const chat = await synnel.multicast<{ text: string; user: string }>('chat')
+// Start the server first
+await syncar.start()
+
+// Create a multicast channel
+const chat = syncar.createMulticast<{ text: string; user: string }>('chat')
 
 // Handle incoming messages
-chat.receive((data, client) => {
+chat.onMessage((data, client) => {
   console.log(`Received from ${client.id}:`, data)
+  // Relay to all other clients
+  chat.publish(data, { exclude: [client.id] })
 })
 
-// Start the server
-await synnel.start()
 httpServer.listen(3000)
 ```
 
 ### 2. Standalone Server (no Express)
 
 ```typescript
-import { Synnel } from '@synca/server'
+import { Syncar } from '@syncar/server'
 
 // Creates HTTP server on port 3000
-const synnel = new Synnel({ port: 3000 })
+const syncar = new Syncar({ port: 3000 })
 
-await synnel.start()
+await syncar.start()
 
-const chat = await synnel.multicast('chat')
-chat.send({ text: 'Welcome!' })
+const chat = syncar.createMulticast('chat')
+chat.publish({ text: 'Welcome!' })
 ```
 
 ### 3. Provider Setup (React)
 
-Wrap your application in the `SynnelProvider`:
+Wrap your application in the `SyncarProvider`:
 
 ```tsx
-import { SynnelProvider } from '@synca/react'
-import { createSynnelClient } from '@synca/client'
-import { WebSocketClientTransport } from '@synca/client'
+import { SyncarProvider } from '@syncar/react'
+import { createSyncarClient } from '@syncar/client'
+import { WebSocketClientTransport } from '@syncar/client'
 
-const client = createSynnelClient({
+const client = createSyncarClient({
   transport: new WebSocketClientTransport({
-    url: 'ws://localhost:3000/synnel',
+    url: 'ws://localhost:3000/syncar',
   }),
 })
 
 function Root() {
   return (
-    <SynnelProvider client={client}>
+    <SyncarProvider client={client}>
       <App />
-    </SynnelProvider>
+    </SyncarProvider>
   )
 }
 ```
@@ -91,7 +94,7 @@ function Root() {
 ### 4. Usage in Hooks
 
 ```tsx
-import { useChannel } from '@synca/react'
+import { useChannel } from '@syncar/react'
 
 function ChatRoom() {
   const chat = useChannel<{ text: string }>('chat', {
@@ -112,12 +115,12 @@ function ChatRoom() {
 
 ## 🔐 Channel Enforcement
 
-Synnel enforces explicit channel creation. Channels must be created on the server before clients can join them.
+Syncar enforces explicit channel creation. Channels must be created on the server before clients can join them.
 
 ```typescript
 // Server - Create channels explicitly
-const chat = await synnel.multicast('chat') // ✅ Clients CAN join
-const notifications = synnel.broadcast() // ✅ Clients CAN join
+const chat = syncar.createMulticast('chat') // ✅ Clients CAN join
+const notifications = syncar.createBroadcast() // ✅ Clients CAN join
 // 'admin' NOT created                                   // ❌ Clients CANNOT join
 ```
 
@@ -133,15 +136,17 @@ await client.subscribe('admin') // ❌ ERROR: Channel not allowed
 Many-to-many messaging. All subscribers can send and receive messages.
 
 ```typescript
-const chat = await synnel.multicast<MessageType>('chat')
+const chat = syncar.createMulticast<MessageType>('chat')
 
 // Receive messages from clients
-chat.receive((data, client) => {
+chat.onMessage((data, client) => {
   console.log(`${client.id}: ${data.text}`)
+  // Relay to all subscribers except sender
+  chat.publish(data, { exclude: [client.id] })
 })
 
-// Send to all subscribers (optionally exclude sender)
-await chat.send(data, excludeClientId)
+// Publish to all subscribers
+await chat.publish(data)
 ```
 
 ### Broadcast Channel
@@ -149,10 +154,10 @@ await chat.send(data, excludeClientId)
 Server-to-all messaging. Only the server can send; all clients receive.
 
 ```typescript
-const notifications = synnel.broadcast<NotificationType>()
+const notifications = syncar.createBroadcast<NotificationType>()
 
 // Send to all connected clients
-await notifications.send({
+await notifications.publish({
   type: 'info',
   message: 'Server maintenance in 5 minutes',
 })
@@ -163,7 +168,7 @@ await notifications.send({
 Add custom authorization logic:
 
 ```typescript
-synnel.authorize(async (clientId, channel, action) => {
+syncar.authorize(async (clientId, channel, action) => {
   if (channel === 'admin') {
     return await isAdminUser(clientId)
   }
@@ -178,7 +183,7 @@ synnel.authorize(async (clientId, channel, action) => {
 Listen to all messages passing through the system:
 
 ```typescript
-synnel.onMessage((client, message) => {
+syncar.onMessage((client, message) => {
   console.log(`Client ${client.id} sent message type: ${message.type}`)
 })
 ```
@@ -186,15 +191,15 @@ synnel.onMessage((client, message) => {
 ### Connection Events
 
 ```typescript
-synnel.on('connection', (client) => {
+syncar.on('connection', (client) => {
   console.log(`Client connected: ${client.id}`)
 })
 
-synnel.on('disconnection', (client) => {
+syncar.on('disconnection', (client) => {
   console.log(`Client disconnected: ${client.id}`)
 })
 
-synnel.on('subscribe', (client, channel) => {
+syncar.on('subscribe', (client, channel) => {
   console.log(`${client.id} subscribed to ${channel}`)
 })
 ```
@@ -202,7 +207,7 @@ synnel.on('subscribe', (client, channel) => {
 ### Server Statistics
 
 ```typescript
-const stats = synnel.getStats()
+const stats = syncar.getStats()
 console.log({
   clients: stats.clientCount,
   channels: stats.channelCount,
@@ -219,13 +224,13 @@ console.log({
 
 ```bash
 # Core packages
-npm install @synnel/core @synnel/server @synnel/client
+npm install @syncar/core @syncar/server @syncar/client
 
 # Adapter (WebSocket transport)
-npm install @synnel/adapter
+npm install @syncar/adapter
 
 # React integration
-npm install @synnel/react
+npm install @syncar/react
 ```
 
 ## 📄 License

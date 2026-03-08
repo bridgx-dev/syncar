@@ -1,7 +1,7 @@
 {
-  "name": "@synca/core",
+  "name": "@syncar/core",
   "version": "1.0.0-alpha.1",
-  "description": "Platform-agnostic core for Synca real-time synchronization",
+  "description": "Platform-agnostic core for Syncar real-time synchronization",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -40,7 +40,7 @@
     "synchronization",
     "pubsub"
   ],
-  "author": "Synca",
+  "author": "Syncar",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.13.10",

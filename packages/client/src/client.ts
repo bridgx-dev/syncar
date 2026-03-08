@@ -1,5 +1,5 @@
 /**
- * Synnel Client
+ * Syncar Client
  * Framework-agnostic real-time synchronization client
  */
 
@@ -9,12 +9,12 @@ import {
   type Message,
   type DataMessage,
   type ChannelName,
-} from '@synca/types'
+} from '@syncar/types'
 import {
   generateMessageId,
   createDataMessage,
   generateClientId,
-} from '@synca/lib'
+} from '@syncar/lib'
 import type {
   ClientConfig,
   ClientStatus,
@@ -29,10 +29,10 @@ import { ConnectionManager } from './connection-manager.js'
 import { ChannelSubscriptionImpl } from './channel-subscription.js'
 
 /**
- * Synnel Client
+ * Syncar Client
  * Main client class for real-time communication
  */
-export class SynnelClient {
+export class SyncarClient {
   public readonly id: string
   private connectionManager: ConnectionManager
   private subscriptions: Map<ChannelName, ChannelSubscriptionImpl> = new Map()
@@ -456,8 +456,8 @@ export class SynnelClient {
 }
 
 /**
- * Factory function to create a Synnel client
+ * Factory function to create a Syncar client
  */
-export function createSynnelClient(config: ClientConfig): SynnelClient {
-  return new SynnelClient(config)
+export function createSyncarClient(config: ClientConfig): SyncarClient {
+  return new SyncarClient(config)
 }

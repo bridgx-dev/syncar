@@ -186,7 +186,7 @@ export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES]
 /**
  * Default WebSocket path
  */
-export const DEFAULT_WS_PATH = '/synca'
+export const DEFAULT_WS_PATH = '/syncar'
 
 /**
  * Default maximum message payload size in bytes (1MB)
@@ -216,7 +216,7 @@ export const DEFAULT_HOST = '0.0.0.0'
 /**
  * Default WebSocket path
  */
-export const DEFAULT_PATH = '/synca'
+export const DEFAULT_PATH = '/syncar'
 
 /**
  * Default ping enabled

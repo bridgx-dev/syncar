@@ -1,26 +1,26 @@
 /**
- * React Context for Synnel
+ * React Context for Syncar
  */
 
 import { createContext, useContext } from 'react'
-import type { SynnelContextValue } from './types.js'
+import type { SyncarContextValue } from './types.js'
 
 /**
- * Synnel React Context
+ * Syncar React Context
  */
-export const SynnelContext = createContext<SynnelContextValue | null>(null)
+export const SyncarContext = createContext<SyncarContextValue | null>(null)
 
 /**
- * Hook to access the Synnel context
- * @throws {MissingProviderError} if used outside of SynnelProvider
+ * Hook to access the Syncar context
+ * @throws {MissingProviderError} if used outside of SyncarProvider
  */
-export function useSynnelContext(): SynnelContextValue {
-  const context = useContext(SynnelContext)
+export function useSyncarContext(): SyncarContextValue {
+  const context = useContext(SyncarContext)
 
   if (!context) {
     throw new Error(
-      'Synnel hooks must be used within a SynnelProvider. ' +
-        'Wrap your component tree with <SynnelProvider client={client}>.',
+      'Syncar hooks must be used within a SyncarProvider. ' +
+        'Wrap your component tree with <SyncarProvider client={client}>.',
     )
   }
 

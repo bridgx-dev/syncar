@@ -7,16 +7,16 @@ import { describe, it, expect } from 'vitest'
 
 // Import all exports from index.ts
 import {
-  SyncaServer,
-  createSyncaServer,
-  Synca,
+  SyncarServer,
+  createSyncarServer,
+  Syncar,
   createAuthMiddleware,
   createLoggingMiddleware,
   createRateLimitMiddleware,
   createChannelWhitelistMiddleware,
   ContextManager,
   createContext,
-  SyncaError,
+  SyncarError,
   ConfigError,
   TransportError,
   ChannelError,
@@ -35,18 +35,18 @@ import {
 } from '../src/index.js'
 
 describe('index.ts exports', () => {
-  it('should export SyncaServer', () => {
-    expect(SyncaServer).toBeDefined()
-    expect(typeof SyncaServer).toBe('function')
+  it('should export SyncarServer', () => {
+    expect(SyncarServer).toBeDefined()
+    expect(typeof SyncarServer).toBe('function')
   })
 
-  it('should export createSyncaServer factory', () => {
-    expect(createSyncaServer).toBeDefined()
-    expect(typeof createSyncaServer).toBe('function')
+  it('should export createSyncarServer factory', () => {
+    expect(createSyncarServer).toBeDefined()
+    expect(typeof createSyncarServer).toBe('function')
   })
 
-  it('should export Synca alias', () => {
-    expect(Synca).toBe(SyncaServer)
+  it('should export Syncar alias', () => {
+    expect(Syncar).toBe(SyncarServer)
   })
 
   it('should export ContextManager', () => {
@@ -69,7 +69,7 @@ describe('index.ts exports', () => {
   })
 
   it('should export all error classes', () => {
-    expect(SyncaError).toBeDefined()
+    expect(SyncarError).toBeDefined()
     expect(ConfigError).toBeDefined()
     expect(TransportError).toBeDefined()
     expect(ChannelError).toBeDefined()

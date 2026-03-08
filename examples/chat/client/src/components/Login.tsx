@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSynnelClient } from '@synca/react'
+import { useSyncarClient } from '@syncar/react'
 
 interface LoginProps {
   onLogin: (username: string) => void
@@ -7,7 +7,7 @@ interface LoginProps {
 
 export default function Login({ onLogin }: LoginProps) {
   const [username, setUsername] = useState('')
-  const client = useSynnelClient()
+  const client = useSyncarClient()
 
   useEffect(() => {
     // Handle Enter key

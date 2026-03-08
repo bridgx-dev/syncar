@@ -3,7 +3,7 @@
  * Client-side WebSocket transport for browser and Node.js environments
  */
 
-import type { ConnectionStatus, Message } from '@synca/types'
+import type { ConnectionStatus, Message } from '@syncar/types'
 import type {
   Transport,
   TransportEventType,

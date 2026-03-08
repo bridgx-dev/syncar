@@ -38,7 +38,7 @@ export function createLogTimestamp(): string {
  * Logs to console with timestamp and level
  */
 export function createDefaultLogger(
-  prefix = 'Synnel',
+  prefix = 'Syncar',
   enabled: { [K in LogLevel]?: boolean } = {},
 ): LoggerFn {
   const logEnabled = {

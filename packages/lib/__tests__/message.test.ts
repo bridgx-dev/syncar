@@ -13,7 +13,7 @@ import {
   createErrorMessage,
   createAckMessage,
 } from '../message.js'
-import { MessageType, SignalType, ErrorCode } from '@synnel/types'
+import { MessageType, SignalType, ErrorCode } from '@syncar/types'
 
 describe('message', () => {
   describe('type guards', () => {

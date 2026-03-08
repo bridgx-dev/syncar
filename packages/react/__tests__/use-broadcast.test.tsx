@@ -5,10 +5,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { renderHook, waitFor, cleanup } from '@testing-library/react'
 import { StrictMode } from 'react'
-import { SynnelProvider, useBroadcast } from '../index.js'
-import { createSynnelClient } from '@synnel/client'
-import type { Transport, Message } from '@synnel/client'
-import type { DataMessage } from '@synnel/core'
+import { SyncarProvider, useBroadcast } from '../index.js'
+import { createSyncarClient } from '@syncar/client'
+import type { Transport, Message } from '@syncar/client'
+import type { DataMessage } from '@syncar/core'
 
 // Mock transport
 class MockTransport implements Transport {
@@ -81,19 +81,19 @@ interface TestBroadcast {
   value: number
 }
 
-function wrapper(client: ReturnType<typeof createSynnelClient>) {
+function wrapper(client: ReturnType<typeof createSyncarClient>) {
   return function Wrapper({ children }: { children: React.ReactNode }) {
-    return <SynnelProvider client={client}>{children}</SynnelProvider>
+    return <SyncarProvider client={client}>{children}</SyncarProvider>
   }
 }
 
 describe('useBroadcast', () => {
-  let client: ReturnType<typeof createSynnelClient>
+  let client: ReturnType<typeof createSyncarClient>
   let transport: MockTransport
 
   beforeEach(async () => {
     transport = new MockTransport()
-    client = createSynnelClient({
+    client = createSyncarClient({
       transport,
       autoConnect: false,
       autoReconnect: false,
@@ -259,7 +259,7 @@ describe('useBroadcast', () => {
         }) {
           return (
             <StrictMode>
-              <SynnelProvider client={client}>{children}</SynnelProvider>
+              <SyncarProvider client={client}>{children}</SyncarProvider>
             </StrictMode>
           )
         },

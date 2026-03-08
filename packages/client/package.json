@@ -1,7 +1,7 @@
 {
-  "name": "@synca/client",
+  "name": "@syncar/client",
   "version": "1.0.0-alpha.1",
-  "description": "Framework-agnostic client for Synca real-time synchronization",
+  "description": "Framework-agnostic client for Syncar real-time synchronization",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -35,7 +35,7 @@
     "pubsub",
     "client"
   ],
-  "author": "Synca",
+  "author": "Syncar",
   "license": "MIT",
   "dependencies": {
     "@syncar/types": "workspace:*",

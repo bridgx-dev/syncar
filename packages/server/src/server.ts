@@ -22,7 +22,7 @@ import { createDefaultLogger, assertValidChannelName } from './utils'
  *
  * @example
  * ```ts
- * const server = createSyncaServer({ port: 3000 })
+ * const server = createSyncarServer({ port: 3000 })
  * await server.start()
  *
  * const stats = server.getStats()
@@ -59,15 +59,15 @@ interface ServerState {
  * Server configuration options
  *
  * @remarks
- * Complete configuration interface for the Synca server. These options
+ * Complete configuration interface for the Syncar server. These options
  * control the WebSocket transport layer, connection handling, middleware,
  * and performance tuning parameters.
  *
  * @example
  * ```ts
- * import { createSyncaServer } from '@synca/server'
+ * import { createSyncarServer } from '@syncar/server'
  *
- * const server = createSyncaServer({
+ * const server = createSyncarServer({
  *   port: 3000,
  *   host: '0.0.0.0',
  *   path: '/ws',
@@ -135,7 +135,7 @@ export interface IServerOptions {
     host: string
 
     /**
-     * WebSocket path (default: '/synca')
+     * WebSocket path (default: '/syncar')
      *
      * @remarks
      * The URL path for WebSocket connections. Clients must connect to
@@ -218,7 +218,7 @@ export interface IServerOptions {
 }
 
 /**
- * Synca Server - Real-time WebSocket server with pub/sub channels
+ * Syncar Server - Real-time WebSocket server with pub/sub channels
  *
  * @remarks
  * The main server class providing WebSocket communication with broadcast
@@ -226,9 +226,9 @@ export interface IServerOptions {
  *
  * @example
  * ```ts
- * import { createSyncaServer } from '@synca/server'
+ * import { createSyncarServer } from '@syncar/server'
  *
- * const server = createSyncaServer({ port: 3000 })
+ * const server = createSyncarServer({ port: 3000 })
  * await server.start()
  *
  * // Create channels
@@ -245,9 +245,9 @@ export interface IServerOptions {
  * chat.publish({ text: 'Welcome!' })
  * ```
  *
- * @see {@link createSyncaServer} for factory function
+ * @see {@link createSyncarServer} for factory function
  */
-export class SyncaServer {
+export class SyncarServer {
     private readonly config: IServerOptions
     private transport: WebSocketServerTransport | undefined
     public readonly registry: ClientRegistry
@@ -289,7 +289,7 @@ export class SyncaServer {
      *
      * @example
      * ```ts
-     * const server = createSyncaServer({ port: 3000 })
+     * const server = createSyncarServer({ port: 3000 })
      * await server.start()
      * console.log('Server is running')
      * ```
@@ -500,7 +500,7 @@ export class SyncaServer {
      *
      * @example
      * ```ts
-     * import { createAuthMiddleware } from '@synca/server'
+     * import { createAuthMiddleware } from '@syncar/server'
      *
      * server.use(createAuthMiddleware({
      *   verifyToken: async (token) => jwt.verify(token, SECRET)
@@ -660,31 +660,31 @@ export class SyncaServer {
 }
 
 /**
- * Create a Synca server with automatic WebSocket transport setup
+ * Create a Syncar server with automatic WebSocket transport setup
  *
  * @remarks
- * Factory function that creates a configured SyncaServer instance.
+ * Factory function that creates a configured SyncarServer instance.
  * Automatically sets up the WebSocket transport layer if not provided,
  * merges user configuration with defaults, and creates the client registry.
  *
  * @param config - Optional partial server configuration. All properties are optional
  * and will be merged with {@link DEFAULT_SERVER_CONFIG}.
  *
- * @returns Configured Synca server instance ready to be started
+ * @returns Configured Syncar server instance ready to be started
  *
  * @example
  * ### Basic usage
  * ```ts
- * import { createSyncaServer } from '@synca/server'
+ * import { createSyncarServer } from '@syncar/server'
  *
- * const server = createSyncaServer({ port: 3000 })
+ * const server = createSyncarServer({ port: 3000 })
  * await server.start()
  * ```
  *
  * @example
  * ### With custom configuration
  * ```ts
- * const server = createSyncaServer({
+ * const server = createSyncarServer({
  *   port: 8080,
  *   host: 'localhost',
  *   path: '/ws',
@@ -700,14 +700,14 @@ export class SyncaServer {
  * ### With existing HTTP server
  * ```ts
  * import { createServer } from 'node:http'
- * import { createSyncaServer } from '@synca/server'
+ * import { createSyncarServer } from '@syncar/server'
  *
  * const httpServer = createServer((req, res) => {
  *   res.writeHead(200)
  *   res.end('OK')
  * })
  *
- * const server = createSyncaServer({
+ * const server = createSyncarServer({
  *   server: httpServer,
  *   path: '/ws',
  * })
@@ -719,12 +719,12 @@ export class SyncaServer {
  * ### With Express
  * ```ts
  * import express from 'express'
- * import { createSyncaServer } from '@synca/server'
+ * import { createSyncarServer } from '@syncar/server'
  *
  * const app = express()
  * const httpServer = app.listen(3000)
  *
- * const server = createSyncaServer({
+ * const server = createSyncarServer({
  *   server: httpServer,
  *   path: '/ws',
  * })
@@ -735,9 +735,9 @@ export class SyncaServer {
  * @example
  * ### With custom logger
  * ```ts
- * import { createSyncaServer } from '@synca/server'
+ * import { createSyncarServer } from '@syncar/server'
  *
- * const server = createSyncaServer({
+ * const server = createSyncarServer({
  *   port: 3000,
  *   logger: {
  *     debug: (msg, ...args) => console.debug('[DEBUG]', msg, ...args),
@@ -751,9 +751,9 @@ export class SyncaServer {
  * @example
  * ### With middleware
  * ```ts
- * import { createSyncaServer, createLoggingMiddleware } from '@synca/server'
+ * import { createSyncarServer, createLoggingMiddleware } from '@syncar/server'
  *
- * const server = createSyncaServer({
+ * const server = createSyncarServer({
  *   port: 3000,
  *   middleware: [
  *     createLoggingMiddleware(),
@@ -763,10 +763,10 @@ export class SyncaServer {
  * await server.start()
  * ```
  *
- * @see {@link SyncaServer} for server class API
+ * @see {@link SyncarServer} for server class API
  * @see {@link DEFAULT_SERVER_CONFIG} for default configuration values
  */
-export function createSyncaServer(config: Partial<IServerOptions> = {}): SyncaServer {
+export function createSyncarServer(config: Partial<IServerOptions> = {}): SyncarServer {
     // Ensure registry exists
     const registry = config.registry ?? new ClientRegistry()
     const logger = config.logger ?? createDefaultLogger()
@@ -802,5 +802,5 @@ export function createSyncaServer(config: Partial<IServerOptions> = {}): SyncaSe
         })
     }
 
-    return new SyncaServer(serverOptions)
+    return new SyncarServer(serverOptions)
 }

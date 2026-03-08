@@ -5,7 +5,7 @@
 
 import type { Transport } from './types.js'
 import type { ClientStatus, ClientConfig } from './types.js'
-import { createDefaultLogger, type LoggerFn, type LogLevel } from '@synca/lib'
+import { createDefaultLogger, type LoggerFn, type LogLevel } from '@syncar/lib'
 
 /**
  * Reconnection state
@@ -48,7 +48,7 @@ export class ConnectionManager {
 
   constructor(config: ClientConfig) {
     // Create or adapt logger to LoggerFn type
-    const rawLogger = config.logger ?? createDefaultLogger('Synnel Client')
+    const rawLogger = config.logger ?? createDefaultLogger('Syncar Client')
     this.logger = ((level: LogLevel, message: string, ...args: unknown[]) => {
       // Filter out debug messages if debug is disabled
       if (level === 'debug' && !config.debug) {

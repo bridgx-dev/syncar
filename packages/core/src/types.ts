@@ -1,5 +1,5 @@
 /**
- * Core type definitions for Synnel
+ * Core type definitions for Syncar
  * Platform-agnostic interfaces used across all packages
  */
 

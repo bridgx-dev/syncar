@@ -1,18 +1,18 @@
 /**
- * @synca/client
+ * @syncar/client
  *
- * Framework-agnostic client for Synnel real-time synchronization
+ * Framework-agnostic client for Syncar real-time synchronization
  *
  * @example
  * ```ts
- * import { createSynnelClient, WebSocketClientTransport } from '@synca/client'
+ * import { createSyncarClient, WebSocketClientTransport } from '@syncar/client'
  *
  * const transport = new WebSocketClientTransport({
  *   url: 'ws://localhost:3000',
  *   reconnect: true,
  * })
  *
- * const client = createSynnelClient({
+ * const client = createSyncarClient({
  *   id: 'my-app',
  *   transport,
  *   autoConnect: false,
@@ -33,7 +33,7 @@
  */
 
 // Main client
-export { SynnelClient, createSynnelClient } from './client.js'
+export { SyncarClient, createSyncarClient } from './client.js'
 
 // Connection manager
 export { ConnectionManager } from './connection-manager.js'
@@ -51,7 +51,7 @@ export type {
   SubscribeOptions,
   SubscriptionCallbacks,
 
-  // Core types (re-exported from @synca/types)
+  // Core types (re-exported from @syncar/types)
   Transport,
   ClientStatus,
   SubscriptionState,
@@ -76,7 +76,7 @@ export type {
   TransportCloseEvent,
   ConnectionStatus,
 
-  // Message types (re-exported from @synca/types)
+  // Message types (re-exported from @syncar/types)
   Message,
   DataMessage,
   MessageType,

@@ -1,12 +1,12 @@
 /**
- * SynnelClient Tests
+ * SyncarClient Tests
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { SynnelClient, createSynnelClient } from '../client.js'
+import { SyncarClient, createSyncarClient } from '../client.js'
 import type { ClientConfig } from '../types.js'
-import type { Message, DataMessage } from '@synnel/types'
-import { SignalType } from '@synnel/types'
+import type { Message, DataMessage } from '@syncar/types'
+import { SignalType } from '@syncar/types'
 
 // Mock transport
 class MockTransport {
@@ -87,8 +87,8 @@ class MockTransport {
   }
 }
 
-describe('SynnelClient', () => {
-  let client: SynnelClient
+describe('SyncarClient', () => {
+  let client: SyncarClient
   let transport: MockTransport
 
   beforeEach(() => {
@@ -100,7 +100,7 @@ describe('SynnelClient', () => {
       autoReconnect: false,
     }
 
-    client = new SynnelClient(config)
+    client = new SyncarClient(config)
   })
 
   afterEach(async () => {
@@ -119,7 +119,7 @@ describe('SynnelClient', () => {
     })
 
     it('should use provided client ID', () => {
-      const customClient = new SynnelClient({
+      const customClient = new SyncarClient({
         transport,
         id: 'custom-id',
       })
@@ -128,11 +128,11 @@ describe('SynnelClient', () => {
     })
   })
 
-  describe('createSynnelClient factory', () => {
+  describe('createSyncarClient factory', () => {
     it('should create a client instance', () => {
-      const factoryClient = createSynnelClient({ transport })
+      const factoryClient = createSyncarClient({ transport })
 
-      expect(factoryClient).toBeInstanceOf(SynnelClient)
+      expect(factoryClient).toBeInstanceOf(SyncarClient)
       expect(factoryClient.status).toBe('disconnected')
     })
   })

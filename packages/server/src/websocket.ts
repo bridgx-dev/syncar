@@ -24,7 +24,7 @@ type ServerInstance = WsServer
  *
  * @remarks
  * Configuration options for the WebSocket transport layer. Extends the
- * standard `ws` library options with Synca-specific settings.
+ * standard `ws` library options with Syncar-specific settings.
  *
  * @example
  * ```ts
@@ -136,7 +136,7 @@ export interface WebSocketServerTransportConfig extends WsServerOptions {
  * @example
  * ### Basic usage
  * ```ts
- * import { WebSocketServerTransport } from '@synca/server'
+ * import { WebSocketServerTransport } from '@syncar/server'
  *
  * const transport = new WebSocketServerTransport({
  *   server: httpServer,

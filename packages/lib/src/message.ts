@@ -9,9 +9,9 @@ import type {
   SignalMessage,
   ErrorMessage,
   AckMessage,
-} from '@synca/types'
-import { MessageType } from '@synca/types'
-import type { ChannelName, MessageId, DataPayload } from '@synca/types'
+} from '@syncar/types'
+import { MessageType } from '@syncar/types'
+import type { ChannelName, MessageId, DataPayload } from '@syncar/types'
 import { generateMessageId } from './id.js'
 
 /**
@@ -66,7 +66,7 @@ export function createDataMessage<T>(
  */
 export function createSignalMessage(
   channel: ChannelName,
-  signal: import('@synca/types').SignalType,
+  signal: import('@syncar/types').SignalType,
   data?: DataPayload,
   id?: MessageId,
 ): SignalMessage {
@@ -85,7 +85,7 @@ export function createSignalMessage(
  */
 export function createErrorMessage(
   message: string,
-  code?: import('@synca/types').ErrorCode,
+  code?: import('@syncar/types').ErrorCode,
   channel?: ChannelName,
   id?: MessageId,
 ): ErrorMessage {

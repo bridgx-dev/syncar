@@ -2,13 +2,13 @@
  * Errors Module
  *
  * @description
- * Custom error classes for the Synca server. All errors extend from
- * {@link SyncaError} and include error codes for programmatic handling.
+ * Custom error classes for the Syncar server. All errors extend from
+ * {@link SyncarError} and include error codes for programmatic handling.
  *
  * @remarks
  * The error hierarchy:
  *
- * - {@link SyncaError} - Base error class
+ * - {@link SyncarError} - Base error class
  *   - {@link ConfigError} - Server configuration issues
  *   - {@link TransportError} - WebSocket transport issues
  *   - {@link ChannelError} - Channel operation failures
@@ -22,7 +22,7 @@
  * @example
  * ### Throwing errors
  * ```ts
- * import { StateError, ValidationError } from '@synca/server'
+ * import { StateError, ValidationError } from '@syncar/server'
  *
  * function createChannel(name: string) {
  *   if (!name) {
@@ -38,10 +38,10 @@
  * ### Catching errors
  * ```ts
  * import {
- *   SyncaError,
+ *   SyncarError,
  *   MiddlewareRejectionError,
  *   StateError
- * } from '@synca/server'
+ * } from '@syncar/server'
  *
  * try {
  *   await server.start()
@@ -50,7 +50,7 @@
  *     console.error('Invalid state:', error.message)
  *   } else if (error instanceof MiddlewareRejectionError) {
  *     console.error(`Action rejected: ${error.reason}`)
- *   } else if (error instanceof SyncaError) {
+ *   } else if (error instanceof SyncarError) {
  *     console.error(`[${error.code}] ${error.message}`)
  *   }
  * }
@@ -66,10 +66,10 @@ import type { IMiddlewareRejectionError, IMiddlewareAction } from './types'
 // ============================================================
 
 /**
- * Base Synca error class
+ * Base Syncar error class
  *
  * @remarks
- * All custom errors in the Synca server extend this class. Provides
+ * All custom errors in the Syncar server extend this class. Provides
  * consistent error handling with error codes, context, and serialization.
  *
  * @property code - Error code for programmatic handling
@@ -77,7 +77,7 @@ import type { IMiddlewareRejectionError, IMiddlewareAction } from './types'
  *
  * @example
  * ```ts
- * throw new SyncaError('Something went wrong', 'CUSTOM_ERROR', { userId: '123' })
+ * throw new SyncarError('Something went wrong', 'CUSTOM_ERROR', { userId: '123' })
  * ```
  *
  * @example
@@ -86,7 +86,7 @@ import type { IMiddlewareRejectionError, IMiddlewareAction } from './types'
  * try {
  *   // ...
  * } catch (error) {
- *   if (error instanceof SyncaError) {
+ *   if (error instanceof SyncarError) {
  *     console.log(error.code)        // 'CUSTOM_ERROR'
  *     console.log(error.message)     // 'Something went wrong'
  *     console.log(error.context)     // { userId: '123' }
@@ -95,7 +95,7 @@ import type { IMiddlewareRejectionError, IMiddlewareAction } from './types'
  * }
  * ```
  */
-export class SyncaError extends Error {
+export class SyncarError extends Error {
     /**
      * Error code for programmatic error handling
      *
@@ -115,7 +115,7 @@ export class SyncaError extends Error {
     public readonly context?: Record<string, unknown>
 
     /**
-     * Creates a new SyncaError
+     * Creates a new SyncarError
      *
      * @param message - Human-readable error message
      * @param code - Error code for programmatic handling (default: 'SYNNEL_ERROR')
@@ -127,13 +127,13 @@ export class SyncaError extends Error {
         context?: Record<string, unknown>,
     ) {
         super(message)
-        this.name = 'SyncaError'
+        this.name = 'SyncarError'
         this.code = code
         this.context = context
 
         // Maintains proper stack trace for where our error was thrown (only available on V8)
         if (Error.captureStackTrace) {
-            Error.captureStackTrace(this, SyncaError)
+            Error.captureStackTrace(this, SyncarError)
         }
     }
 
@@ -144,10 +144,10 @@ export class SyncaError extends Error {
      *
      * @example
      * ```ts
-     * const error = new SyncaError('Failed', 'FAIL', { id: 123 })
+     * const error = new SyncarError('Failed', 'FAIL', { id: 123 })
      * console.log(JSON.stringify(error.toJSON(), null, 2))
      * // {
-     * //   "name": "SyncaError",
+     * //   "name": "SyncarError",
      * //   "message": "Failed",
      * //   "code": "FAIL",
      * //   "context": { "id": 123 },
@@ -178,9 +178,9 @@ export class SyncaError extends Error {
      *
      * @example
      * ```ts
-     * const error = new SyncaError('Failed', 'FAIL')
+     * const error = new SyncarError('Failed', 'FAIL')
      * console.log(error.toString())
-     * // "[SyncaError:FAIL] Failed"
+     * // "[SyncarError:FAIL] Failed"
      * ```
      */
     override toString(): string {
@@ -205,7 +205,7 @@ export class SyncaError extends Error {
  * }
  * ```
  */
-export class ConfigError extends SyncaError {
+export class ConfigError extends SyncarError {
     constructor(message: string, context?: Record<string, unknown>) {
         super(message, 'CONFIG_ERROR', context)
         this.name = 'ConfigError'
@@ -225,7 +225,7 @@ export class ConfigError extends SyncaError {
  * }
  * ```
  */
-export class TransportError extends SyncaError {
+export class TransportError extends SyncarError {
     constructor(message: string, context?: Record<string, unknown>) {
         super(message, 'TRANSPORT_ERROR', context)
         this.name = 'TransportError'
@@ -245,7 +245,7 @@ export class TransportError extends SyncaError {
  * }
  * ```
  */
-export class ChannelError extends SyncaError {
+export class ChannelError extends SyncarError {
     constructor(message: string, context?: Record<string, unknown>) {
         super(message, 'CHANNEL_ERROR', context)
         this.name = 'ChannelError'
@@ -265,7 +265,7 @@ export class ChannelError extends SyncaError {
  * }
  * ```
  */
-export class ClientError extends SyncaError {
+export class ClientError extends SyncarError {
     constructor(message: string, context?: Record<string, unknown>) {
         super(message, 'CLIENT_ERROR', context)
         this.name = 'ClientError'
@@ -285,7 +285,7 @@ export class ClientError extends SyncaError {
  * }
  * ```
  */
-export class MessageError extends SyncaError {
+export class MessageError extends SyncarError {
     constructor(message: string, context?: Record<string, unknown>) {
         super(message, 'MESSAGE_ERROR', context)
         this.name = 'MessageError'
@@ -305,7 +305,7 @@ export class MessageError extends SyncaError {
  * }
  * ```
  */
-export class ValidationError extends SyncaError {
+export class ValidationError extends SyncarError {
     constructor(message: string, context?: Record<string, unknown>) {
         super(message, 'VALIDATION_ERROR', context)
         this.name = 'ValidationError'
@@ -329,7 +329,7 @@ export class ValidationError extends SyncaError {
  * }
  * ```
  */
-export class StateError extends SyncaError {
+export class StateError extends SyncarError {
     constructor(message: string, context?: Record<string, unknown>) {
         super(message, 'STATE_ERROR', context)
         this.name = 'StateError'

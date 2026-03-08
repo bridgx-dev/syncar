@@ -1,5 +1,5 @@
 /**
- * Common type definitions used across all Synnel packages
+ * Common type definitions used across all Syncar packages
  * Platform-agnostic primitive types and identifiers
  */
 

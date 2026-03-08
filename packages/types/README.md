@@ -1,16 +1,16 @@
-# @synca/types
+# @syncar/types
 
 **INTERNAL PACKAGE - NOT FOR PUBLICATION**
 
-Shared TypeScript type definitions for Synnel real-time synchronization packages.
+Shared TypeScript type definitions for Syncarr real-time synchronization packages.
 
-> **WARNING:** This package is marked as `private: true` and should NOT be published to npm. It is intended for internal use within the Synnel monorepo only.
+> **WARNING:** This package is marked as `private: true` and should NOT be published to npm. It is intended for internal use within the Syncarr monorepo only.
 
 ## Installation
 
 ```bash
 # This package is automatically available via workspace protocol
-bun add @synca/types
+bun add @syncar/types
 ```
 
 ## Usage
@@ -22,7 +22,7 @@ import type {
   ChannelName,
   ConnectionStatus,
   TransportConfig,
-} from '@synca/types'
+} from '@syncar/types'
 
 // Use the types in your code
 const channel: ChannelName = 'chat'

@@ -1,18 +1,18 @@
 /**
- * useSynnelClient Hook
+ * useSyncarClient Hook
  *
- * Hook to access the Synnel client instance from context.
+ * Hook to access the Syncar client instance from context.
  */
 
 import { useSyncExternalStore } from 'react'
-import { useSynnelContext } from './context.js'
-import type { SynnelClient } from '@synca/client'
+import { useSyncarContext } from './context.js'
+import type { SyncarClient } from '@syncar/client'
 
 /**
  * Subscribe to client state changes
  */
 function subscribeToClient(
-  client: SynnelClient,
+  client: SyncarClient,
   callback: () => void,
 ): () => void {
   // Subscribe to all relevant client events
@@ -34,19 +34,19 @@ function subscribeToClient(
 /**
  * Get snapshot of client state - return just the status as a primitive
  */
-function getClientSnapshot(client: SynnelClient): string {
+function getClientSnapshot(client: SyncarClient): string {
   return client.status
 }
 
 /**
- * Hook to access the Synnel client instance
+ * Hook to access the Syncar client instance
  *
- * @returns The Synnel client instance
+ * @returns The Syncar client instance
  *
  * @example
  * ```tsx
  * function MyComponent() {
- *   const client = useSynnelClient()
+ *   const client = useSyncarClient()
  *
  *   const connect = () => client.connect()
  *   const disconnect = () => client.disconnect()
@@ -61,8 +61,8 @@ function getClientSnapshot(client: SynnelClient): string {
  * }
  * ```
  */
-export function useSynnelClient(): SynnelClient {
-  const { client } = useSynnelContext()
+export function useSyncarClient(): SyncarClient {
+  const { client } = useSyncarContext()
 
   // Subscribe to client state changes to trigger re-renders
   // Use status as the snapshot value - it's a primitive string that can be compared with ===

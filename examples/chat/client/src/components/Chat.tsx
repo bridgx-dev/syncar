@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useLayoutEffect } from 'react'
-import { useSynnelClient, useChannel, useBroadcast } from '@synca/react'
+import { useSyncarClient, useChannel, useBroadcast } from '@syncar/react'
 import type { Notification } from '../App'
 
 interface ChatProps {
@@ -21,7 +21,7 @@ export default function Chat({ username }: ChatProps) {
   const [typingUsers, setTypingUsers] = useState<string[]>([])
   const [userCount, setUserCount] = useState<number>(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const client = useSynnelClient()
+  const client = useSyncarClient()
   const messageIdsRef = useRef<Set<string>>(new Set())
   const typingTimeoutsRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
     new Map(),
@@ -177,7 +177,7 @@ export default function Chat({ username }: ChatProps) {
   return (
     <>
       <div className="header">
-        <h1>Synnel v2 Chat</h1>
+        <h1>Syncar v2 Chat</h1>
         <div className="status">
           <span className="statusDot" />
           <span>{username}</span>

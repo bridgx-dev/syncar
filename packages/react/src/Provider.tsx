@@ -1,42 +1,42 @@
 /**
- * Synnel React Provider
+ * Syncar React Provider
  */
 
 import { type ReactNode } from 'react'
-import { SynnelContext } from './context.js'
-import type { SynnelProviderProps } from './types.js'
+import { SyncarContext } from './context.js'
+import type { SyncarProviderProps } from './types.js'
 
 /**
- * Synnel Provider Component
+ * Syncar Provider Component
  *
- * Provides the Synnel client instance to all child components via React Context.
+ * Provides the Syncar client instance to all child components via React Context.
  *
  * @example
  * ```tsx
- * import { SynnelProvider } from '@synca/react'
- * import { createSynnelClient } from '@synca/client'
- * import { WebSocketClientTransport } from '@synca/client'
+ * import { SyncarProvider } from '@syncar/react'
+ * import { createSyncarClient } from '@syncar/client'
+ * import { WebSocketClientTransport } from '@syncar/client'
  *
- * const client = createSynnelClient({
+ * const client = createSyncarClient({
  *   transport: new WebSocketClientTransport({ url: 'ws://localhost:3000' })
  * })
  *
  * function App() {
  *   return (
- *     <SynnelProvider client={client}>
+ *     <SyncarProvider client={client}>
  *       <YourComponents />
- *     </SynnelProvider>
+ *     </SyncarProvider>
  *   )
  * }
  * ```
  */
-export function SynnelProvider({
+export function SyncarProvider({
   client,
   children,
-}: SynnelProviderProps): ReactNode {
+}: SyncarProviderProps): ReactNode {
   return (
-    <SynnelContext.Provider value={{ client }}>
+    <SyncarContext.Provider value={{ client }}>
       {children}
-    </SynnelContext.Provider>
+    </SyncarContext.Provider>
   )
 }

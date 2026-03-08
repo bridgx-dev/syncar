@@ -1,20 +1,20 @@
 /**
  * React Integration Types
- * Types for @synca/react package
+ * Types for @syncar/react package
  */
 
-import type { SynnelClient, ClientStatus } from '@synca/client'
-import type { ChannelName, DataMessage } from '@synca/types'
+import type { SyncarClient, ClientStatus } from '@syncar/client'
+import type { ChannelName, DataMessage } from '@syncar/types'
 import type { ReactNode } from 'react'
 
 /**
- * Synnel React Context Value
+ * Syncar React Context Value
  */
-export interface SynnelContextValue {
+export interface SyncarContextValue {
   /**
-   * The Synnel client instance
+   * The Syncar client instance
    */
-  client: SynnelClient
+  client: SyncarClient
 }
 
 /**
@@ -172,13 +172,13 @@ export interface UseBroadcastReturn<T = unknown> {
 }
 
 /**
- * Options for SynnelProvider
+ * Options for SyncarProvider
  */
-export interface SynnelProviderProps {
+export interface SyncarProviderProps {
   /**
-   * The Synnel client instance
+   * The Syncar client instance
    */
-  client: SynnelClient
+  client: SyncarClient
 
   /**
    * React children
@@ -187,13 +187,13 @@ export interface SynnelProviderProps {
 }
 
 /**
- * Error thrown when hooks are used outside of SynnelProvider
+ * Error thrown when hooks are used outside of SyncarProvider
  */
 export class MissingProviderError extends Error {
   constructor() {
     super(
-      'Synnel hooks must be used within a SynnelProvider. ' +
-      'Wrap your component tree with <SynnelProvider client={client}>.',
+      'Syncar hooks must be used within a SyncarProvider. ' +
+      'Wrap your component tree with <SyncarProvider client={client}>.',
     )
     this.name = 'MissingProviderError'
   }

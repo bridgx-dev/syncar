@@ -1,10 +1,10 @@
-# @synca/client-v2
+# @syncar/client-v2
 
-Framework-agnostic client for Synnel real-time synchronization. Works with any JavaScript framework or vanilla JS.
+Framework-agnostic client for Syncarr real-time synchronization. Works with any JavaScript framework or vanilla JS.
 
 ## Overview
 
-This package provides a framework-agnostic client for real-time pub/sub communication using the Synnel protocol. It handles:
+This package provides a framework-agnostic client for real-time pub/sub communication using the Syncarr protocol. It handles:
 
 - Connection management with auto-reconnect
 - Channel subscriptions with auto-resubscribe
@@ -15,18 +15,18 @@ This package provides a framework-agnostic client for real-time pub/sub communic
 ## Installation
 
 ```bash
-npm install @synca/client-v2
+npm install @syncar/client-v2
 # or
-pnpm add @synca/client-v2
+pnpm add @syncar/client-v2
 # or
-yarn add @synca/client-v2
+yarn add @syncar/client-v2
 ```
 
 ## Quick Start
 
 ```typescript
-import { createSynnelClient } from '@synca/client-v2'
-import { WebSocketClientTransport } from '@synca/client-v2'
+import { createSyncarrClient } from '@syncar/client-v2'
+import { WebSocketClientTransport } from '@syncar/client-v2'
 
 // Create transport
 const transport = new WebSocketClientTransport({
@@ -35,7 +35,7 @@ const transport = new WebSocketClientTransport({
 })
 
 // Create client
-const client = createSynnelClient({
+const client = createSyncarrClient({
   transport,
   autoReconnect: true,
 })
@@ -55,14 +55,14 @@ await client.publish('chat', { text: 'Hello!' })
 
 ## API Reference
 
-### `createSynnelClient(config)`
+### `createSyncarrClient(config)`
 
-Creates a new Synnel client instance.
+Creates a new Syncarr client instance.
 
 ```typescript
-import { createSynnelClient } from '@synca/client-v2'
+import { createSyncarrClient } from '@syncar/client-v2'
 
-const client = createSynnelClient({
+const client = createSyncarrClient({
   transport: myTransport,
   id: 'my-app', // optional, auto-generated if not provided
   autoConnect: false, // optional, connect immediately
@@ -268,14 +268,14 @@ const info = subscription.getInfo()
 ### Vanilla JavaScript
 
 ```javascript
-import { createSynnelClient } from '@synnel/client-v2'
-import { WebSocketClientTransport } from '@synnel/client-v2'
+import { createSyncarrClient } from '@syncar/client-v2'
+import { WebSocketClientTransport } from '@syncar/client-v2'
 
 const transport = new WebSocketClientTransport({
   url: 'ws://localhost:3000',
 })
 
-const client = createSynnelClient({ transport })
+const client = createSyncarrClient({ transport })
 
 await client.connect()
 
@@ -298,8 +298,8 @@ document.getElementById('send').onclick = async () => {
 ```vue
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
-import { createSynnelClient } from '@synnel/client-v2'
-import { WebSocketClientTransport } from '@synnel/client-v2'
+import { createSyncarrClient } from '@syncar/client-v2'
+import { WebSocketClientTransport } from '@syncar/client-v2'
 
 const messages = ref([])
 
@@ -310,7 +310,7 @@ onMounted(async () => {
     url: 'ws://localhost:3000',
   })
 
-  client = createSynnelClient({ transport })
+  client = createSyncarrClient({ transport })
   await client.connect()
 
   await client.subscribe('chat', {
@@ -335,8 +335,8 @@ const sendMessage = async () => {
 ```svelte
 <script>
 import { onMount, onDestroy } from 'svelte'
-import { createSynnelClient } from '@synnel/client-v2'
-import { WebSocketClientTransport } from '@synnel/client-v2'
+import { createSyncarrClient } from '@syncar/client-v2'
+import { WebSocketClientTransport } from '@syncar/client-v2'
 
 let messages = []
 let client
@@ -346,7 +346,7 @@ onMount(async () => {
     url: 'ws://localhost:3000',
   })
 
-  client = createSynnelClient({ transport })
+  client = createSyncarrClient({ transport })
   await client.connect()
 
   await client.subscribe('chat', {
@@ -371,7 +371,7 @@ async function sendMessage() {
 ### Custom Logger
 
 ```typescript
-const client = createSynnelClient({
+const client = createSyncarrClient({
   transport,
   logger: (level, message, ...args) => {
     // Custom logging implementation

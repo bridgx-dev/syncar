@@ -1,6 +1,6 @@
 /**
  * Client Types
- * Type definitions for the @synca/client package
+ * Type definitions for the @syncar/client package
  */
 
 import type {
@@ -10,9 +10,9 @@ import type {
   SubscriberId,
   MessageType,
   SignalType,
-} from '@synca/types'
+} from '@syncar/types'
 
-// Re-export common types from @synca/types for convenience
+// Re-export common types from @syncar/types for convenience
 export type {
   Message,
   DataMessage,
