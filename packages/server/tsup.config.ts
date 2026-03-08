@@ -16,4 +16,9 @@ export default defineConfig({
   bundle: true,
   // Don't split code - keep it as one file
   splitting: false,
+
+  // Minify code
+  minify: true,
+  minifySyntax: true,
+  minifyWhitespace: true,
 })
