@@ -64,6 +64,9 @@ export abstract class BaseChannel<
 
     abstract getMiddlewares(): IMiddleware[]
 
+    handleSubscribe?(client: IClientConnection): Promise<void>
+    handleUnsubscribe?(client: IClientConnection): Promise<void>
+
     publish(data: T, options?: IPublishOptions): void {
         const clients = this.getTargetClients(options)
         if (clients.length > this.chunkSize) {
@@ -225,7 +228,7 @@ export class MulticastChannel<T = unknown>
         return () => this.unsubscribeHandlers.delete(handler)
     }
 
-    async handleSubscribe(client: IClientConnection): Promise<void> {
+    override async handleSubscribe(client: IClientConnection): Promise<void> {
         for (const handler of this.subscribeHandlers) {
             try {
                 await handler(client)
@@ -240,7 +243,7 @@ export class MulticastChannel<T = unknown>
         }
     }
 
-    async handleUnsubscribe(client: IClientConnection): Promise<void> {
+    override async handleUnsubscribe(client: IClientConnection): Promise<void> {
         for (const handler of this.unsubscribeHandlers) {
             try {
                 await handler(client)

@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events'
-import { WebSocketServer as WsServer, type ServerOptions as WsServerOptions } from 'ws'
+import { WebSocketServer as WsServer, type ServerOptions as WsServerOptions, type WebSocket } from 'ws'
 import {
     MessageType,
     SignalType,
@@ -14,7 +14,6 @@ import {
 } from './config'
 
 // Instance types
-type WebSocketInstance = any
 type ServerInstance = WsServer
 
 export interface WebSocketServerTransportConfig extends WsServerOptions {
@@ -72,7 +71,7 @@ export class WebSocketServerTransport extends EventEmitter {
 
         const ServerConstructor = config.ServerConstructor ?? WsServer
         this.wsServer = new ServerConstructor({
-            server: this.config.server as any,
+            server: this.config.server,
             path: this.config.path,
             maxPayload: this.config.maxPayload,
         })
@@ -89,7 +88,7 @@ export class WebSocketServerTransport extends EventEmitter {
     }
 
     private setupEventHandlers(): void {
-        this.wsServer.on('connection', (socket: WebSocketInstance, request: import('node:http').IncomingMessage) => {
+        this.wsServer.on('connection', (socket: WebSocket, request: import('node:http').IncomingMessage) => {
             this.handleConnection(socket, request)
         })
 
@@ -98,7 +97,7 @@ export class WebSocketServerTransport extends EventEmitter {
         })
     }
 
-    private async handleConnection(socket: WebSocketInstance, request: import('node:http').IncomingMessage): Promise<void> {
+    private async handleConnection(socket: WebSocket, request: import('node:http').IncomingMessage): Promise<void> {
         let clientId: ClientId
 
         try {
@@ -119,7 +118,7 @@ export class WebSocketServerTransport extends EventEmitter {
         const connectedAt = Date.now()
 
         const connection: IClientConnection = {
-            socket: socket as any, // Cast to avoid WebSocket version mismatch in types
+            socket,
             id: clientId,
             connectedAt,
             lastPingAt: connectedAt,
@@ -172,7 +171,7 @@ export class WebSocketServerTransport extends EventEmitter {
         this.connections.delete(clientId)
     }
 
-    private setupPingPong(clientId: ClientId, socket: WebSocketInstance): void {
+    private setupPingPong(clientId: ClientId, socket: WebSocket): void {
         socket.on('pong', () => {
             const connection = this.connections.get(clientId)
             if (connection) {
@@ -196,7 +195,7 @@ export class WebSocketServerTransport extends EventEmitter {
         const connections = Array.from(this.connections.values())
 
         for (const connection of connections) {
-            const socket = connection.socket as unknown as WebSocketInstance
+            const socket = connection.socket
             const lastPing = connection.lastPingAt ?? connection.connectedAt
 
             // Check for timeout

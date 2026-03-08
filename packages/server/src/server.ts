@@ -34,8 +34,8 @@ interface ServerState {
  * These are the options stored and used by the SynnelServer class.
  */
 export interface IServerOptions {
-    /** HTTP server instance */
-    server?: import('node:http').Server
+    /** HTTP or HTTPS server instance */
+    server?: import('node:http').Server | import('node:https').Server
     /** Port to listen on (default: 3000) */
     port: number
     /** Host to bind to (default: '0.0.0.0') */

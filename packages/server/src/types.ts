@@ -184,12 +184,12 @@ export type IMiddlewareAction =
     | 'subscribe'
     | 'unsubscribe'
 
-export type Next = () => Promise<any>
+export type Next = () => Promise<void>
 
 /**
  * Middleware context interface
  */
-export interface Context<S = Record<string, any>> {
+export interface Context<S = Record<string, unknown>> {
     readonly req: {
         readonly client?: IClientConnection
         readonly message?: Message
@@ -198,7 +198,7 @@ export interface Context<S = Record<string, any>> {
     }
     error?: Error
     finalized: boolean
-    res?: any
+    res?: unknown
     readonly var: S
     get<K extends keyof S>(key: K): S[K]
     set<K extends keyof S>(key: K, value: S[K]): void
@@ -208,14 +208,14 @@ export interface Context<S = Record<string, any>> {
 /**
  * Middleware function signature
  */
-export type Middleware<S = any> = (
+export type Middleware<S = Record<string, unknown>> = (
     c: Context<S>,
     next: Next,
-) => any | Promise<any>
+) => void | Promise<void> | unknown
 
 // Aliases
-export type IMiddleware<S = any> = Middleware<S>
-export type IMiddlewareContext<S = any> = Context<S>
+export type IMiddleware<S = Record<string, unknown>> = Middleware<S>
+export type IMiddlewareContext<S = Record<string, unknown>> = Context<S>
 
 /**
  * Middleware rejection error interface

@@ -12,7 +12,7 @@ import type {
 /**
  * Context Data Options
  */
-export interface ContextOptions<S = any> {
+export interface ContextOptions<S = Record<string, unknown>> {
     action: IMiddlewareAction
     client?: IClientConnection
     message?: Message
@@ -27,7 +27,7 @@ export interface ContextOptions<S = any> {
  * @param options - Context initialization options
  * @returns A lightweight Context object
  */
-export function createContext<S = Record<string, any>>(
+export function createContext<S = Record<string, unknown>>(
     options: ContextOptions<S>,
 ): Context<S> {
     const { action, client, message, channel, initialState = {} as S } = options
@@ -161,7 +161,7 @@ export class ContextManager {
             }
         })
 
-        return await compose(wrappedMiddlewares)(context, finalHandler as any)
+        return await compose(wrappedMiddlewares)(context, finalHandler as () => Promise<void>)
     }
 
     createConnectionContext(

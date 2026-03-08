@@ -3,7 +3,7 @@ import type {
     ClientId,
     ChannelName,
 } from './types'
-import { BaseChannel, MulticastChannel } from './channel'
+import { BaseChannel } from './channel'
 
 /**
  * Client Registry
@@ -13,7 +13,7 @@ export class ClientRegistry {
     public readonly connections: Map<ClientId, IClientConnection> = new Map()
     private readonly subscriptions: Map<ClientId, Set<ChannelName>> = new Map()
     private readonly channels: Map<ChannelName, Set<ClientId>> = new Map()
-    private readonly channelInstances: Map<ChannelName, MulticastChannel<any>> = new Map()
+    private readonly channelInstances: Map<ChannelName, BaseChannel<unknown>> = new Map()
 
     register(connection: IClientConnection): IClientConnection {
         this.connections.set(connection.id, connection)
@@ -34,7 +34,10 @@ export class ClientRegistry {
 
         for (const channelName of clientChannels) {
             this.channels.get(channelName)?.delete(connection.id);
-            (this.getChannel(channelName) as any)?.handleUnsubscribe(connection)
+            const channel = this.getChannel(channelName)
+            if (channel?.handleUnsubscribe) {
+                channel.handleUnsubscribe(connection)
+            }
         }
 
         this.subscriptions.delete(connection.id)
@@ -58,11 +61,11 @@ export class ClientRegistry {
             this.channels.set(channel.name, new Set())
         }
         // Store the channel instance
-        this.channelInstances.set(channel.name, channel as unknown as MulticastChannel<any>)
+        this.channelInstances.set(channel.name, channel)
     }
 
     getChannel<T = unknown>(name: ChannelName): BaseChannel<T> | undefined {
-        return this.channelInstances.get(name) as unknown as BaseChannel<T> | undefined
+        return this.channelInstances.get(name) as BaseChannel<T> | undefined
     }
 
     removeChannel(name: ChannelName): boolean {

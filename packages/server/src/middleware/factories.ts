@@ -186,6 +186,7 @@ export interface LoggingMiddlewareOptions {
     clientId?: string
     channel?: string
     message?: unknown
+    duration?: number
   }) => string
 
   /**
@@ -248,7 +249,7 @@ export function createLoggingMiddleware(
     }
 
     const logMessage = format
-      ? format(logData as any)
+      ? format(logData)
       : `[${logData.action}] Client: ${logData.clientId ?? 'unknown'}${logData.channel ? ` Channel: ${logData.channel}` : ''} (${duration}ms)`
 
     logger[logLevel](logMessage)

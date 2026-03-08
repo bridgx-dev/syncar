@@ -2,7 +2,7 @@ import type {
   IClientConnection,
   DataMessage,
 } from '../types'
-import { BaseChannel, MulticastChannel } from '../channel'
+import { BaseChannel } from '../channel'
 
 import { MessageError, ChannelError } from '../errors'
 import { isDataMessage } from '../lib'
@@ -50,7 +50,7 @@ export class MessageHandler {
     }
 
     // Build the middleware pipeline
-    const pipeline = this.context.getPipeline(channel as any)
+    const pipeline = this.context.getPipeline(channel)
 
     // Create Context
     const ctx = this.context.createMessageContext(client, message)
@@ -58,8 +58,8 @@ export class MessageHandler {
     // Define Kernel
     const kernel = async () => {
       // Route to channel for processing (triggers onMessage handlers)
-      if (channel) {
-        await (channel as MulticastChannel<T>).receive(
+      if (channel && 'receive' in channel && typeof channel.receive === 'function') {
+        await channel.receive(
           message.data,
           client,
           message,

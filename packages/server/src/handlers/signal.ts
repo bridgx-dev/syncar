@@ -2,7 +2,7 @@ import type {
   IClientConnection,
   SignalMessage,
 } from '../types'
-import { MulticastChannel } from '../channel'
+
 
 import { createSignalMessage, isReservedChannelName } from '../lib'
 import { SignalType } from '../types'
@@ -86,7 +86,7 @@ export class SignalHandler {
       channelInstance = this.registry.getChannel(message.channel)
     }
 
-    const pipeline = this.context.getPipeline(channelInstance as any)
+    const pipeline = this.context.getPipeline(channelInstance)
 
     // 5. Execute Onion (Global + Channel Middleware)
     await this.context.execute(ctx, pipeline, kernel)
@@ -121,11 +121,9 @@ export class SignalHandler {
     // Trigger channel subscribe handlers (if channel exists)
     const channelInstance = this.registry.getChannel(channel)
 
-    if (channelInstance) {
+    if (channelInstance?.handleSubscribe) {
       try {
-        await (channelInstance as MulticastChannel<unknown>).handleSubscribe(
-          client,
-        )
+        await channelInstance.handleSubscribe(client)
       } catch (error) {
         // If handler throws, unsubscribe and rethrow
         this.registry.unsubscribe(client.id, channel)
@@ -166,10 +164,8 @@ export class SignalHandler {
     // Trigger channel unsubscribe handlers (if channel exists)
     const channelInstance = this.registry.getChannel(channel)
 
-    if (channelInstance) {
-      await (channelInstance as MulticastChannel<unknown>).handleUnsubscribe(
-        client,
-      )
+    if (channelInstance?.handleUnsubscribe) {
+      await channelInstance.handleUnsubscribe(client)
     }
 
     // Send acknowledgment
