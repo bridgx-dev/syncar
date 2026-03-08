@@ -4,11 +4,11 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { ContextManager } from '../src/context.js'
+import { ContextManager } from '../src/context'
 import {
   MiddlewareRejectionError,
   MiddlewareExecutionError,
-} from '../src/errors/index.js'
+} from '../src/errors'
 import {
   createAuthMiddleware,
   createLoggingMiddleware,
@@ -16,10 +16,10 @@ import {
   createChannelWhitelistMiddleware,
   clearRateLimitStore,
   getRateLimitState,
-} from '../src/middleware/factories.js'
-import type { IClientConnection } from '../src/types/index.js'
-import type { Message, DataMessage } from '../src/types/index.js'
-import { MessageType } from '../src/types/index.js'
+} from '../src/middleware'
+import type { IClientConnection } from '../src/types'
+import type { Message, DataMessage } from '../src/types'
+import { MessageType } from '../src/types'
 
 // Mock client
 const createMockClient = (id: string): IClientConnection => {

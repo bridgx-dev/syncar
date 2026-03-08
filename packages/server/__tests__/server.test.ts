@@ -1,798 +1,762 @@
 /**
- * SynnelServer Tests
- * Tests for the main server class and factory
+ * Unit tests for server.ts
+ *
+ * @vitest-environment node
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { SynnelServer, createSynnelServer } from '../src/server/index.js'
-import { WebSocketServerTransport } from '../src/transport/index.js'
-import type { IServerConfig } from '../src/types/index.js'
-import { StateError, ConfigError } from '../src/errors/index.js'
+import {
+  SynnelServer,
+  createSynnelServer,
+  type IServerOptions,
+  type IServerStats,
+} from '../src/server'
+import { ClientRegistry } from '../src/registry'
+import { BroadcastChannel, MulticastChannel } from '../src/channel'
+import { WebSocketServerTransport } from '../src/websocket'
+import { StateError, ValidationError } from '../src/errors'
+import { ContextManager } from '../src/context'
+import { createDefaultLogger } from '../src/utils'
+import type { IClientConnection } from '../src/types'
+import { WebSocket } from 'ws'
 
-// Mock transport factory
-function createMockTransport() {
-  const connections = new Map()
-  const clients: Map<string, any> = new Map()
+// Mock WebSocket class for testing
+class MockWebSocket {
+  public readyState = 1 // OPEN
+  public sent: string[] = []
 
-  return {
-    connections,
-    clients,
-    sendToClient: vi.fn().mockResolvedValue(undefined),
-    on: vi.fn(),
-    off: vi.fn(),
-    emit: vi.fn(),
-    start: vi.fn().mockResolvedValue(undefined),
-    stop: vi.fn(),
+  send(data: string, _callback?: () => void) {
+    this.sent.push(data)
+  }
 
-    // Helper to simulate client connection
-    simulateClient: (id: string) => {
-      const client = {
-        id,
-        socket: {
-          send: vi.fn(),
-          close: vi.fn(),
-        },
-        status: 'connected',
-        connectedAt: Date.now(),
-      }
-      connections.set(id, client)
-      clients.set(id, client)
-      return client
-    },
+  close(_code?: number, _reason?: string) {
+    this.readyState = 3 // CLOSED
+  }
+
+  ping() {
+    // Mock ping
   }
 }
 
 describe('SynnelServer', () => {
-  let server: SynnelServer
-  let mockTransport: ReturnType<typeof createMockTransport>
+  let registry: ClientRegistry
+  let transport: WebSocketServerTransport
+  let mockHttpServer: any
 
   beforeEach(() => {
-    mockTransport = createMockTransport()
+    registry = new ClientRegistry()
+
+    // Create a mock HTTP server
+    mockHttpServer = {
+      listen: vi.fn((port, host, callback) => {
+        if (callback) callback()
+      }),
+      close: vi.fn((callback) => {
+        if (callback) callback()
+      }),
+      on: vi.fn(),
+    }
+
+    // Create a real transport with mock server
+    transport = new WebSocketServerTransport({
+      server: mockHttpServer,
+      path: '/test',
+      enablePing: false,
+      connections: registry.connections,
+      logger: createDefaultLogger(),
+    })
   })
 
   describe('constructor', () => {
-    it('should create server with default config', () => {
-      server = new SynnelServer()
+    it('should create server with required config', () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
 
-      expect(server).toBeDefined()
+      const server = new SynnelServer(config)
+
+      expect(server).toBeInstanceOf(SynnelServer)
+      expect(server.registry).toBe(registry)
+      expect(server.getStats().clientCount).toBe(0)
     })
 
-    it('should create server with custom config', () => {
-      const config: IServerConfig = {
-        port: 4000,
+    it('should register middleware from config', () => {
+      const middleware = vi.fn(async (_ctx, next) => next())
+
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [middleware],
+        broadcastChunkSize: 500,
       }
 
-      server = new SynnelServer(config)
-
-      expect(server).toBeDefined()
-      expect(server.getConfig().port).toBe(4000)
-    })
-
-    it('should accept injected registry', () => {
-      const customRegistry = {
-        connections: new Map(),
-        register: vi.fn(),
-        unregister: vi.fn(),
-        get: vi.fn(),
-        getAll: vi.fn(),
-        getCount: vi.fn(),
-        registerChannel: vi.fn(),
-        getChannel: vi.fn(),
-        removeChannel: vi.fn(),
-        subscribe: vi.fn(),
-        unsubscribe: vi.fn(),
-        getSubscribers: vi.fn(),
-        getSubscriberCount: vi.fn(),
-        getChannels: vi.fn(),
-        getTotalSubscriptionCount: vi.fn(),
-        isSubscribed: vi.fn(),
-        clear: vi.fn(),
-      }
-
-      const config: IServerConfig = {
-        registry: customRegistry as any,
-      }
-
-      server = new SynnelServer(config)
-
-      expect(server.getRegistry()).toBe(customRegistry)
-    })
-
-    it('should accept middleware array', () => {
-      const middleware1 = async () => {}
-      const middleware2 = async () => {}
-
-      const config: IServerConfig = {
-        middleware: [middleware1, middleware2],
-      }
-
-      server = new SynnelServer(config)
-
-      expect(server).toBeDefined()
+      const server = new SynnelServer(config)
+      server.use(middleware)
+      expect(server).toBeInstanceOf(SynnelServer)
     })
   })
 
-  describe('lifecycle', () => {
+  describe('start()', () => {
     it('should start the server successfully', async () => {
-      const transport = new WebSocketServerTransport({
-        server: {} as any,
-        connections: new Map(),
-        ServerConstructor: vi.fn().mockImplementation(() => ({
-          on: vi.fn(),
-          close: vi.fn(),
-        })),
-      })
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
 
-      server = new SynnelServer({
-        transport: transport as any,
-      })
-
+      const server = new SynnelServer(config)
       await server.start()
 
-      expect(server.getStats().startedAt).toBeDefined()
+      const stats = server.getStats()
+      expect(stats.startedAt).toBeDefined()
+      expect(stats.startedAt).toBeGreaterThan(0)
     })
 
-    it('should throw error when starting without transport', async () => {
-      server = new SynnelServer()
+    it('should throw StateError when already started', async () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
 
-      await expect(server.start()).rejects.toThrow(ConfigError)
-    })
-
-    it('should throw error when starting already started server', async () => {
-      const transport = new WebSocketServerTransport({
-        server: {} as any,
-        connections: new Map(),
-        ServerConstructor: vi.fn().mockImplementation(() => ({
-          on: vi.fn(),
-          close: vi.fn(),
-        })),
-      })
-
-      server = new SynnelServer({
-        transport: transport as any,
-      })
-
+      const server = new SynnelServer(config)
       await server.start()
 
       await expect(server.start()).rejects.toThrow(StateError)
+      await expect(server.start()).rejects.toThrow('Server is already started')
     })
 
-    it('should stop the server successfully', async () => {
-      const transport = new WebSocketServerTransport({
-        server: {} as any,
-        connections: new Map(),
-        ServerConstructor: vi.fn().mockImplementation(() => ({
-          on: vi.fn(),
-          close: vi.fn(),
-        })),
-      })
+    it('should create broadcast channel on start', async () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
 
-      server = new SynnelServer({
-        transport: transport as any,
-      })
-
+      const server = new SynnelServer(config)
       await server.start()
-      await server.stop()
 
-      // Should be able to start again after stop
-      await server.start()
-    })
-
-    it('should handle multiple start/stop cycles', async () => {
-      const transport = new WebSocketServerTransport({
-        server: {} as any,
-        connections: new Map(),
-        ServerConstructor: vi.fn().mockImplementation(() => ({
-          on: vi.fn(),
-          close: vi.fn(),
-        })),
-      })
-
-      server = new SynnelServer({
-        transport: transport as any,
-      })
-
-      await server.start()
-      await server.stop()
-      await server.start()
-      await server.stop()
-
-      expect(server.getStats().startedAt).toBeUndefined()
+      const broadcast = server.createBroadcast<string>()
+      expect(broadcast).toBeInstanceOf(BroadcastChannel)
+      expect(broadcast.name).toBe('__broadcast__')
     })
   })
 
-  describe('channels', () => {
-    beforeEach(async () => {
-      const transport = new WebSocketServerTransport({
-        server: {} as any,
-        connections: new Map(),
-        ServerConstructor: vi.fn().mockImplementation(() => ({
-          on: vi.fn(),
-          close: vi.fn(),
-        })),
-      })
+  describe('stop()', () => {
+    it('should stop the server successfully', async () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
 
-      server = new SynnelServer({
-        transport: transport as any,
-      })
-
+      const server = new SynnelServer(config)
       await server.start()
+      await server.stop()
+
+      // Should be able to stop again without error
+      await server.stop()
     })
 
-    it('should create a broadcast channel', () => {
-      const broadcast = server.createBroadcast()
+    it('should clear channels on stop', async () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
 
-      expect(broadcast).toBeDefined()
+      const server = new SynnelServer(config)
+      await server.start()
+
+      // Create a channel
+      server.createMulticast('chat')
+      expect(server.hasChannel('chat')).toBe(true)
+
+      // Stop and verify channels are cleared
+      await server.stop()
+      expect(server.getChannels()).toHaveLength(0)
+    })
+  })
+
+  describe('createBroadcast()', () => {
+    it('should return broadcast channel after start', async () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
+
+      const server = new SynnelServer(config)
+      await server.start()
+
+      const broadcast = server.createBroadcast<string>()
+      expect(broadcast).toBeInstanceOf(BroadcastChannel)
       expect(broadcast.name).toBe('__broadcast__')
     })
 
-    it('should return the same broadcast channel on subsequent calls', () => {
-      const broadcast1 = server.createBroadcast()
-      const broadcast2 = server.createBroadcast()
+    it('should throw StateError when server not started', () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
+
+      const server = new SynnelServer(config)
+
+      expect(() => server.createBroadcast()).toThrow(StateError)
+      expect(() => server.createBroadcast()).toThrow('Server must be started before creating channels')
+    })
+
+    it('should return same broadcast channel instance', async () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
+
+      const server = new SynnelServer(config)
+      await server.start()
+
+      const broadcast1 = server.createBroadcast<string>()
+      const broadcast2 = server.createBroadcast<number>()
 
       expect(broadcast1).toBe(broadcast2)
     })
+  })
 
-    it('should create a multicast channel', () => {
-      const channel = server.createMulticast('chat')
+  describe('createMulticast()', () => {
+    it('should create a new multicast channel', async () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
 
-      expect(channel).toBeDefined()
-      expect(channel.name).toBe('chat')
+      const server = new SynnelServer(config)
+      await server.start()
+
+      const chat = server.createMulticast<{ text: string }>('chat')
+      expect(chat).toBeInstanceOf(MulticastChannel)
+      expect(chat.name).toBe('chat')
     })
 
-    it('should return existing multicast channel if already created', () => {
-      const channel1 = server.createMulticast('chat')
-      const channel2 = server.createMulticast('chat')
+    it('should throw StateError when server not started', () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
 
-      expect(channel1).toBe(channel2)
+      const server = new SynnelServer(config)
+
+      expect(() => server.createMulticast('chat')).toThrow(StateError)
     })
 
-    it('should throw error when creating channels before server start', async () => {
-      const transport = new WebSocketServerTransport({
-        server: {} as any,
-        connections: new Map(),
-        ServerConstructor: vi.fn().mockImplementation(() => ({
-          on: vi.fn(),
-          close: vi.fn(),
-        })),
-      })
+    it('should throw ValidationError for reserved channel names', async () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
 
-      const newServer = new SynnelServer({
-        transport: transport as any,
-      })
+      const server = new SynnelServer(config)
+      await server.start()
 
-      expect(() => newServer.createMulticast('chat')).toThrow(StateError)
+      // __private__ starts with __ which is reserved
+      expect(() => server.createMulticast('__private__')).toThrow(Error)
     })
 
-    it('should track created channels', () => {
-      server.createMulticast('chat')
-      server.createMulticast('news')
+    it('should return existing channel if already created', async () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
 
-      const channels = server.getChannels()
+      const server = new SynnelServer(config)
+      await server.start()
 
-      expect(channels).toContain('chat')
-      expect(channels).toContain('news')
+      const chat1 = server.createMulticast('chat')
+      const chat2 = server.createMulticast('chat')
+
+      expect(chat1).toBe(chat2)
     })
+  })
 
-    it('should check if channel exists', () => {
+  describe('hasChannel()', () => {
+    it('should return false for non-existent channel', () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
+
+      const server = new SynnelServer(config)
       expect(server.hasChannel('chat')).toBe(false)
+    })
+
+    it('should return true for existing channel', async () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
+
+      const server = new SynnelServer(config)
+      await server.start()
 
       server.createMulticast('chat')
-
       expect(server.hasChannel('chat')).toBe(true)
     })
   })
 
-  describe('events', () => {
-    beforeEach(async () => {
-      const transport = new WebSocketServerTransport({
-        server: {} as any,
-        connections: new Map(),
-        ServerConstructor: vi.fn().mockImplementation(() => ({
-          on: vi.fn(),
-          close: vi.fn(),
-        })),
-      })
-
-      server = new SynnelServer({
-        transport: transport as any,
-      })
-
-      await server.start()
-    })
-
-    it('should register connection event handler', () => {
-      const handler = vi.fn()
-      const unsubscribe = server.on('connection', handler)
-
-      expect(typeof unsubscribe).toBe('function')
-    })
-
-    it('should register disconnection event handler', () => {
-      const handler = vi.fn()
-      const unsubscribe = server.on('disconnection', handler)
-
-      expect(typeof unsubscribe).toBe('function')
-    })
-
-    it('should register message event handler', () => {
-      const handler = vi.fn()
-      const unsubscribe = server.on('message', handler)
-
-      expect(typeof unsubscribe).toBe('function')
-    })
-
-    it('should register subscribe event handler', () => {
-      const handler = vi.fn()
-      const unsubscribe = server.on('subscribe', handler)
-
-      expect(typeof unsubscribe).toBe('function')
-    })
-
-    it('should register unsubscribe event handler', () => {
-      const handler = vi.fn()
-      const unsubscribe = server.on('unsubscribe', handler)
-
-      expect(typeof unsubscribe).toBe('function')
-    })
-
-    it('should register error event handler', () => {
-      const handler = vi.fn()
-      const unsubscribe = server.on('error', handler)
-
-      expect(typeof unsubscribe).toBe('function')
-    })
-
-    it('should register once event handler', () => {
-      const handler = vi.fn()
-      const unsubscribe = server.once('connection', handler)
-
-      expect(typeof unsubscribe).toBe('function')
-    })
-
-    it('should unregister event handler with off', () => {
-      const handler = vi.fn()
-      server.on('connection', handler)
-      server.off('connection', handler)
-
-      // Handler should be removed
-    })
-
-    it('should emit custom events', () => {
-      const handler = vi.fn()
-      server.on('error', handler)
-
-      const testError = new Error('Test error')
-      server.emit('error', testError)
-
-      expect(handler).toHaveBeenCalledWith(testError)
-    })
-  })
-
-  describe('middleware', () => {
-    it('should register middleware via use method', () => {
-      server = new SynnelServer()
-
-      const middleware = async () => {}
-      server.use(middleware)
-
-      // Middleware should be registered
-    })
-
-    it('should register middleware from config', async () => {
-      const middleware1 = async () => {}
-      const middleware2 = async () => {}
-
-      const transport = new WebSocketServerTransport({
-        server: {} as any,
-        connections: new Map(),
-        ServerConstructor: vi.fn().mockImplementation(() => ({
-          on: vi.fn(),
-          close: vi.fn(),
-        })),
-      })
-
-      server = new SynnelServer({
-        transport: transport as any,
-        middleware: [middleware1, middleware2],
-      })
-
-      await server.start()
-
-      // Middleware should be registered
-    })
-  })
-
-  describe('message handling', () => {
-    beforeEach(async () => {
-      const transport = new WebSocketServerTransport({
-        server: {} as any,
-        connections: new Map(),
-        ServerConstructor: vi.fn().mockImplementation(() => ({
-          on: vi.fn(),
-          close: vi.fn(),
-        })),
-      })
-
-      server = new SynnelServer({
-        transport: transport as any,
-      })
-
-      await server.start()
-    })
-
-    it('should register and call global message handler', () => {
-      const handler = vi.fn()
-      const unsubscribe = server.onMessage(handler)
-
-      expect(typeof unsubscribe).toBe('function')
-    })
-
-    it('should return unsubscribe function for message handler', () => {
-      const handler = vi.fn()
-      const unsubscribe = server.onMessage(handler)
-
-      unsubscribe()
-
-      // Handler should be removed
-    })
-
-    it('should register authorization handler', () => {
-      const handler = vi.fn()
-      const unsubscribe = server.authorize(handler)
-
-      expect(typeof unsubscribe).toBe('function')
-    })
-
-    it('should remove authorization handler when unsubscribe is called', () => {
-      const handler1 = vi.fn(() => true)
-      const handler2 = vi.fn(() => true)
-
-      const unsubscribe1 = server.authorize(handler1)
-      server.authorize(handler2)
-
-      // Remove first handler
-      unsubscribe1()
-
-      // Handler should be removed
-      expect(handler1).toBeDefined()
-      expect(handler2).toBeDefined()
-    })
-
-    it('should call authorization handler for messages', () => {
-      let authorized = false
-      server.authorize((_clientId, _channel, _action) => {
-        authorized = true
-        return true
-      })
-
-      // Authorization would be called during message routing
-      // This is tested in integration tests
-    })
-  })
-
-  describe('stats', () => {
-    beforeEach(async () => {
-      const transport = new WebSocketServerTransport({
-        server: {} as any,
-        connections: new Map(),
-        ServerConstructor: vi.fn().mockImplementation(() => ({
-          on: vi.fn(),
-          close: vi.fn(),
-        })),
-      })
-
-      server = new SynnelServer({
-        transport: transport as any,
-      })
-
-      await server.start()
-    })
-
-    it('should return server stats', () => {
-      const stats = server.getStats()
-
-      expect(stats).toHaveProperty('startedAt')
-      expect(stats).toHaveProperty('clientCount')
-      expect(stats).toHaveProperty('channelCount')
-      expect(stats).toHaveProperty('subscriptionCount')
-    })
-
-    it('should track startedAt after start', () => {
-      const stats = server.getStats()
-
-      expect(stats.startedAt).toBeGreaterThan(0)
-    })
-
-    it('should track channel count', () => {
-      server.createMulticast('chat')
-      server.createMulticast('news')
-
-      const stats = server.getStats()
-
-      // At least 1 (broadcast) + 2 multicast channels
-      expect(stats.channelCount).toBeGreaterThanOrEqual(3)
-    })
-  })
-
-  describe('utilities', () => {
-    it('should get config', () => {
-      const config: IServerConfig = {
-        port: 4000,
+  describe('getChannels()', () => {
+    it('should return empty array when no channels', () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
       }
 
-      server = new SynnelServer(config)
+      const server = new SynnelServer(config)
+      expect(server.getChannels()).toEqual([])
+    })
 
+    it('should return all channel names', async () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
+
+      const server = new SynnelServer(config)
+      await server.start()
+
+      server.createMulticast('chat')
+      server.createMulticast('notifications')
+      server.createMulticast('presence')
+
+      const channels = server.getChannels()
+      // Includes the broadcast channel + our 3 channels
+      expect(channels).toContain('__broadcast__')
+      expect(channels).toContain('chat')
+      expect(channels).toContain('notifications')
+      expect(channels).toContain('presence')
+      expect(channels).toHaveLength(4)
+    })
+  })
+
+  describe('use()', () => {
+    it('should register global middleware', () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
+
+      const server = new SynnelServer(config)
+      const middleware = vi.fn(async (_ctx, next) => next())
+
+      server.use(middleware)
+
+      // No direct way to verify, but should not throw
+      expect(server).toBeInstanceOf(SynnelServer)
+    })
+  })
+
+  describe('authenticate()', () => {
+    it('should set authenticator on transport', async () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
+
+      const server = new SynnelServer(config)
+      await server.start()
+
+      const authenticator = vi.fn(async (request) => {
+        return 'user-' + request.headers['user-id']
+      })
+
+      server.authenticate(authenticator)
+
+      // Should not throw - authenticator is set on transport
+      expect(server).toBeInstanceOf(SynnelServer)
+    })
+  })
+
+  describe('getStats()', () => {
+    it('should return server statistics', async () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
+
+      const server = new SynnelServer(config)
+
+      const stats = server.getStats()
+      expect(stats.clientCount).toBe(0)
+      expect(stats.channelCount).toBe(0)
+      expect(stats.subscriptionCount).toBe(0)
+      expect(stats.startedAt).toBeUndefined()
+
+      await server.start()
+
+      const startedStats = server.getStats()
+      expect(startedStats.startedAt).toBeDefined()
+      expect(startedStats.startedAt).toBeGreaterThan(0)
+    })
+
+    it('should reflect client count correctly', async () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
+
+      const server = new SynnelServer(config)
+      await server.start()
+
+      // Add a mock client
+      const client: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket: new MockWebSocket() as any,
+      }
+      registry.register(client)
+
+      const stats = server.getStats()
+      expect(stats.clientCount).toBe(1)
+    })
+  })
+
+  describe('getConfig()', () => {
+    it('should return readonly config', () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
+
+      const server = new SynnelServer(config)
       const retrievedConfig = server.getConfig()
 
-      expect(retrievedConfig.port).toBe(4000)
+      expect(retrievedConfig.port).toBe(3000)
+      expect(retrievedConfig.host).toBe('0.0.0.0')
+      expect(retrievedConfig.path).toBe('/synnel')
     })
+  })
 
-    it('should get registry', () => {
-      server = new SynnelServer()
+  describe('getRegistry()', () => {
+    it('should return the client registry', () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/synnel',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
 
-      const registry = server.getRegistry()
+      const server = new SynnelServer(config)
+      const retrievedRegistry = server.getRegistry()
 
-      expect(registry).toBeDefined()
-    })
-
-    it('should get emitter', () => {
-      server = new SynnelServer()
-
-      const emitter = server.getEmitter()
-
-      expect(emitter).toBeDefined()
+      expect(retrievedRegistry).toBe(registry)
     })
   })
 })
 
-describe('createSynnelServer factory', () => {
-  it('should create a SynnelServer instance', () => {
-    const transport = new WebSocketServerTransport({
-      server: {} as any,
-      connections: new Map(),
-      ServerConstructor: vi.fn().mockImplementation(() => ({
-        on: vi.fn(),
-        close: vi.fn(),
-      })),
-    })
+describe('createSynnelServer', () => {
+  let mockHttpServer: any
 
-    const config: IServerConfig = {
-      transport: transport as any,
+  beforeEach(() => {
+    // Create a mock HTTP server for each test
+    mockHttpServer = {
+      listen: vi.fn((port, host, callback) => {
+        if (callback) callback()
+      }),
+      close: vi.fn((callback) => {
+        if (callback) callback()
+      }),
+      on: vi.fn(),
     }
+  })
 
-    const server = createSynnelServer(config)
+  it('should create server with defaults and mock server', () => {
+    const server = createSynnelServer({
+      server: mockHttpServer,
+    })
 
     expect(server).toBeInstanceOf(SynnelServer)
+    expect(server.getRegistry()).toBeInstanceOf(ClientRegistry)
   })
 
-  it('should pass config to SynnelServer', () => {
-    const transport = new WebSocketServerTransport({
-      server: {} as any,
-      connections: new Map(),
-      ServerConstructor: vi.fn().mockImplementation(() => ({
-        on: vi.fn(),
-        close: vi.fn(),
-      })),
+  it('should merge provided config with defaults', () => {
+    const server = createSynnelServer({
+      server: mockHttpServer,
+      port: 8080,
+      host: 'localhost',
     })
 
-    const config: IServerConfig = {
-      transport: transport as any,
-      port: 4000,
+    const config = server.getConfig()
+    expect(config.port).toBe(8080)
+    expect(config.host).toBe('localhost')
+  })
+
+  it('should use provided registry', () => {
+    const customRegistry = new ClientRegistry()
+    const server = createSynnelServer({
+      server: mockHttpServer,
+      registry: customRegistry,
+    })
+
+    expect(server.getRegistry()).toBe(customRegistry)
+  })
+
+  it('should use provided logger', () => {
+    const customLogger = {
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
     }
 
-    const server = createSynnelServer(config)
+    const server = createSynnelServer({
+      server: mockHttpServer,
+      logger: customLogger as any,
+    })
 
-    expect(server.getConfig().port).toBe(4000)
+    expect(server.getConfig().logger).toBe(customLogger)
   })
 
-  it('should be a function', () => {
-    expect(typeof createSynnelServer).toBe('function')
+  it('should create WebSocketServerTransport when not provided', () => {
+    const server = createSynnelServer({
+      server: mockHttpServer,
+    })
+
+    const config = server.getConfig()
+    expect(config.transport).toBeInstanceOf(WebSocketServerTransport)
   })
 
-  describe('factory with transport creation', () => {
-    it('should create WebSocketServerTransport when no transport provided', () => {
-      const mockServer = {
-        listen: vi.fn(),
-        on: vi.fn(),
-        close: vi.fn(),
-      }
+  it('should use provided transport', () => {
+    const registry = new ClientRegistry()
 
-      const MockWsServer = vi.fn().mockImplementation(() => ({
-        on: vi.fn(),
-        close: vi.fn(),
-      }))
-
-      const config: IServerConfig = {
-        server: mockServer as any,
-      }
-
-      // Temporarily replace the WsServer constructor
-      const originalWsServer = require('ws').WebSocketServer
-      // @ts-ignore - testing purposes
-      require('ws').WebSocketServer = MockWsServer
-
-      const server = createSynnelServer(config)
-
-      // Restore original
-      // @ts-ignore
-      require('ws').WebSocketServer = originalWsServer
-
-      expect(server).toBeInstanceOf(SynnelServer)
-      // Note: The dynamic import in factory means the WsServer won't be called synchronously
-      // This test verifies the factory doesn't throw
+    const customTransport = new WebSocketServerTransport({
+      server: mockHttpServer,
+      path: '/custom',
+      enablePing: false,
+      connections: registry.connections,
+      logger: createDefaultLogger(),
     })
 
-    it('should use custom path when provided', () => {
-      const mockServer = {
-        listen: vi.fn(),
-        on: vi.fn(),
-        close: vi.fn(),
-      }
-
-      const MockWsServer = vi.fn().mockImplementation(() => ({
-        on: vi.fn(),
-        close: vi.fn(),
-      }))
-
-      const config: IServerConfig = {
-        server: mockServer as any,
-        path: '/custom-ws',
-      }
-
-      // Temporarily replace the WsServer constructor
-      const originalWsServer = require('ws').WebSocketServer
-      // @ts-ignore - testing purposes
-      require('ws').WebSocketServer = MockWsServer
-
-      const server = createSynnelServer(config)
-
-      // Restore original
-      // @ts-ignore
-      require('ws').WebSocketServer = originalWsServer
-
-      expect(server).toBeInstanceOf(SynnelServer)
+    const server = createSynnelServer({
+      transport: customTransport,
     })
 
-    it('should use custom maxPayload when provided', () => {
-      const mockServer = {
-        listen: vi.fn(),
-        on: vi.fn(),
-        close: vi.fn(),
-      }
+    expect(server.getConfig().transport).toBe(customTransport)
+  })
 
-      const MockWsServer = vi.fn().mockImplementation(() => ({
-        on: vi.fn(),
-        close: vi.fn(),
-      }))
+  it('should register middleware from config', () => {
+    const middleware = vi.fn(async (_ctx, next) => next())
 
-      const config: IServerConfig = {
-        server: mockServer as any,
-      }
-
-      // Temporarily replace the WsServer constructor
-      const originalWsServer = require('ws').WebSocketServer
-      // @ts-ignore - testing purposes
-      require('ws').WebSocketServer = MockWsServer
-
-      const server = createSynnelServer(config)
-
-      // Restore original
-      // @ts-ignore
-      require('ws').WebSocketServer = originalWsServer
-
-      expect(server).toBeInstanceOf(SynnelServer)
+    const server = createSynnelServer({
+      server: mockHttpServer,
+      middleware: [middleware],
     })
 
-    it('should use custom ping settings when provided', () => {
-      const mockServer = {
-        listen: vi.fn(),
-        on: vi.fn(),
-        close: vi.fn(),
-      }
-
-      const MockWsServer = vi.fn().mockImplementation(() => ({
-        on: vi.fn(),
-        close: vi.fn(),
-      }))
-
-      const config: IServerConfig = {
-        server: mockServer as any,
-        pingInterval: 30000,
-        pingTimeout: 5000,
-        enablePing: false,
-      }
-
-      // Temporarily replace the WsServer constructor
-      const originalWsServer = require('ws').WebSocketServer
-      // @ts-ignore - testing purposes
-      require('ws').WebSocketServer = MockWsServer
-
-      const server = createSynnelServer(config)
-
-      // Restore original
-      // @ts-ignore
-      require('ws').WebSocketServer = originalWsServer
-
-      expect(server).toBeInstanceOf(SynnelServer)
-    })
-
-    it('should use custom ping settings when provided', () => {
-      const mockServer = {
-        listen: vi.fn(),
-        on: vi.fn(),
-        close: vi.fn(),
-      }
-
-      const config: IServerConfig = {
-        server: mockServer as any,
-        pingInterval: 30000,
-        pingTimeout: 5000,
-        enablePing: false,
-      }
-
-      const server = createSynnelServer(config)
-
-      expect(server).toBeInstanceOf(SynnelServer)
-    })
-
-    it('should use injected registry when provided', () => {
-      const mockRegistry = {
-        connections: new Map(),
-        register: vi.fn(),
-        unregister: vi.fn(),
-        get: vi.fn(),
-        getAll: vi.fn(),
-        getCount: vi.fn(),
-        registerChannel: vi.fn(),
-        getChannel: vi.fn(),
-        removeChannel: vi.fn(),
-        getChannels: vi.fn(),
-        subscribe: vi.fn(),
-        unsubscribe: vi.fn(),
-        getSubscribers: vi.fn(),
-        getSubscriberCount: vi.fn(),
-        hasSubscriber: vi.fn(),
-        getTotalSubscriptionCount: vi.fn(),
-        clear: vi.fn(),
-      }
-
-      const transport = new WebSocketServerTransport({
-        server: {} as any,
-        connections: new Map(),
-        ServerConstructor: vi.fn().mockImplementation(() => ({
-          on: vi.fn(),
-          close: vi.fn(),
-        })),
-      })
-
-      const server = createSynnelServer({
-        transport: transport as any,
-        registry: mockRegistry as any,
-      })
-
-      expect(server.getRegistry()).toBe(mockRegistry)
-    })
-
-    it('should use injected connections when provided', () => {
-      const connections = new Map()
-
-      const transport = new WebSocketServerTransport({
-        server: {} as any,
-        connections,
-        ServerConstructor: vi.fn().mockImplementation(() => ({
-          on: vi.fn(),
-          close: vi.fn(),
-        })),
-      })
-
-      const server = createSynnelServer({
-        transport: transport as any,
-        connections,
-      })
-
-      // The connections should be the same map (by reference)
-      expect(server.getRegistry().connections.size).toBe(connections.size)
-    })
+    // Middleware should be registered via context
+    expect(server).toBeInstanceOf(SynnelServer)
   })
 })

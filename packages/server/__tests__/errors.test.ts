@@ -1,6 +1,7 @@
 /**
- * Errors Tests
- * Tests for custom error classes
+ * Unit tests for errors.ts
+ *
+ * @vitest-environment node
  */
 
 import { describe, it, expect } from 'vitest'
@@ -15,411 +16,380 @@ import {
   StateError,
   MiddlewareRejectionError,
   MiddlewareExecutionError,
-} from '../src/errors/index.js'
+} from '../src/errors'
 
-describe('Errors', () => {
-  describe('SynnelError', () => {
-    it('should create a base SynnelError', () => {
-      const error = new SynnelError('Test error', 'TEST_CODE')
+describe('SynnelError', () => {
+  describe('constructor', () => {
+    it('should create error with message and default code', () => {
+      const error = new SynnelError('Something went wrong')
 
       expect(error).toBeInstanceOf(Error)
-      expect(error.message).toBe('Test error')
-      expect(error.code).toBe('TEST_CODE')
+      expect(error.message).toBe('Something went wrong')
+      expect(error.code).toBe('SYNNEL_ERROR')
       expect(error.name).toBe('SynnelError')
     })
 
-    it('should have undefined context by default', () => {
-      const error = new SynnelError('Test', 'TEST')
+    it('should create error with custom code', () => {
+      const error = new SynnelError('Failed', 'CUSTOM_ERROR')
 
-      expect(error.context).toBeUndefined()
+      expect(error.code).toBe('CUSTOM_ERROR')
     })
 
     it('should accept context object', () => {
-      const context = { key: 'value', number: 42 }
-      const error = new SynnelError('Test', 'TEST', context)
+      const context = { userId: '123', requestId: 'abc' }
+      const error = new SynnelError('Failed', 'FAILED', context)
 
       expect(error.context).toEqual(context)
     })
 
-    it('should convert to JSON correctly', () => {
-      const error = new SynnelError('Test error', 'TEST_CODE', { key: 'value' })
+    it('should have proper stack trace', () => {
+      const error = new SynnelError('Test error')
+
+      expect(error.stack).toBeDefined()
+      expect(error.stack).toContain('SynnelError')
+    })
+  })
+
+  describe('toJSON()', () => {
+    it('should serialize error to JSON', () => {
+      const error = new SynnelError('Test error', 'TEST', { key: 'value' })
       const json = error.toJSON()
 
-      expect(json.name).toBe('SynnelError')
-      expect(json.message).toBe('Test error')
-      expect(json.code).toBe('TEST_CODE')
-      expect(json.context).toEqual({ key: 'value' })
-      expect(json.stack).toBeDefined()
+      expect(json).toEqual({
+        name: 'SynnelError',
+        message: 'Test error',
+        code: 'TEST',
+        context: { key: 'value' },
+        stack: error.stack,
+      })
     })
 
-    it('should convert to string correctly', () => {
-      const error = new SynnelError('Test error', 'TEST_CODE')
-      const str = error.toString()
+    it('should handle error without context', () => {
+      const error = new SynnelError('Test error')
+      const json = error.toJSON()
 
-      expect(str).toContain('Test error')
-      expect(str).toContain('TEST_CODE')
-    })
-  })
-
-  describe('ConfigError', () => {
-    it('should create ConfigError extending SynnelError', () => {
-      const error = new ConfigError('Invalid config')
-
-      expect(error).toBeInstanceOf(SynnelError)
-      expect(error).toBeInstanceOf(ConfigError)
-      expect(error.name).toBe('ConfigError')
-    })
-
-    it('should have default code CONFIG_ERROR', () => {
-      const error = new ConfigError('Test')
-      expect(error.code).toBe('CONFIG_ERROR')
+      expect(json).toEqual({
+        name: 'SynnelError',
+        message: 'Test error',
+        code: 'SYNNEL_ERROR',
+        stack: error.stack,
+      })
     })
   })
 
-  describe('TransportError', () => {
-    it('should create TransportError extending SynnelError', () => {
-      const error = new TransportError('Transport failed')
+  describe('toString()', () => {
+    it('should format error as string', () => {
+      const error = new SynnelError('Test error', 'TEST')
 
-      expect(error).toBeInstanceOf(SynnelError)
-      expect(error).toBeInstanceOf(TransportError)
-      expect(error.name).toBe('TransportError')
-    })
-
-    it('should have default code TRANSPORT_ERROR', () => {
-      const error = new TransportError('Test')
-      expect(error.code).toBe('TRANSPORT_ERROR')
+      expect(error.toString()).toBe('[SynnelError:TEST] Test error')
     })
   })
+})
 
-  describe('ChannelError', () => {
-    it('should create ChannelError extending SynnelError', () => {
-      const error = new ChannelError('Channel not found')
+describe('ConfigError', () => {
+  it('should create error with correct code and name', () => {
+    const error = new ConfigError('Invalid port')
 
-      expect(error).toBeInstanceOf(SynnelError)
-      expect(error).toBeInstanceOf(ChannelError)
-      expect(error.name).toBe('ChannelError')
-    })
-
-    it('should have default code CHANNEL_ERROR', () => {
-      const error = new ChannelError('Test')
-      expect(error.code).toBe('CHANNEL_ERROR')
-    })
+    expect(error).toBeInstanceOf(SynnelError)
+    expect(error.name).toBe('ConfigError')
+    expect(error.code).toBe('CONFIG_ERROR')
+    expect(error.message).toBe('Invalid port')
   })
 
-  describe('ClientError', () => {
-    it('should create ClientError extending SynnelError', () => {
-      const error = new ClientError('Client not found')
+  it('should accept context', () => {
+    const error = new ConfigError('Invalid port', { port: 'abc' })
 
-      expect(error).toBeInstanceOf(SynnelError)
-      expect(error).toBeInstanceOf(ClientError)
-      expect(error.name).toBe('ClientError')
-    })
-
-    it('should have default code CLIENT_ERROR', () => {
-      const error = new ClientError('Test')
-      expect(error.code).toBe('CLIENT_ERROR')
-    })
+    expect(error.context).toEqual({ port: 'abc' })
   })
 
-  describe('MessageError', () => {
-    it('should create MessageError extending SynnelError', () => {
-      const error = new MessageError('Invalid message')
+  it('should serialize correctly', () => {
+    const error = new ConfigError('Invalid config')
+    const json = error.toJSON()
 
-      expect(error).toBeInstanceOf(SynnelError)
-      expect(error).toBeInstanceOf(MessageError)
-      expect(error.name).toBe('MessageError')
-    })
+    expect(json.name).toBe('ConfigError')
+    expect(json.code).toBe('CONFIG_ERROR')
+  })
+})
 
-    it('should have default code MESSAGE_ERROR', () => {
-      const error = new MessageError('Test')
-      expect(error.code).toBe('MESSAGE_ERROR')
-    })
+describe('TransportError', () => {
+  it('should create error with correct code and name', () => {
+    const error = new TransportError('WebSocket error')
+
+    expect(error).toBeInstanceOf(SynnelError)
+    expect(error.name).toBe('TransportError')
+    expect(error.code).toBe('TRANSPORT_ERROR')
   })
 
-  describe('ValidationError', () => {
-    it('should create ValidationError extending SynnelError', () => {
-      const error = new ValidationError('Validation failed')
+  it('should accept context', () => {
+    const error = new TransportError('Connection failed', { url: 'ws://localhost' })
 
-      expect(error).toBeInstanceOf(SynnelError)
-      expect(error).toBeInstanceOf(ValidationError)
-      expect(error.name).toBe('ValidationError')
-    })
-
-    it('should have default code VALIDATION_ERROR', () => {
-      const error = new ValidationError('Test')
-      expect(error.code).toBe('VALIDATION_ERROR')
-    })
+    expect(error.context).toEqual({ url: 'ws://localhost' })
   })
+})
 
-  describe('StateError', () => {
-    it('should create StateError extending SynnelError', () => {
-      const error = new StateError('Invalid state')
+describe('ChannelError', () => {
+  it('should create error with correct code and name', () => {
+    const error = new ChannelError('Channel not found')
 
-      expect(error).toBeInstanceOf(SynnelError)
-      expect(error).toBeInstanceOf(StateError)
-      expect(error.name).toBe('StateError')
-    })
-
-    it('should have default code STATE_ERROR', () => {
-      const error = new StateError('Test')
-      expect(error.code).toBe('STATE_ERROR')
-    })
+    expect(error).toBeInstanceOf(SynnelError)
+    expect(error.name).toBe('ChannelError')
+    expect(error.code).toBe('CHANNEL_ERROR')
   })
+})
 
-  describe('MiddlewareRejectionError', () => {
-    it('should create MiddlewareRejectionError with reason and action', () => {
-      const error = new MiddlewareRejectionError('Not allowed', 'connect')
+describe('ClientError', () => {
+  it('should create error with correct code and name', () => {
+    const error = new ClientError('Client not found')
 
-      expect(error.reason).toBe('Not allowed')
-      expect(error.action).toBe('connect')
-    })
+    expect(error).toBeInstanceOf(SynnelError)
+    expect(error.name).toBe('ClientError')
+    expect(error.code).toBe('CLIENT_ERROR')
+  })
+})
 
-    it('should have name MiddlewareRejectionError', () => {
-      const error = new MiddlewareRejectionError('Not allowed', 'connect')
-      expect(error.name).toBe('MiddlewareRejectionError')
-    })
+describe('MessageError', () => {
+  it('should create error with correct code and name', () => {
+    const error = new MessageError('Invalid message')
 
-    it('should create error message with reason and action', () => {
-      const error = new MiddlewareRejectionError('Not allowed', 'connect')
-      expect(error.message).toContain('connect')
-      expect(error.message).toContain('Not allowed')
-    })
+    expect(error).toBeInstanceOf(SynnelError)
+    expect(error.name).toBe('MessageError')
+    expect(error.code).toBe('MESSAGE_ERROR')
+  })
+})
 
-    it('should be instanceof Error', () => {
-      const error = new MiddlewareRejectionError('Not allowed', 'connect')
+describe('ValidationError', () => {
+  it('should create error with correct code and name', () => {
+    const error = new ValidationError('Invalid input')
+
+    expect(error).toBeInstanceOf(SynnelError)
+    expect(error.name).toBe('ValidationError')
+    expect(error.code).toBe('VALIDATION_ERROR')
+  })
+})
+
+describe('StateError', () => {
+  it('should create error with correct code and name', () => {
+    const error = new StateError('Invalid state')
+
+    expect(error).toBeInstanceOf(SynnelError)
+    expect(error.name).toBe('StateError')
+    expect(error.code).toBe('STATE_ERROR')
+  })
+})
+
+describe('MiddlewareRejectionError', () => {
+  describe('constructor', () => {
+    it('should create error with reason and action', () => {
+      const error = new MiddlewareRejectionError('Not authorized', 'subscribe')
+
       expect(error).toBeInstanceOf(Error)
+      expect(error.name).toBe('MiddlewareRejectionError')
+      expect(error.reason).toBe('Not authorized')
+      expect(error.action).toBe('subscribe')
+      expect(error.message).toBe("Action 'subscribe' rejected: Not authorized")
     })
 
-    it('should handle action passed as wider string type', () => {
-      // When action is passed as a wider string type (not IMiddlewareAction),
-      // it should still work and trigger the string type check branch
-      const customAction: string = 'custom-action'
-      const error = new MiddlewareRejectionError('Not allowed', customAction)
+    it('should accept string action', () => {
+      const error = new MiddlewareRejectionError('Failed', 'custom-action')
 
       expect(error.action).toBe('custom-action')
     })
 
-    it('should store action as-is when already a string', () => {
-      // This tests the branch where typeof action === 'string' is true
-      // and the action is used directly
-      const error = new MiddlewareRejectionError(
-        'Test reason',
-        'my-custom-action' as string, // Explicitly typed as string
-      )
+    it('should accept error code', () => {
+      const error = new MiddlewareRejectionError('Not allowed', 'connect', 'FORBIDDEN')
 
-      expect(error.action).toBe('my-custom-action')
+      expect(error.code).toBe('FORBIDDEN')
+    })
+
+    it('should accept context', () => {
+      const context = { userId: '123' }
+      const error = new MiddlewareRejectionError('Not allowed', 'connect', 'FORBIDDEN', context)
+
+      expect(error.context).toEqual(context)
+    })
+
+    it('should have proper stack trace', () => {
+      const error = new MiddlewareRejectionError('Rejected', 'message')
+
+      expect(error.stack).toBeDefined()
+      expect(error.stack).toContain('MiddlewareRejectionError')
     })
   })
 
-  describe('MiddlewareExecutionError', () => {
-    it('should create MiddlewareExecutionError with action, middleware, and cause', () => {
-      const originalError = new Error('Original error')
-      const error = new MiddlewareExecutionError(
-        'connect',
-        'auth',
-        originalError,
-      )
-
-      expect(error.action).toBe('connect')
-      expect(error.middleware).toBe('auth')
-      expect(error.cause).toBe(originalError)
-      expect(error.name).toBe('MiddlewareExecutionError')
-    })
-
-    it('should have informative error message', () => {
-      const originalError = new Error('Invalid token')
-      const error = new MiddlewareExecutionError(
-        'connect',
-        'auth',
-        originalError,
-      )
-
-      expect(error.message).toContain('auth')
-      expect(error.message).toContain('connect')
-      expect(error.message).toContain('Invalid token')
-    })
-
-    it('should be instanceof Error', () => {
-      const originalError = new Error('Test')
-      const error = new MiddlewareExecutionError(
-        'connect',
-        'test',
-        originalError,
-      )
-      expect(error).toBeInstanceOf(Error)
-    })
-
-    it('should provide getCause() method', () => {
-      const originalError = new Error('Original')
-      const error = new MiddlewareExecutionError(
-        'message',
-        'test',
-        originalError,
-      )
-
-      expect(error.getCause()).toBe(originalError)
-    })
-  })
-
-  describe('instanceof checks', () => {
-    it('should identify ConfigError correctly', () => {
-      const error = new ConfigError('Test')
-      expect(error instanceof SynnelError).toBe(true)
-      expect(error instanceof ConfigError).toBe(true)
-    })
-
-    it('should identify TransportError correctly', () => {
-      const error = new TransportError('Test')
-      expect(error instanceof SynnelError).toBe(true)
-      expect(error instanceof TransportError).toBe(true)
-    })
-
-    it('should identify ChannelError correctly', () => {
-      const error = new ChannelError('Test')
-      expect(error instanceof SynnelError).toBe(true)
-      expect(error instanceof ChannelError).toBe(true)
-    })
-
-    it('should identify ClientError correctly', () => {
-      const error = new ClientError('Test')
-      expect(error instanceof SynnelError).toBe(true)
-      expect(error instanceof ClientError).toBe(true)
-    })
-
-    it('should identify MessageError correctly', () => {
-      const error = new MessageError('Test')
-      expect(error instanceof SynnelError).toBe(true)
-      expect(error instanceof MessageError).toBe(true)
-    })
-
-    it('should identify ValidationError correctly', () => {
-      const error = new ValidationError('Test')
-      expect(error instanceof SynnelError).toBe(true)
-      expect(error instanceof ValidationError).toBe(true)
-    })
-
-    it('should identify StateError correctly', () => {
-      const error = new StateError('Test')
-      expect(error instanceof SynnelError).toBe(true)
-      expect(error instanceof StateError).toBe(true)
-    })
-
-    it('should identify MiddlewareRejectionError correctly', () => {
-      const error = new MiddlewareRejectionError('Test', 'test')
-      expect(error).toBeInstanceOf(Error)
-      expect(error.name).toBe('MiddlewareRejectionError')
-    })
-
-    it('should identify MiddlewareExecutionError correctly', () => {
-      const originalError = new Error('Test')
-      const error = new MiddlewareExecutionError(
-        'connect',
-        'auth',
-        originalError,
-      )
-      expect(error).toBeInstanceOf(Error)
-      expect(error.name).toBe('MiddlewareExecutionError')
-    })
-  })
-
-  describe('error message format', () => {
-    it('should format SynnelError correctly', () => {
-      const error = new SynnelError('Something failed', 'ERR_001')
-      expect(error.toString()).toMatch(/SynnelError/)
-      expect(error.toString()).toMatch(/Something failed/)
-      expect(error.toString()).toMatch(/ERR_001/)
-    })
-
-    it('should format ConfigError correctly', () => {
-      const error = new ConfigError('Bad config')
-      expect(error.toString()).toMatch(/ConfigError/)
-      expect(error.toString()).toMatch(/Bad config/)
-    })
-
-    it('should format ChannelError correctly', () => {
-      const error = new ChannelError('Channel not found: test')
-      expect(error.toString()).toMatch(/ChannelError/)
-      expect(error.toString()).toMatch(/Channel not found: test/)
-    })
-
-    it('should format MiddlewareRejectionError correctly', () => {
-      const error = new MiddlewareRejectionError('Unauthorized', 'message')
-      expect(error.toString()).toMatch(/MiddlewareRejectionError/)
-      expect(error.toString()).toMatch(/Unauthorized/)
-      expect(error.toString()).toMatch(/message/)
-    })
-
-    it('should format with custom action type', () => {
+  describe('toJSON()', () => {
+    it('should serialize error to JSON', () => {
       const error = new MiddlewareRejectionError(
         'Not allowed',
-        'subscribe' as const,
+        'subscribe',
+        'FORBIDDEN',
+        { userId: '123' }
       )
-      expect(error.toString()).toBe(
-        '[MiddlewareRejectionError:subscribe] Not allowed',
-      )
-    })
-  })
-
-  describe('MiddlewareRejectionError serialization', () => {
-    it('should convert to JSON with all properties', () => {
-      const originalError = new Error('Original')
-      const error = new MiddlewareRejectionError(
-        'Authentication failed',
-        'connect',
-        'AUTH_001',
-        { userId: 'user-123', attempt: 3 },
-      )
-
       const json = error.toJSON()
 
       expect(json).toEqual({
         name: 'MiddlewareRejectionError',
-        reason: 'Authentication failed',
-        action: 'connect',
-        code: 'AUTH_001',
-        context: { userId: 'user-123', attempt: 3 },
-        message: expect.stringContaining('connect'),
-        stack: expect.any(String),
+        reason: 'Not allowed',
+        action: 'subscribe',
+        code: 'FORBIDDEN',
+        context: { userId: '123' },
+        message: "Action 'subscribe' rejected: Not allowed",
+        stack: error.stack,
       })
     })
 
-    it('should include optional code and context in JSON', () => {
-      const error = new MiddlewareRejectionError('Not allowed', 'message')
+    it('should handle error without optional fields', () => {
+      const error = new MiddlewareRejectionError('Rejected', 'message')
       const json = error.toJSON()
 
-      expect(json.name).toBe('MiddlewareRejectionError')
-      expect(json.reason).toBe('Not allowed')
-      expect(json.action).toBe('message')
-      expect(json.code).toBeUndefined()
-      expect(json.context).toBeUndefined()
+      expect(json).toEqual({
+        name: 'MiddlewareRejectionError',
+        reason: 'Rejected',
+        action: 'message',
+        message: "Action 'message' rejected: Rejected",
+        stack: error.stack,
+      })
     })
   })
 
-  describe('MiddlewareExecutionError serialization', () => {
-    it('should provide custom toString format', () => {
-      const originalError = new Error('Database connection failed')
-      const error = new MiddlewareExecutionError(
-        'message',
-        'db-middleware',
-        originalError,
-      )
+  describe('toString()', () => {
+    it('should format error as string', () => {
+      const error = new MiddlewareRejectionError('Not allowed', 'subscribe', 'FORBIDDEN')
 
-      const str = error.toString()
-      expect(str).toBe(
-        '[MiddlewareExecutionError] db-middleware failed during message: Database connection failed',
-      )
+      expect(error.toString()).toBe('[MiddlewareRejectionError:subscribe] Not allowed')
+    })
+  })
+})
+
+describe('MiddlewareExecutionError', () => {
+  const originalError = new Error('Database connection failed')
+
+  describe('constructor', () => {
+    it('should create error with action and middleware name', () => {
+      const error = new MiddlewareExecutionError('message', 'auth-middleware', originalError)
+
+      expect(error).toBeInstanceOf(Error)
+      expect(error.name).toBe('MiddlewareExecutionError')
+      expect(error.action).toBe('message')
+      expect(error.middleware).toBe('auth-middleware')
+      expect(error.cause).toBe(originalError)
     })
 
-    it('should getCause return original error', () => {
-      const originalError = new Error('Cache miss')
-      const error = new MiddlewareExecutionError(
-        'subscribe',
-        'cache-middleware',
-        originalError,
-      )
+    it('should generate descriptive message', () => {
+      const error = new MiddlewareExecutionError('connect', 'auth-middleware', originalError)
 
-      expect(error.getCause()).toBe(originalError)
-      expect(error.getCause().message).toBe('Cache miss')
+      expect(error.message).toBe('Middleware execution error in auth-middleware during connect: Database connection failed')
+    })
+
+    it('should have proper stack trace', () => {
+      const error = new MiddlewareExecutionError('message', 'auth', originalError)
+
+      expect(error.stack).toBeDefined()
+      expect(error.stack).toContain('MiddlewareExecutionError')
+    })
+  })
+
+  describe('getCause()', () => {
+    it('should return the original error', () => {
+      const error = new MiddlewareExecutionError('message', 'auth', originalError)
+      const cause = error.getCause()
+
+      expect(cause).toBe(originalError)
+      expect(cause.message).toBe('Database connection failed')
+    })
+  })
+
+  describe('toString()', () => {
+    it('should format error as string', () => {
+      const error = new MiddlewareExecutionError('subscribe', 'auth-check', originalError)
+
+      expect(error.toString()).toBe('[MiddlewareExecutionError] auth-check failed during subscribe: Database connection failed')
+    })
+  })
+
+  describe('cause property', () => {
+    it('should expose cause as readonly property', () => {
+      const error = new MiddlewareExecutionError('message', 'auth', originalError)
+
+      expect(error.cause).toBe(originalError)
+    })
+  })
+})
+
+describe('Error inheritance chain', () => {
+  it('should maintain instanceof checks', () => {
+    const synnelError = new SynnelError('Test')
+    const configError = new ConfigError('Test')
+    const rejectionError = new MiddlewareRejectionError('Test', 'test')
+    const executionError = new MiddlewareExecutionError('test', 'test', new Error('cause'))
+
+    expect(synnelError).toBeInstanceOf(Error)
+    expect(synnelError).toBeInstanceOf(SynnelError)
+
+    expect(configError).toBeInstanceOf(Error)
+    expect(configError).toBeInstanceOf(SynnelError)
+    expect(configError).toBeInstanceOf(ConfigError)
+
+    expect(rejectionError).toBeInstanceOf(Error)
+    expect(rejectionError).toBeInstanceOf(MiddlewareRejectionError)
+
+    expect(executionError).toBeInstanceOf(Error)
+    expect(executionError).toBeInstanceOf(MiddlewareExecutionError)
+  })
+})
+
+describe('Error context edge cases', () => {
+  it('should handle empty context', () => {
+    const error = new SynnelError('Test', 'TEST', {})
+
+    expect(error.context).toEqual({})
+  })
+
+  it('should handle undefined context', () => {
+    const error = new SynnelError('Test', 'TEST', undefined)
+
+    expect(error.context).toBeUndefined()
+  })
+
+  it('should handle complex nested context', () => {
+    const context = {
+      user: { id: '123', name: 'Test' },
+      metadata: { key: 'value', nested: { deep: 'value' } },
+    }
+    const error = new SynnelError('Test', 'TEST', context)
+
+    expect(error.context).toEqual(context)
+  })
+})
+
+describe('Error serialization edge cases', () => {
+  it('should handle error without stack trace', () => {
+    const error = new SynnelError('Test')
+    const stack = error.stack
+    error.stack = undefined
+
+    const json = error.toJSON()
+    expect(json.stack).toBeUndefined()
+
+    // Restore for cleanup
+    error.stack = stack
+  })
+
+  it('should handle toJSON() for all error types', () => {
+    const errors = [
+      new ConfigError('Test'),
+      new TransportError('Test'),
+      new ChannelError('Test'),
+      new ClientError('Test'),
+      new MessageError('Test'),
+      new ValidationError('Test'),
+      new StateError('Test'),
+    ]
+
+    errors.forEach(error => {
+      const json = error.toJSON()
+      expect(json).toHaveProperty('name')
+      expect(json).toHaveProperty('message')
+      expect(json).toHaveProperty('code')
     })
   })
 })

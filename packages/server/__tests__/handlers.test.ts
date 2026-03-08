@@ -1,941 +1,812 @@
 /**
- * Handlers Tests
- * Tests for connection, message, and signal handlers
+ * Unit tests for handlers
+ *
+ * @vitest-environment node
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import {
-  ConnectionHandler,
-  MessageHandler,
-  SignalHandler,
-} from '../src/handlers/index.js'
-import { ClientRegistry } from '../src/registry/index.js'
-import { MiddlewareManager } from '../src/middleware/index.js'
-import { EventEmitter } from '../src/emitter/index.js'
-import { ChannelRef, BroadcastChannel } from '../src/channel/index.js'
-import type {
-  IClientConnection,
-  IServerTransport,
-  DataMessage,
-  SignalMessage,
-  IServerEventMap,
-} from '../src/types/index.js'
-import { MessageType, SignalType } from '../src/types/index.js'
-import { CLOSE_CODES } from '../src/config/index.js'
-import { ChannelError, MessageError } from '../src/errors/index.js'
+import { ConnectionHandler } from '../src/handlers/connections'
+import { MessageHandler } from '../src/handlers/messages'
+import { SignalHandler } from '../src/handlers/signal'
+import { ClientRegistry } from '../src/registry'
+import { ContextManager } from '../src/context'
+import { MulticastChannel } from '../src/channel'
+import { MessageType, SignalType, type IClientConnection, type DataMessage } from '../src/types'
+import { ChannelError, MessageError } from '../src/errors'
+import { CLOSE_CODES } from '../src/config'
 
-// Helper function to create data messages
-function createDataMessage<T>(
-  channel: string,
-  data: T,
-  id?: string,
-): DataMessage<T> {
-  return {
-    id: id || `msg-${Date.now()}`,
-    type: MessageType.DATA,
-    channel,
-    data,
-    timestamp: Date.now(),
+// Mock WebSocket
+class MockWebSocket {
+  public readyState = 1 // OPEN
+  public sent: string[] = []
+
+  send(data: string, _callback?: () => void) {
+    this.sent.push(data)
+  }
+
+  close(_code?: number, _reason?: string) {
+    this.readyState = 3 // CLOSED
   }
 }
 
-// Helper function to create signal messages
-function createSignalMessage(
-  channel: string,
-  signal: SignalType,
-  data?: unknown,
-): SignalMessage {
-  return {
-    id: `sig-${Date.now()}`,
-    type: MessageType.SIGNAL,
-    channel,
-    signal,
-    data,
-    timestamp: Date.now(),
-  }
-}
+describe('ConnectionHandler', () => {
+  let registry: ClientRegistry
+  let connectionHandler: ConnectionHandler
 
-// Mock connection
-function createMockConnection(id: string): IClientConnection {
-  return {
-    id,
-    socket: {
-      send: vi.fn((_data: string, cb?: (err?: Error) => void) => {
-        cb?.()
-      }),
-      close: vi.fn(),
-    } as any,
-    connectedAt: Date.now(),
-    lastPingAt: undefined,
-  }
-}
-
-// Mock transport
-function createMockTransport(): IServerTransport {
-  const connections = new Map()
-  return {
-    connections,
-    on: vi.fn(),
-    off: vi.fn(),
-    emit: vi.fn(),
-    start: vi.fn().mockResolvedValue(undefined),
-    stop: vi.fn(),
-  } as any
-}
-
-describe('Handlers', () => {
-  describe('ConnectionHandler', () => {
-    let handler: ConnectionHandler
-    let registry: ClientRegistry
-    let middleware: MiddlewareManager
-    let emitter: EventEmitter<IServerEventMap>
-
-    beforeEach(() => {
-      registry = new ClientRegistry()
-      middleware = new MiddlewareManager()
-      emitter = new EventEmitter<IServerEventMap>()
-
-      handler = new ConnectionHandler({
-        registry,
-        middleware,
-        emitter,
-      })
-    })
-
-    describe('handleConnection', () => {
-      it('should register client and return connection', async () => {
-        const connection = createMockConnection('client-1')
-
-        const client = await handler.handleConnection(connection)
-
-        expect(client).toBeDefined()
-        expect(client.id).toBe('client-1')
-        expect(registry.getCount()).toBe(1)
-      })
-
-      it('should execute connection middleware', async () => {
-        const connection = createMockConnection('client-1')
-        const middlewareSpy = vi.fn()
-
-        middleware.use(async ({ action }) => {
-          middlewareSpy(action)
-        })
-
-        await handler.handleConnection(connection)
-
-        expect(middlewareSpy).toHaveBeenCalledWith('connect')
-      })
-
-      it('should emit connection event', async () => {
-        const connection = createMockConnection('client-1')
-        const eventSpy = vi.fn()
-
-        emitter.on('connection', eventSpy)
-
-        await handler.handleConnection(connection)
-
-        expect(eventSpy).toHaveBeenCalledTimes(1)
-        expect(eventSpy).toHaveBeenCalledWith(
-          expect.objectContaining({ id: 'client-1' }),
-        )
-      })
-
-      it('should not emit event when emitConnectionEvent is false', async () => {
-        const handlerNoEmit = new ConnectionHandler({
-          registry,
-          middleware,
-          emitter,
-          options: { emitConnectionEvent: false },
-        })
-
-        const connection = createMockConnection('client-1')
-        const eventSpy = vi.fn()
-
-        emitter.on('connection', eventSpy)
-
-        await handlerNoEmit.handleConnection(connection)
-
-        expect(eventSpy).not.toHaveBeenCalled()
-      })
-
-      it('should reject and disconnect when middleware rejects', async () => {
-        const connection = createMockConnection('client-1')
-
-        middleware.use(async ({ reject }) => {
-          reject('Not authorized')
-        })
-
-        await expect(handler.handleConnection(connection)).rejects.toThrow(
-          'Connection rejected by middleware',
-        )
-
-        expect(registry.getCount()).toBe(0)
-        expect(connection.socket.close).toHaveBeenCalledWith(
-          CLOSE_CODES.REJECTED,
-          'Connection rejected',
-        )
-      })
-
-      it('should use custom rejection close code', async () => {
-        const handlerCustom = new ConnectionHandler({
-          registry,
-          middleware,
-          emitter,
-          options: { rejectionCloseCode: 4003 },
-        })
-
-        const connection = createMockConnection('client-1')
-
-        middleware.use(async ({ reject }) => {
-          reject('Rejected')
-        })
-
-        try {
-          await handlerCustom.handleConnection(connection)
-        } catch {
-          // Expected error
-        }
-
-        expect(connection.socket.close).toHaveBeenCalledWith(
-          4003,
-          'Connection rejected',
-        )
-      })
-    })
-
-    describe('handleDisconnection', () => {
-      it('should unregister client', async () => {
-        const connection = createMockConnection('client-1')
-        await handler.handleConnection(connection)
-
-        expect(registry.getCount()).toBe(1)
-
-        await handler.handleDisconnection('client-1')
-
-        expect(registry.getCount()).toBe(0)
-      })
-
-      it('should execute disconnect middleware', async () => {
-        const connection = createMockConnection('client-1')
-        await handler.handleConnection(connection)
-
-        const middlewareSpy = vi.fn()
-        middleware.use(async ({ action }) => {
-          middlewareSpy(action)
-        })
-
-        await handler.handleDisconnection('client-1')
-
-        expect(middlewareSpy).toHaveBeenCalledWith('disconnect')
-      })
-
-      it('should emit disconnection event', async () => {
-        const connection = createMockConnection('client-1')
-        await handler.handleConnection(connection)
-
-        const eventSpy = vi.fn()
-        emitter.on('disconnection', eventSpy)
-
-        await handler.handleDisconnection('client-1')
-
-        expect(eventSpy).toHaveBeenCalledTimes(1)
-      })
-
-      it('should not emit event when emitDisconnectionEvent is false', async () => {
-        const handlerNoEmit = new ConnectionHandler({
-          registry,
-          middleware,
-          emitter,
-          options: { emitDisconnectionEvent: false },
-        })
-
-        const connection = createMockConnection('client-1')
-        await handlerNoEmit.handleConnection(connection)
-
-        const eventSpy = vi.fn()
-        emitter.on('disconnection', eventSpy)
-
-        await handlerNoEmit.handleDisconnection('client-1')
-
-        expect(eventSpy).not.toHaveBeenCalled()
-      })
-
-      it('should handle non-existent client gracefully', async () => {
-        // Should not throw
-        await handler.handleDisconnection('non-existent')
-      })
-
-      it('should ignore middleware errors during disconnection', async () => {
-        const connection = createMockConnection('client-1')
-        await handler.handleConnection(connection)
-
-        middleware.use(async () => {
-          throw new Error('Middleware error')
-        })
-
-        // Should not throw
-        await handler.handleDisconnection('client-1')
-
-        expect(registry.getCount()).toBe(0)
-      })
-    })
-
-    describe('getOptions', () => {
-      it('should return handler options', () => {
-        const options = handler.getOptions()
-
-        expect(options.emitConnectionEvent).toBe(true)
-        expect(options.emitDisconnectionEvent).toBe(true)
-        expect(options.rejectionCloseCode).toBe(CLOSE_CODES.REJECTED)
-      })
-
-      it('should return custom options', () => {
-        const customHandler = new ConnectionHandler({
-          registry,
-          middleware,
-          emitter,
-          options: {
-            emitConnectionEvent: false,
-            rejectionCloseCode: 4003,
-          },
-        })
-
-        const options = customHandler.getOptions()
-
-        expect(options.emitConnectionEvent).toBe(false)
-        expect(options.rejectionCloseCode).toBe(4003)
-      })
+  beforeEach(() => {
+    registry = new ClientRegistry()
+    connectionHandler = new ConnectionHandler({
+      registry,
     })
   })
 
-  describe('MessageHandler', () => {
-    let handler: MessageHandler
-    let registry: ClientRegistry
-    let middleware: MiddlewareManager
-    let emitter: EventEmitter<IServerEventMap>
-    let mockChannel: any
-    let channels: Map<string, any>
+  describe('constructor', () => {
+    it('should create handler with default options', () => {
+      expect(connectionHandler).toBeInstanceOf(ConnectionHandler)
+      expect(connectionHandler.getOptions().rejectionCloseCode).toBe(CLOSE_CODES.REJECTED)
+    })
 
-    beforeEach(() => {
-      registry = new ClientRegistry()
-      middleware = new MiddlewareManager()
-      emitter = new EventEmitter<IServerEventMap>()
-
-      mockChannel = {
-        name: 'test',
-        receive: vi.fn(),
-        handleSubscribe: vi.fn(),
-        handleUnsubscribe: vi.fn(),
-      }
-      registry.registerChannel(mockChannel)
-
-      handler = new MessageHandler({
+    it('should use custom rejection close code', () => {
+      const handler = new ConnectionHandler({
         registry,
-        middleware,
-        emitter,
-      })
-    })
-
-    describe('handleMessage', () => {
-      it('should route message to channel', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-        registry.subscribe('client-1' as any, 'test' as any)
-
-        const message: DataMessage<string> = createDataMessage('test', 'Hello')
-
-        await handler.handleMessage(client, message)
-
-        expect(mockChannel.receive).toHaveBeenCalledWith(
-          'Hello',
-          client,
-          message,
-        )
-      })
-
-      it('should execute message middleware', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-
-        const middlewareSpy = vi.fn()
-        middleware.use(async ({ action }) => {
-          middlewareSpy(action)
-        })
-
-        const message: DataMessage<string> = createDataMessage('test', 'Hello')
-
-        await handler.handleMessage(client, message)
-
-        expect(middlewareSpy).toHaveBeenCalledWith('message')
-      })
-
-      it('should emit message event', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-        registry.subscribe('client-1', 'test')
-
-        const eventSpy = vi.fn()
-        emitter.on('message', eventSpy)
-
-        const message: DataMessage<string> = createDataMessage('test', 'Hello')
-
-        await handler.handleMessage(client, message)
-
-        expect(eventSpy).toHaveBeenCalledWith(client, message)
-      })
-
-      it('should throw error for invalid message type', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-
-        const invalidMessage = {
-          id: 'msg-1',
-          type: 'invalid',
-          channel: 'test',
-          data: 'test',
-          timestamp: Date.now(),
-        } as any
-
-        await expect(
-          handler.handleMessage(client, invalidMessage),
-        ).rejects.toThrow(MessageError)
-      })
-
-      it('should throw error when channel not found and requireChannel is true', async () => {
-        const handlerStrict = new MessageHandler({
-          registry,
-          middleware,
-          emitter,
-          options: { requireChannel: true },
-        })
-
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-
-        const message: DataMessage<string> = createDataMessage(
-          'nonexistent',
-          'Hello',
-        )
-
-        await expect(
-          handlerStrict.handleMessage(client, message),
-        ).rejects.toThrow(ChannelError)
-      })
-
-      it('should not throw when channel not found and requireChannel is false', async () => {
-        const handlerLenient = new MessageHandler({
-          registry,
-          middleware,
-          emitter,
-          options: { requireChannel: false },
-        })
-
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-
-        const message: DataMessage<string> = createDataMessage(
-          'nonexistent',
-          'Hello',
-        )
-
-        // Should not throw
-        await handlerLenient.handleMessage(client, message)
-      })
-    })
-
-    describe('canProcessMessage', () => {
-      it('should return true for valid message with existing channel', () => {
-        const message: DataMessage<string> = createDataMessage('test', 'Hello')
-
-        expect(handler.canProcessMessage(message)).toBe(true)
-      })
-
-      it('should return false for invalid message type', () => {
-        const invalidMessage = {
-          id: 'msg-1',
-          type: 'invalid',
-          channel: 'test',
-          data: 'test',
-          timestamp: Date.now(),
-        } as any
-
-        expect(handler.canProcessMessage(invalidMessage)).toBe(false)
-      })
-
-      it('should return false for non-existent channel when requireChannel is true', () => {
-        const message: DataMessage<string> = createDataMessage(
-          'nonexistent',
-          'Hello',
-        )
-
-        expect(handler.canProcessMessage(message)).toBe(false)
-      })
-
-      it('should return true for non-existent channel when requireChannel is false', () => {
-        const handlerLenient = new MessageHandler({
-          registry,
-          middleware,
-          emitter,
-          options: { requireChannel: false },
-        })
-
-        const message: DataMessage<string> = createDataMessage(
-          'nonexistent',
-          'Hello',
-        )
-
-        expect(handlerLenient.canProcessMessage(message)).toBe(true)
-      })
-    })
-
-    describe('getChannelForMessage', () => {
-      it('should return channel for message', () => {
-        const message: DataMessage<string> = createDataMessage('test', 'Hello')
-
-        const found = handler.getChannelForMessage(message)
-
-        expect(found).toBe(mockChannel)
-      })
-
-      it('should return undefined for non-existent channel', () => {
-        const message: DataMessage<string> = createDataMessage(
-          'nonexistent',
-          'Hello',
-        )
-
-        const found = handler.getChannelForMessage(message)
-
-        expect(found).toBeUndefined()
-      })
-    })
-
-    describe('getOptions', () => {
-      it('should return handler options', () => {
-        const options = handler.getOptions()
-
-        expect(options.emitMessageEvent).toBe(true)
-        expect(options.requireChannel).toBe(true)
-        expect(options.executeMiddleware).toBe(true)
-      })
-
-      it('should return custom options', () => {
-        const customHandler = new MessageHandler({
-          registry,
-          middleware,
-          emitter,
-          options: {
-            emitMessageEvent: false,
-            requireChannel: false,
-          },
-        })
-
-        const options = customHandler.getOptions()
-
-        expect(options.emitMessageEvent).toBe(false)
-        expect(options.requireChannel).toBe(false)
-      })
-    })
-  })
-
-  describe('SignalHandler', () => {
-    let handler: SignalHandler
-    let registry: ClientRegistry
-    let middleware: MiddlewareManager
-    let emitter: EventEmitter<IServerEventMap>
-    let mockChannel: any
-    let channels: Map<string, any>
-
-    beforeEach(() => {
-      registry = new ClientRegistry()
-      middleware = new MiddlewareManager()
-      emitter = new EventEmitter<IServerEventMap>()
-
-      mockChannel = {
-        name: 'chat',
-        receive: vi.fn(),
-        handleSubscribe: vi.fn(),
-        handleUnsubscribe: vi.fn(),
-      }
-      registry.registerChannel(mockChannel)
-
-      handler = new SignalHandler({
-        registry,
-        middleware,
-        emitter,
         options: {
-          requireChannel: true,
+          rejectionCloseCode: 4003,
         },
       })
+
+      expect(handler.getOptions().rejectionCloseCode).toBe(4003)
+    })
+  })
+
+  describe('handleConnection()', () => {
+    it('should register client in registry', async () => {
+      const socket = new MockWebSocket() as any
+      const connection: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+      }
+
+      const result = await connectionHandler.handleConnection(connection)
+
+      expect(result).toBe(connection)
+      expect(registry.get('client-1')).toBe(connection)
     })
 
-    describe('handleSignal', () => {
-      it('should route subscribe signal to handleSubscribe', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
+    it('should return same connection for duplicate registration', async () => {
+      const socket = new MockWebSocket() as any
+      const connection: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+      }
 
-        const subscribeSpy = vi.spyOn(handler, 'handleSubscribe')
+      await connectionHandler.handleConnection(connection)
+      const result = await connectionHandler.handleConnection(connection)
 
-        const message: SignalMessage = createSignalMessage(
-          'chat',
-          SignalType.SUBSCRIBE,
-        )
+      expect(result).toBe(connection)
+      expect(registry.getCount()).toBe(1)
+    })
+  })
 
-        await handler.handleSignal(client, message)
+  describe('handleDisconnection()', () => {
+    it('should unregister client from registry', async () => {
+      const socket = new MockWebSocket() as any
+      const connection: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+      }
 
-        expect(subscribeSpy).toHaveBeenCalledWith(client, message)
-      })
+      await connectionHandler.handleConnection(connection)
+      expect(registry.get('client-1')).toBeDefined()
 
-      it('should route unsubscribe signal to handleUnsubscribe', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-        registry.subscribe('client-1', 'chat')
-
-        const unsubscribeSpy = vi.spyOn(handler, 'handleUnsubscribe')
-
-        const message: SignalMessage = createSignalMessage(
-          'chat',
-          SignalType.UNSUBSCRIBE,
-        )
-
-        await handler.handleSignal(client, message)
-
-        expect(unsubscribeSpy).toHaveBeenCalledWith(client, message)
-      })
-
-      it('should route ping signal to handlePing', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-
-        const pingSpy = vi.spyOn(handler, 'handlePing')
-
-        const message: SignalMessage = createSignalMessage('', SignalType.PING)
-
-        await handler.handleSignal(client, message)
-
-        expect(pingSpy).toHaveBeenCalledWith(client, message)
-      })
-
-      it('should route pong signal to handlePong', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-
-        const pongSpy = vi.spyOn(handler, 'handlePong')
-
-        const message: SignalMessage = createSignalMessage('', SignalType.PONG)
-
-        await handler.handleSignal(client, message)
-
-        expect(pongSpy).toHaveBeenCalledWith(client, message)
-      })
-
-      it('should throw error for unknown signal type', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-
-        const message: SignalMessage = {
-          id: 'sig-1',
-          type: MessageType.SIGNAL,
-          channel: '',
-          signal: 'unknown' as SignalType,
-          data: undefined,
-          timestamp: Date.now(),
-        }
-
-        await expect(handler.handleSignal(client, message)).rejects.toThrow(
-          MessageError,
-        )
-      })
+      await connectionHandler.handleDisconnection('client-1')
+      expect(registry.get('client-1')).toBeUndefined()
     })
 
-    describe('handleSubscribe', () => {
-      it('should subscribe client to channel', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-        const message: SignalMessage = createSignalMessage(
-          'chat',
-          SignalType.SUBSCRIBE,
-        )
-
-        await handler.handleSubscribe(client, message)
-
-        expect(registry.isSubscribed('client-1' as any, 'chat' as any)).toBe(
-          true,
-        )
-        expect(mockChannel.handleSubscribe).toHaveBeenCalledWith(client)
-      })
-
-      it('should execute subscribe middleware', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-
-        const middlewareSpy = vi.fn()
-        middleware.use(async ({ action }) => {
-          middlewareSpy(action)
-        })
-
-        const message: SignalMessage = createSignalMessage(
-          'chat',
-          SignalType.SUBSCRIBE,
-        )
-
-        await handler.handleSubscribe(client, message)
-
-        expect(middlewareSpy).toHaveBeenCalledWith(SignalType.SUBSCRIBE)
-      })
-
-      it('should emit subscribe event', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-
-        const eventSpy = vi.fn()
-        emitter.on('subscribe', eventSpy)
-
-        const message: SignalMessage = createSignalMessage(
-          'chat',
-          SignalType.SUBSCRIBE,
-        )
-
-        await handler.handleSubscribe(client, message)
-
-        expect(eventSpy).toHaveBeenCalledWith(client, 'chat')
-      })
-
-      it('should send subscribed acknowledgment', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-
-        const message: SignalMessage = createSignalMessage(
-          'chat',
-          SignalType.SUBSCRIBE,
-        )
-
-        await handler.handleSubscribe(client, message)
-
-        expect(connection.socket.send).toHaveBeenCalledWith(
-          expect.stringContaining('"signal":"subscribed"'),
-          expect.any(Function),
-        )
-      })
-
-      it('should throw error for reserved channel', async () => {
-        // Mock reserved channel logic via middleware or similar if needed,
-        // but here we just test the handler's built-in check
-        // Channel created implicitly by subscribe
-
-        const handlerStrict = new SignalHandler({
-          registry,
-          middleware,
-          emitter,
-          options: { allowReservedChannels: false },
-        })
-
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-
-        const message: SignalMessage = createSignalMessage(
-          '__private__',
-          SignalType.SUBSCRIBE,
-        )
-
-        const error = await handlerStrict
-          .handleSubscribe(client, message)
-          .catch((e) => e)
-
-        expect(error).toBeInstanceOf(ChannelError)
-        expect(error.message).toContain('Cannot subscribe to reserved channel')
-      })
-
-      it('should throw error for broadcast channel', async () => {
-        // Create a handler that allows reserved channels so we can test
-        // the broadcast channel check specifically
-        const handlerWithAllowReserved = new SignalHandler({
-          registry,
-          middleware,
-          emitter,
-          options: { allowReservedChannels: true },
-        })
-
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-
-        const message: SignalMessage = createSignalMessage(
-          '__broadcast__',
-          SignalType.SUBSCRIBE,
-        )
-
-        await expect(
-          handlerWithAllowReserved.handleSubscribe(client, message),
-        ).rejects.toThrow('Cannot subscribe to broadcast channel')
-      })
-
-      it('should throw error for non-existent channel', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-
-        const message: SignalMessage = createSignalMessage(
-          'nonexistent',
-          SignalType.SUBSCRIBE,
-        )
-
-        await expect(handler.handleSubscribe(client, message)).rejects.toThrow(
-          ChannelError,
-        )
-      })
-
-      it('should throw error when registry subscribe fails', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-
-        const subscribeSpy = vi
-          .spyOn(registry, 'subscribe')
-          .mockReturnValue(false)
-
-        const message: SignalMessage = createSignalMessage(
-          'chat',
-          SignalType.SUBSCRIBE,
-        )
-
-        await expect(handler.handleSubscribe(client, message)).rejects.toThrow(
-          'Failed to subscribe',
-        )
-
-        subscribeSpy.mockRestore()
-      })
+    it('should return silently for non-existent client', async () => {
+      // Should not throw
+      await expect(connectionHandler.handleDisconnection('non-existent')).resolves.toBeUndefined()
     })
 
-    describe('handleUnsubscribe', () => {
-      it('should unsubscribe client from channel', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-        registry.subscribe('client-1' as any, 'chat' as any)
-        const message: SignalMessage = createSignalMessage(
-          'chat',
-          SignalType.UNSUBSCRIBE,
-        )
+    it('should accept optional reason parameter', async () => {
+      const socket = new MockWebSocket() as any
+      const connection: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+      }
 
-        await handler.handleUnsubscribe(client, message)
+      await connectionHandler.handleConnection(connection)
+      await connectionHandler.handleDisconnection('client-1', 'Client disconnect')
 
-        expect(registry.isSubscribed('client-1' as any, 'chat' as any)).toBe(
-          false,
-        )
-        expect(mockChannel.handleUnsubscribe).toHaveBeenCalledWith(client)
-      })
+      expect(registry.get('client-1')).toBeUndefined()
+    })
+  })
 
-      it('should execute unsubscribe middleware', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-        registry.subscribe('client-1', 'chat')
+  describe('getOptions()', () => {
+    it('should return readonly options', () => {
+      const options = connectionHandler.getOptions()
 
-        const middlewareSpy = vi.fn()
-        middleware.use(async ({ action }) => {
-          middlewareSpy(action)
-        })
+      expect(options).toHaveProperty('rejectionCloseCode')
+      expect(options.rejectionCloseCode).toBe(CLOSE_CODES.REJECTED)
+    })
+  })
+})
 
-        const message: SignalMessage = createSignalMessage(
-          'chat',
-          SignalType.UNSUBSCRIBE,
-        )
+describe('MessageHandler', () => {
+  let registry: ClientRegistry
+  let context: ContextManager
+  let messageHandler: MessageHandler
+  let testChannel: MulticastChannel<{ text: string }>
 
-        await handler.handleUnsubscribe(client, message)
-
-        expect(middlewareSpy).toHaveBeenCalledWith(SignalType.UNSUBSCRIBE)
-      })
-
-      it('should emit unsubscribe event', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-        registry.subscribe('client-1', 'chat')
-
-        const eventSpy = vi.fn()
-        emitter.on('unsubscribe', eventSpy)
-
-        const message: SignalMessage = createSignalMessage(
-          'chat',
-          SignalType.UNSUBSCRIBE,
-        )
-
-        await handler.handleUnsubscribe(client, message)
-
-        expect(eventSpy).toHaveBeenCalledWith(client, 'chat')
-      })
-
-      it('should send unsubscribed acknowledgment', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-        registry.subscribe('client-1', 'chat')
-
-        const message: SignalMessage = createSignalMessage(
-          'chat',
-          SignalType.UNSUBSCRIBE,
-        )
-
-        await handler.handleUnsubscribe(client, message)
-
-        expect(connection.socket.send).toHaveBeenCalledWith(
-          expect.stringContaining('"signal":"unsubscribed"'),
-          expect.any(Function),
-        )
-      })
-
-      it('should throw error when client not subscribed', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-
-        const message: SignalMessage = createSignalMessage(
-          'chat',
-          SignalType.UNSUBSCRIBE,
-        )
-
-        await expect(
-          handler.handleUnsubscribe(client, message),
-        ).rejects.toThrow(ChannelError)
-      })
+  beforeEach(() => {
+    registry = new ClientRegistry()
+    context = new ContextManager()
+    messageHandler = new MessageHandler({
+      registry,
+      context,
     })
 
-    describe('handlePing', () => {
-      it('should send pong response', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
+    // Create a test channel
+    testChannel = new MulticastChannel({
+      name: 'test-channel',
+      registry,
+    })
+    registry.registerChannel(testChannel as any)
+  })
 
-        const message: SignalMessage = createSignalMessage('', SignalType.PING)
-
-        await handler.handlePing(client, message)
-
-        expect(connection.socket.send).toHaveBeenCalledWith(
-          expect.stringContaining('"signal":"pong"'),
-          expect.any(Function),
-        )
-      })
-
-      it('should not send pong when autoRespondToPing is false', async () => {
-        const handlerNoAuto = new SignalHandler({
-          registry,
-          middleware,
-          emitter,
-          options: { autoRespondToPing: false },
-        })
-
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-
-        const message: SignalMessage = createSignalMessage('', SignalType.PING)
-
-        await handlerNoAuto.handlePing(client, message)
-
-        expect(connection.socket.send).not.toHaveBeenCalled()
-      })
+  describe('constructor', () => {
+    it('should create handler with default options', () => {
+      expect(messageHandler).toBeInstanceOf(MessageHandler)
+      expect(messageHandler.getOptions().requireChannel).toBe(true)
     })
 
-    describe('handlePong', () => {
-      it('should handle pong without error', async () => {
-        const connection = createMockConnection('client-1')
-        const client = registry.register(connection)
-
-        const message: SignalMessage = createSignalMessage('', SignalType.PONG)
-
-        // Should not throw
-        await handler.handlePong(client, message)
+    it('should use custom requireChannel option', () => {
+      const handler = new MessageHandler({
+        registry,
+        context,
+        options: {
+          requireChannel: false,
+        },
       })
+
+      expect(handler.getOptions().requireChannel).toBe(false)
+    })
+  })
+
+  describe('handleMessage()', () => {
+    it('should throw error for non-DataMessage', async () => {
+      const socket = new MockWebSocket() as any
+      const client: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+      }
+
+      const invalidMessage = {
+        id: 'msg-1',
+        type: MessageType.SIGNAL,
+        signal: SignalType.PING,
+        channel: 'system',
+        timestamp: Date.now(),
+      } as any
+
+      await expect(messageHandler.handleMessage(client, invalidMessage)).rejects.toThrow(MessageError)
+      await expect(messageHandler.handleMessage(client, invalidMessage)).rejects.toThrow('Invalid message type')
+    })
+
+    it('should throw error when channel not found and requireChannel is true', async () => {
+      const socket = new MockWebSocket() as any
+      const client: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+      }
+
+      const message: DataMessage<string> = {
+        id: 'msg-1',
+        type: MessageType.DATA,
+        channel: 'non-existent',
+        data: 'hello',
+        timestamp: Date.now(),
+      }
+
+      await expect(messageHandler.handleMessage(client, message)).rejects.toThrow(ChannelError)
+      await expect(messageHandler.handleMessage(client, message)).rejects.toThrow('Channel not found')
+    })
+
+    it('should dispatch message to channel', async () => {
+      const socket = new MockWebSocket() as any
+      const client: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+      }
+
+      const message: DataMessage<{ text: string }> = {
+        id: 'msg-1',
+        type: MessageType.DATA,
+        channel: 'test-channel',
+        data: { text: 'hello' },
+        timestamp: Date.now(),
+      }
+
+      // Subscribe client to channel
+      testChannel.subscribe(client.id)
+
+      // Handler should complete without error
+      await expect(messageHandler.handleMessage(client, message)).resolves.toBeUndefined()
+    })
+
+    it('should handle message when requireChannel is false and channel does not exist', async () => {
+      const handler = new MessageHandler({
+        registry,
+        context,
+        options: {
+          requireChannel: false,
+        },
+      })
+
+      const socket = new MockWebSocket() as any
+      const client: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+      }
+
+      const message: DataMessage<string> = {
+        id: 'msg-1',
+        type: MessageType.DATA,
+        channel: 'non-existent',
+        data: 'hello',
+        timestamp: Date.now(),
+      }
+
+      // Should not throw when requireChannel is false
+      await expect(handler.handleMessage(client, message)).resolves.toBeUndefined()
+    })
+  })
+
+  describe('canProcessMessage()', () => {
+    it('should return false for non-DataMessage', () => {
+      const invalidMessage = {
+        id: 'msg-1',
+        type: MessageType.SIGNAL,
+        signal: SignalType.PING,
+        channel: 'system',
+        timestamp: Date.now(),
+      } as any
+
+      expect(messageHandler.canProcessMessage(invalidMessage)).toBe(false)
+    })
+
+    it('should return true when channel exists', () => {
+      const message: DataMessage<string> = {
+        id: 'msg-1',
+        type: MessageType.DATA,
+        channel: 'test-channel',
+        data: 'hello',
+        timestamp: Date.now(),
+      }
+
+      expect(messageHandler.canProcessMessage(message)).toBe(true)
+    })
+
+    it('should return false when channel does not exist and requireChannel is true', () => {
+      const message: DataMessage<string> = {
+        id: 'msg-1',
+        type: MessageType.DATA,
+        channel: 'non-existent',
+        data: 'hello',
+        timestamp: Date.now(),
+      }
+
+      expect(messageHandler.canProcessMessage(message)).toBe(false)
+    })
+
+    it('should return true when requireChannel is false', () => {
+      const handler = new MessageHandler({
+        registry,
+        context,
+        options: {
+          requireChannel: false,
+        },
+      })
+
+      const message: DataMessage<string> = {
+        id: 'msg-1',
+        type: MessageType.DATA,
+        channel: 'non-existent',
+        data: 'hello',
+        timestamp: Date.now(),
+      }
+
+      expect(handler.canProcessMessage(message)).toBe(true)
+    })
+  })
+
+  describe('getChannelForMessage()', () => {
+    it('should return channel when it exists', () => {
+      const message: DataMessage<string> = {
+        id: 'msg-1',
+        type: MessageType.DATA,
+        channel: 'test-channel',
+        data: 'hello',
+        timestamp: Date.now(),
+      }
+
+      const channel = messageHandler.getChannelForMessage(message)
+      expect(channel).toBe(testChannel)
+    })
+
+    it('should return undefined when channel does not exist', () => {
+      const message: DataMessage<string> = {
+        id: 'msg-1',
+        type: MessageType.DATA,
+        channel: 'non-existent',
+        data: 'hello',
+        timestamp: Date.now(),
+      }
+
+      expect(messageHandler.getChannelForMessage(message)).toBeUndefined()
+    })
+  })
+
+  describe('getOptions()', () => {
+    it('should return readonly options', () => {
+      const options = messageHandler.getOptions()
+
+      expect(options).toHaveProperty('requireChannel')
+      expect(options.requireChannel).toBe(true)
+    })
+  })
+})
+
+describe('SignalHandler', () => {
+  let registry: ClientRegistry
+  let context: ContextManager
+  let signalHandler: SignalHandler
+  let testChannel: MulticastChannel<string>
+
+  beforeEach(() => {
+    registry = new ClientRegistry()
+    context = new ContextManager()
+    signalHandler = new SignalHandler({
+      registry,
+      context,
+    })
+
+    // Create a test channel
+    testChannel = new MulticastChannel({
+      name: 'test-channel',
+      registry,
+    })
+    registry.registerChannel(testChannel as any)
+  })
+
+  describe('constructor', () => {
+    it('should create handler with default options', () => {
+      expect(signalHandler).toBeInstanceOf(SignalHandler)
+      const options = signalHandler.getOptions()
+
+      expect(options.requireChannel).toBe(false)
+      expect(options.allowReservedChannels).toBe(false)
+      expect(options.sendAcknowledgments).toBe(true)
+      expect(options.autoRespondToPing).toBe(true)
+    })
+
+    it('should use custom options', () => {
+      const handler = new SignalHandler({
+        registry,
+        context,
+        options: {
+          requireChannel: true,
+          allowReservedChannels: true,
+          sendAcknowledgments: false,
+          autoRespondToPing: false,
+        },
+      })
+
+      const options = handler.getOptions()
+      expect(options.requireChannel).toBe(true)
+      expect(options.allowReservedChannels).toBe(true)
+      expect(options.sendAcknowledgments).toBe(false)
+      expect(options.autoRespondToPing).toBe(false)
+    })
+  })
+
+  describe('handleSignal()', () => {
+    it('should handle SUBSCRIBE signal', async () => {
+      const socket = new MockWebSocket() as any
+      const client: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+      }
+
+      // Register client in registry first
+      registry.register(client)
+
+      const message = {
+        id: 'msg-1',
+        type: MessageType.SIGNAL,
+        signal: SignalType.SUBSCRIBE,
+        channel: 'test-channel',
+        timestamp: Date.now(),
+      }
+
+      await signalHandler.handleSignal(client, message)
+
+      expect(registry.isSubscribed('client-1', 'test-channel')).toBe(true)
+    })
+
+    it('should handle UNSUBSCRIBE signal', async () => {
+      const socket = new MockWebSocket() as any
+      const client: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+      }
+
+      // Register client and subscribe
+      registry.register(client)
+      registry.subscribe('client-1', 'test-channel')
+
+      const message = {
+        id: 'msg-1',
+        type: MessageType.SIGNAL,
+        signal: SignalType.UNSUBSCRIBE,
+        channel: 'test-channel',
+        timestamp: Date.now(),
+      }
+
+      await signalHandler.handleSignal(client, message)
+
+      expect(registry.isSubscribed('client-1', 'test-channel')).toBe(false)
+    })
+
+    it('should handle PING signal', async () => {
+      const socket = new MockWebSocket() as any
+      const client: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+        lastPingAt: Date.now() - 10000,
+      }
+
+      const message = {
+        id: 'msg-1',
+        type: MessageType.SIGNAL,
+        signal: SignalType.PING,
+        channel: undefined,
+        timestamp: Date.now(),
+      }
+
+      await signalHandler.handleSignal(client, message)
+
+      // Should have updated lastPingAt
+      expect(client.lastPingAt).toBeGreaterThan(Date.now() - 1000)
+
+      // Should have sent PONG response
+      expect(socket.sent.length).toBeGreaterThan(0)
+      const pongMsg = JSON.parse(socket.sent[0])
+      expect(pongMsg.signal).toBe(SignalType.PONG)
+    })
+
+    it('should handle PONG signal', async () => {
+      const socket = new MockWebSocket() as any
+      const client: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+        lastPingAt: Date.now() - 10000,
+      }
+
+      const message = {
+        id: 'msg-1',
+        type: MessageType.SIGNAL,
+        signal: SignalType.PONG,
+        channel: undefined,
+        timestamp: Date.now(),
+      }
+
+      await signalHandler.handleSignal(client, message)
+
+      // Should have updated lastPingAt
+      expect(client.lastPingAt).toBeGreaterThan(Date.now() - 1000)
+    })
+
+    it('should throw error for unknown signal type', async () => {
+      const socket = new MockWebSocket() as any
+      const client: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+      }
+
+      const message = {
+        id: 'msg-1',
+        type: MessageType.SIGNAL,
+        signal: 'UNKNOWN' as SignalType,
+        channel: undefined,
+        timestamp: Date.now(),
+      }
+
+      await expect(signalHandler.handleSignal(client, message)).rejects.toThrow(MessageError)
+    })
+  })
+
+  describe('handleSubscribe()', () => {
+    it('should throw error for reserved channel names', async () => {
+      const socket = new MockWebSocket() as any
+      const client: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+      }
+
+      const message = {
+        id: 'msg-1',
+        type: MessageType.SIGNAL,
+        signal: SignalType.SUBSCRIBE,
+        channel: '__private__',
+        timestamp: Date.now(),
+      }
+
+      await expect(signalHandler.handleSubscribe(client, message)).rejects.toThrow(ChannelError)
+    })
+
+    it('should throw error for broadcast channel', async () => {
+      const socket = new MockWebSocket() as any
+      const client: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+      }
+
+      // Register client first
+      registry.register(client)
+
+      const message = {
+        id: 'msg-1',
+        type: MessageType.SIGNAL,
+        signal: SignalType.SUBSCRIBE,
+        channel: '__broadcast__',
+        timestamp: Date.now(),
+      }
+
+      await expect(signalHandler.handleSubscribe(client, message)).rejects.toThrow(ChannelError)
+      // __broadcast__ is a reserved channel, so it fails that check first
+      await expect(signalHandler.handleSubscribe(client, message)).rejects.toThrow('reserved channel')
+    })
+
+    it('should send acknowledgment when enabled', async () => {
+      const handler = new SignalHandler({
+        registry,
+        context,
+        options: {
+          sendAcknowledgments: true,
+        },
+      })
+
+      const socket = new MockWebSocket() as any
+      const client: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+      }
+
+      // Register client first
+      registry.register(client)
+
+      const message = {
+        id: 'msg-1',
+        type: MessageType.SIGNAL,
+        signal: SignalType.SUBSCRIBE,
+        channel: 'test-channel',
+        timestamp: Date.now(),
+      }
+
+      await handler.handleSubscribe(client, message)
+
+      expect(socket.sent.length).toBeGreaterThan(0)
+      const ack = JSON.parse(socket.sent[0])
+      expect(ack.signal).toBe(SignalType.SUBSCRIBED)
+      expect(ack.id).toBe('msg-1')
+    })
+
+    it('should not send acknowledgment when disabled', async () => {
+      const handler = new SignalHandler({
+        registry,
+        context,
+        options: {
+          sendAcknowledgments: false,
+        },
+      })
+
+      const socket = new MockWebSocket() as any
+      const client: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+      }
+
+      // Register client first
+      registry.register(client)
+
+      const message = {
+        id: 'msg-1',
+        type: MessageType.SIGNAL,
+        signal: SignalType.SUBSCRIBE,
+        channel: 'test-channel',
+        timestamp: Date.now(),
+      }
+
+      await handler.handleSubscribe(client, message)
+
+      expect(socket.sent.length).toBe(0)
+    })
+  })
+
+  describe('handleUnsubscribe()', () => {
+    it('should throw error when not subscribed', async () => {
+      const socket = new MockWebSocket() as any
+      const client: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+      }
+
+      const message = {
+        id: 'msg-1',
+        type: MessageType.SIGNAL,
+        signal: SignalType.UNSUBSCRIBE,
+        channel: 'test-channel',
+        timestamp: Date.now(),
+      }
+
+      await expect(signalHandler.handleUnsubscribe(client, message)).rejects.toThrow(ChannelError)
+    })
+
+    it('should send acknowledgment when enabled', async () => {
+      // First register and subscribe
+      const socket = new MockWebSocket() as any
+      const client: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+      }
+      registry.register(client)
+      registry.subscribe('client-1', 'test-channel')
+
+      const message = {
+        id: 'msg-1',
+        type: MessageType.SIGNAL,
+        signal: SignalType.UNSUBSCRIBE,
+        channel: 'test-channel',
+        timestamp: Date.now(),
+      }
+
+      await signalHandler.handleUnsubscribe(client, message)
+
+      expect(socket.sent.length).toBeGreaterThan(0)
+      const ack = JSON.parse(socket.sent[0])
+      expect(ack.signal).toBe(SignalType.UNSUBSCRIBED)
+    })
+  })
+
+  describe('handlePing()', () => {
+    it('should auto-respond with PONG when enabled', async () => {
+      const socket = new MockWebSocket() as any
+      const client: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+        lastPingAt: 0,
+      }
+
+      const message = {
+        id: 'msg-1',
+        type: MessageType.SIGNAL,
+        signal: SignalType.PING,
+        channel: 'test-channel',
+        timestamp: Date.now(),
+      }
+
+      await signalHandler.handlePing(client, message)
+
+      expect(socket.sent.length).toBeGreaterThan(0)
+      const pong = JSON.parse(socket.sent[0])
+      expect(pong.signal).toBe(SignalType.PONG)
+    })
+
+    it('should not auto-respond when disabled', async () => {
+      const handler = new SignalHandler({
+        registry,
+        context,
+        options: {
+          autoRespondToPing: false,
+        },
+      })
+
+      const socket = new MockWebSocket() as any
+      const client: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+        lastPingAt: 0,
+      }
+
+      const message = {
+        id: 'msg-1',
+        type: MessageType.SIGNAL,
+        signal: SignalType.PING,
+        channel: 'test-channel',
+        timestamp: Date.now(),
+      }
+
+      await handler.handlePing(client, message)
+
+      expect(socket.sent.length).toBe(0)
+    })
+
+    it('should update client lastPingAt', async () => {
+      const socket = new MockWebSocket() as any
+      const client: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+        lastPingAt: 0,
+      }
+
+      const message = {
+        id: 'msg-1',
+        type: MessageType.SIGNAL,
+        signal: SignalType.PING,
+        channel: undefined,
+        timestamp: Date.now(),
+      }
+
+      await signalHandler.handlePing(client, message)
+
+      expect(client.lastPingAt).toBeGreaterThan(0)
+    })
+  })
+
+  describe('handlePong()', () => {
+    it('should update client lastPingAt', async () => {
+      const socket = new MockWebSocket() as any
+      const client: IClientConnection = {
+        id: 'client-1',
+        connectedAt: Date.now(),
+        socket,
+        lastPingAt: 0,
+      }
+
+      const message = {
+        id: 'msg-1',
+        type: MessageType.SIGNAL,
+        signal: SignalType.PONG,
+        channel: undefined,
+        timestamp: Date.now(),
+      }
+
+      await signalHandler.handlePong(client, message)
+
+      expect(client.lastPingAt).toBeGreaterThan(0)
+    })
+  })
+
+  describe('getOptions()', () => {
+    it('should return readonly options', () => {
+      const options = signalHandler.getOptions()
+
+      expect(options).toHaveProperty('requireChannel')
+      expect(options).toHaveProperty('allowReservedChannels')
+      expect(options).toHaveProperty('sendAcknowledgments')
+      expect(options).toHaveProperty('autoRespondToPing')
     })
   })
 })
