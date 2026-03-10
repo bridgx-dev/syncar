@@ -51,9 +51,9 @@ The central hub for managing channels and routing messages.
 import { MessageBus } from '@syncar/core'
 
 const bus = new MessageBus({
-  autoCreateChannels: true,
-  autoDeleteEmptyChannels: true,
-  emptyChannelGracePeriod: 5000,
+    autoCreateChannels: true,
+    autoDeleteEmptyChannels: true,
+    emptyChannelGracePeriod: 5000,
 })
 ```
 
@@ -65,8 +65,8 @@ Represents a named topic with subscribers.
 import { Channel } from '@syncar/core'
 
 const channel = new Channel('chat', {
-  maxSubscribers: 100,
-  historySize: 50,
+    maxSubscribers: 100,
+    historySize: 50,
 })
 
 // Subscribe
@@ -86,9 +86,9 @@ All messages follow the protocol defined in this package.
 
 ```typescript
 import {
-  createDataMessage,
-  createSignalMessage,
-  createErrorMessage,
+    createDataMessage,
+    createSignalMessage,
+    createErrorMessage,
 } from '@syncar/core'
 
 // Data message
@@ -99,8 +99,8 @@ const signalMsg = createSignalMessage('chat', SignalType.SUBSCRIBE)
 
 // Error message
 const errorMsg = createErrorMessage(
-  'Channel not found',
-  ErrorCode.CHANNEL_NOT_FOUND,
+    'Channel not found',
+    ErrorCode.CHANNEL_NOT_FOUND,
 )
 ```
 
@@ -143,8 +143,8 @@ const errorMsg = createErrorMessage(
 import { isDataMessage, isSignalMessage, isErrorMessage } from '@syncar/core'
 
 if (isDataMessage(message)) {
-  // message.data is typed
-  console.log(message.data)
+    // message.data is typed
+    console.log(message.data)
 }
 ```
 

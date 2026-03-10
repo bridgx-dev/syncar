@@ -5,7 +5,16 @@ import {
     type DataMessage,
     type IClientConnection,
     type IMiddleware,
+    type ChannelOptions,
+    type ChannelScope,
+    type ChannelFlow,
 } from './types'
+import { createDataMessage, assertValidChannelName } from './utils'
+import { ClientRegistry } from './registry'
+
+// ============================================================
+// TYPES
+// ============================================================
 
 /**
  * Channel state information
@@ -110,9 +119,9 @@ export type IMessageHandler<T> = (
     message: DataMessage<T>,
 ) => void | Promise<void>
 
-import { createDataMessage, assertValidChannelName } from './utils'
-import { ClientRegistry } from './registry'
-import { BROADCAST_CHANNEL } from './config'
+// ============================================================
+// BASE CHANNEL
+// ============================================================
 
 /**
  * Base Channel implementation
@@ -136,8 +145,7 @@ import { BROADCAST_CHANNEL } from './config'
  * }
  * ```
  *
- * @see {@link BroadcastChannel} for channel that sends to all clients
- * @see {@link MulticastChannel} for channel that sends to subscribers only
+ * @see {@link Channel} for the unified channel implementation
  */
 export abstract class BaseChannel<
     T = unknown,
@@ -157,7 +165,7 @@ export abstract class BaseChannel<
         protected readonly registry: ClientRegistry,
         /** Number of clients to process per chunk for large broadcasts (default: 500) */
         protected readonly chunkSize: number = 500,
-    ) { }
+    ) {}
 
     /**
      * Get the current subscriber count
@@ -231,7 +239,11 @@ export abstract class BaseChannel<
      * @param message - The complete message object
      */
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    async dispatch(_data: T, _client: IClientConnection, _message: DataMessage<T>): Promise<void> { }
+    async dispatch(
+        _data: T,
+        _client: IClientConnection,
+        _message: DataMessage<T>,
+    ): Promise<void> {}
 
     protected abstract getTargetClients(options?: IPublishOptions): ClientId[]
 
@@ -252,7 +264,10 @@ export abstract class BaseChannel<
                 try {
                     client.socket.send(JSON.stringify(message))
                 } catch (error) {
-                    this.registry.logger?.error(`[${this.name}] Failed to send to ${clientId}:`, error as Error)
+                    this.registry.logger?.error(
+                        `[${this.name}] Failed to send to ${clientId}:`,
+                        error as Error,
+                    )
                 }
             }
         }
@@ -281,468 +296,273 @@ export abstract class BaseChannel<
 }
 
 /**
- * Broadcast Channel - sends messages to ALL connected clients
- *
- * @remarks
- * A special channel that delivers messages to every connected client,
- * regardless of subscription. This is useful for server-wide announcements,
- * system notifications, and global events.
- *
- * The broadcast channel is a singleton with the reserved name `__broadcast__`.
- * It is automatically created when the server starts and can be accessed
- * via `server.createBroadcast()`.
- *
- * @template T - Type of data to be broadcast (default: unknown)
- *
- * @example
- * ### Basic broadcasting
- * ```ts
- * const broadcast = server.createBroadcast<string>()
- * broadcast.publish('Server maintenance in 5 minutes')
- * ```
- *
- * @example
- * ### Broadcasting objects
- * ```ts
- * const alerts = server.createBroadcast<{ type: string; message: string }>()
- * alerts.publish({ type: 'warning', message: 'High load detected' })
- * ```
- *
- * @example
- * ### Client filtering
- * ```ts
- * // Send to all except specific clients
- * broadcast.publish('Admin message', { exclude: ['client-123'] })
- *
- * // Send to specific clients only
- * broadcast.publish('Private message', { to: ['client-1', 'client-2'] })
- * ```
- *
- * @example
- * ### System announcements
- * ```ts
- * const broadcast = server.createBroadcast<string>()
- *
- * // Send periodic announcements
- * setInterval(() => {
- *   const time = new Date().toLocaleTimeString()
- *   broadcast.publish(`Server time: ${time}`)
- * }, 60000)
- * ```
- *
- * @see {@link BROADCAST_CHANNEL} for the reserved channel name constant
- * @see {@link MulticastChannel} for subscription-based channels
- */
-export class BroadcastChannel<T = unknown>
-    extends BaseChannel<T, typeof BROADCAST_CHANNEL> {
-    /**
-     * Creates a new BroadcastChannel instance
-     *
-     * @remarks
-     * BroadcastChannel is created automatically by the server and typically
-     * accessed via `server.createBroadcast()` rather than instantiated directly.
-     *
-     * @param registry - The client registry for connection management
-     * @param chunkSize - Number of clients to process per chunk for large broadcasts (default: 500)
-     */
-    constructor(registry: ClientRegistry, chunkSize: number = 500) {
-        super(BROADCAST_CHANNEL, registry, chunkSize)
-    }
-
-    /**
-     * Get all connected clients as target recipients
-     *
-     * @remarks
-     * Broadcast channel targets ALL connected clients. The `options` parameter
-     * is still applied after this method returns for filtering.
-     *
-     * @param _options - Publish options (ignored for broadcast target selection)
-     * @returns Array of all connected client IDs
-     *
-     * @internal
-     */
-    protected getTargetClients(_options?: IPublishOptions): ClientId[] {
-        return Array.from(this.registry.connections.keys())
-    }
-
-    /**
-     * Get the number of connected clients
-     *
-     * @returns The total number of connected clients
-     *
-     * @example
-     * ```ts
-     * const broadcast = server.createBroadcast<string>()
-     * console.log(`Connected clients: ${broadcast.subscriberCount}`)
-     * ```
-     */
-    get subscriberCount(): number {
-        return this.registry.connections.size
-    }
-
-    /**
-     * Check if there are no connected clients
-     *
-     * @returns `true` if no clients are connected, `false` otherwise
-     *
-     * @example
-     * ```ts
-     * const broadcast = server.createBroadcast<string>()
-     * if (broadcast.isEmpty()) {
-     *   console.log('No clients connected')
-     * }
-     * ```
-     */
-    isEmpty(): boolean {
-        return this.registry.connections.size === 0
-    }
-
-    /**
-     * Get the middleware for this channel
-     *
-     * @remarks
-     * Broadcast channel has no middleware by default. Returns an empty array.
-     *
-     * @returns Empty array (broadcast channels don't have middleware)
-     */
-    getMiddlewares(): IMiddleware[] {
-        return []
-    }
-}
-
-/**
- * Multicast channel options
- *
- * @remarks
- * Configuration options for creating a multicast channel.
- *
- * @property chunkSize - Number of clients to process per chunk for large broadcasts
- *
- * @example
- * ```ts
- * const chat = server.createMulticast('chat', { chunkSize: 1000 })
- * ```
- */
-export interface MulticastChannelOptions {
-    /**
-     * Number of clients to process per chunk for large broadcasts
-     *
-     * @remarks
-     * When broadcasting to more than this many subscribers, messages are sent
-     * in chunks to avoid blocking the event loop.
-     *
-     * @default 500
-     */
-    chunkSize?: number
-}
-
-/**
- * Multicast Channel - sends messages to subscribed clients only
- *
- * @remarks
- * A topic-based channel that delivers messages only to clients that have
- * explicitly subscribed. This is the standard channel type for implementing
- * chat rooms, notifications, and other subscription-based messaging patterns.
- *
- * Key features:
- * - Clients must subscribe to receive messages
- * - Supports message handlers for intercepting incoming messages
- * - Auto-relays messages to all subscribers (excluding sender) when no handler is set
- * - Supports per-channel middleware
- *
  * @template T - Type of data published on this channel (default: unknown)
- *
  * @example
- * ### Creating a channel
+ * ### Default: subscribers + bidirectional (chat room)
  * ```ts
- * const chat = server.createMulticast<{ text: string; user: string }>('chat')
- * ```
- *
- * @example
- * ### Publishing messages
- * ```ts
- * // Publish to all subscribers
- * chat.publish({ text: 'Hello everyone!', user: 'Alice' })
- *
- * // Publish excluding sender
- * chat.publish({ text: 'Welcome!', user: 'System' }, { exclude: ['client-123'] })
- *
- * // Publish to specific subscribers only
- * chat.publish({ text: 'Private message', user: 'Bob' }, { to: ['client-1'] })
- * ```
- *
- * @example
- * ### Handling incoming messages with auto-relay
- * ```ts
- * // When no handler is set, messages are auto-relayed to all subscribers (excluding sender)
- * // This is the default behavior for simple chat rooms
- * ```
- *
- * @example
- * ### Handling incoming messages with custom handler
- * ```ts
+ * const chat = server.createChannel('chat')
  * chat.onMessage((data, client) => {
- *   console.log(`${data.user} (${client.id}): ${data.text}`)
- *
- *   // Apply custom logic (filtering, transformation, persistence, etc.)
- *   if (isProfane(data.text)) {
- *     return // Don't relay
- *   }
- *
- *   // Manually publish to subscribers
- *   chat.publish(data, { exclude: [client.id] })
+ *   console.log(`${client.id}: ${data.text}`)
+ *   chat.publish(data)
  * })
  * ```
- *
- * @example
- * ### Managing subscriptions
- * ```ts
- * // Subscribe a client
- * chat.subscribe('client-123')
- *
- * // Unsubscribe a client
- * chat.unsubscribe('client-123')
- *
- * // Check if subscribed
- * if (chat.hasSubscriber('client-123')) {
- *   console.log('Client is subscribed')
- * }
- *
- * // Get all subscribers
- * const subscribers = chat.getSubscribers()
- * console.log(`Subscribers: ${Array.from(subscribers).join(', ')}`)
- * ```
- *
- * @example
- * ### Channel middleware
- * ```ts
- * chat.use(async (context, next) => {
- *   if (context.req.action === 'message') {
- *     // Filter profanity
- *     const data = context.req.message?.data as { text: string }
- *     if (data?.text && isProfane(data.text)) {
- *       context.reject('Profanity is not allowed')
- *     }
- *   }
- *   await next()
- * })
- * ```
- *
- * @see {@link BroadcastChannel} for broadcasting to all clients
  */
-export class MulticastChannel<T = unknown>
-    extends BaseChannel<T> {
+export class Channel<T = unknown> extends BaseChannel<T> {
     private readonly middlewares: IMiddleware[] = []
-
     private readonly messageHandlers: Set<IMessageHandler<T>> = new Set()
 
+    /** The channel scope: 'broadcast' or 'subscribers' */
+    public readonly scope: ChannelScope
+
+    /** The channel flow: 'bidirectional', 'send-only', or 'receive-only' */
+    public readonly flow: ChannelFlow
+
     /**
-     * Creates a new MulticastChannel instance
+     * Creates a new Channel instance
      *
-     * @remarks
-     * MulticastChannel is typically created via `server.createMulticast()`
-     * rather than instantiated directly.
+     * @param config.name - The channel name
+     * @param config.registry - The client registry
+     * @param config.options - Channel options (scope, flow)
+     * @param config.chunkSize - Broadcast chunk size
      *
-     * @param config.name - The channel name (must not start with `__`)
-     * @param config.registry - The client registry for connection management
-     * @param config.options - Optional channel configuration
+     * @throws {Error} If scope is 'broadcast' and flow is not 'send-only'
      *
-     * @throws {ValidationError} If the channel name is invalid (starts with `__`)
+     * @example
+     * ```ts
+     * new Channel({
+     *   name: 'chat',
+     *   registry: registry,
+     *   options: { scope: 'subscribers', flow: 'bidirectional' }
+     * })
+     * ```
      */
     constructor(config: {
-        /** The channel name (must not start with `__`) */
         name: ChannelName
-        /** The client registry for connection management */
         registry: ClientRegistry
-        /** Optional channel configuration */
-        options?: MulticastChannelOptions
+        options?: ChannelOptions
+        chunkSize?: number
     }) {
-        assertValidChannelName(config.name)
-        super(config.name, config.registry, config.options?.chunkSize)
+        const { name, registry, options, chunkSize } = config
+
+        // Apply defaults
+        // Broadcast scope automatically sets flow to send-only
+        const scope = options?.scope ?? 'subscribers'
+        const flow =
+            options?.flow ??
+            (scope === 'broadcast' ? 'send-only' : 'bidirectional')
+
+        // Validation: broadcast scope only allows send-only flow
+        if (scope === 'broadcast' && flow !== 'send-only') {
+            throw new Error(
+                `Invalid channel configuration: broadcast scope only supports send-only flow. ` +
+                    `Got scope '${scope}' and flow '${flow}'.`,
+            )
+        }
+
+        // For broadcast scope, use the broadcast channel name
+        const channelName = scope === 'broadcast' ? '__broadcast__' : name
+
+        // Validate channel name
+        assertValidChannelName(channelName)
+
+        super(channelName, registry, chunkSize)
+
+        this.scope = scope
+        this.flow = flow
     }
 
     /**
-     * Get all subscribed clients as target recipients
-     *
-     * @remarks
-     * Only clients that have subscribed to this channel will receive messages.
-     * The `options` parameter is still applied after this method returns for filtering.
-     *
-     * @param _options - Publish options (ignored for multicast target selection)
-     * @returns Array of subscribed client IDs
+     * Get target clients based on scope
      *
      * @internal
      */
     protected getTargetClients(_options?: IPublishOptions): ClientId[] {
+        if (this.scope === 'broadcast') {
+            return Array.from(this.registry.connections.keys())
+        }
         return Array.from(this.registry.getChannelSubscribers(this.name))
     }
 
     /**
-     * Register a channel-specific middleware
+     * Get the number of subscribers/clients
      *
-     * @remarks
-     * Adds a middleware function that runs for all actions on this channel,
-     * after global middleware. Channel middleware is useful for channel-specific
-     * validation, filtering, or enrichment.
-     *
-     * @param middleware - The middleware function to register
+     * @returns Number of clients that will receive messages
      *
      * @example
      * ```ts
-     * chat.use(async (context, next) => {
-     *   if (context.req.action === 'message') {
-     *     const data = context.req.message?.data as { text: string }
-     *     if (data?.text && isProfane(data.text)) {
-     *       context.reject('Profanity is not allowed')
-     *     }
-     *   }
-     *   await next()
-     * })
+     * console.log(`Channel reach: ${channel.subscriberCount}`)
      * ```
-     *
-     * @see {@link IMiddleware} for middleware interface
      */
-    use(middleware: IMiddleware): void {
-        this.middlewares.push(middleware)
+    get subscriberCount(): number {
+        if (this.scope === 'broadcast') {
+            return this.registry.connections.size
+        }
+        return this.registry.getChannelSubscribers(this.name).size
     }
 
     /**
-     * Get the middleware for this channel
+     * Check if channel has no subscribers/clients
      *
-     * @returns Array of middleware functions registered on this channel
+     * @returns `true` if no clients will receive messages
+     *
+     * @example
+     * ```ts
+     * if (channel.isEmpty()) {
+     *   console.log('No one is listening')
+     * }
+     * ```
+     */
+    isEmpty(): boolean {
+        return this.subscriberCount === 0
+    }
+
+    /**
+     * Get middleware for this channel
+     *
+     * @internal
      */
     getMiddlewares(): IMiddleware[] {
         return [...this.middlewares]
     }
 
     /**
-     * Get the number of subscribers
+     * Register channel-specific middleware
      *
-     * @returns The number of clients subscribed to this channel
+     * @param middleware - The middleware function
      *
      * @example
      * ```ts
-     * console.log(`Chat subscribers: ${chat.subscriberCount}`)
+     * channel.use(async (context, next) => {
+     *   console.log(`Action: ${context.req.action}`)
+     *   await next()
+     * })
      * ```
      */
-    get subscriberCount(): number {
-        return this.registry.getChannelSubscribers(this.name).size
+    use(middleware: IMiddleware): void {
+        this.middlewares.push(middleware)
     }
 
     /**
-     * Register a message handler for incoming messages
-     *
-     * @remarks
-     * Registers a handler that intercepts incoming messages to this channel.
-     * When handlers are registered, they receive full control over message
-     * processing - auto-relay is disabled.
+     * Register a message handler (not available in send-only mode)
      *
      * @param handler - The message handler function
-     * @returns Unsubscribe function that removes the handler when called
+     * @returns Unsubscribe function
+     * @throws {Error} If flow is 'send-only'
      *
      * @example
      * ```ts
-     * const unsubscribe = chat.onMessage((data, client) => {
-     *   console.log(`${client.id}: ${data.text}`)
-     *   // Custom processing logic
+     * const unsubscribe = channel.onMessage((data, client) => {
+     *   console.log(`Received from ${client.id}:`, data)
      * })
      *
-     * // Later, remove the handler
+     * // Later
      * unsubscribe()
      * ```
-     *
-     * @remarks
-     * Multiple handlers can be registered. They will be executed in the order
-     * they were registered. If any handler throws an error, it will be logged
-     * but other handlers will still execute.
      */
     onMessage(handler: IMessageHandler<T>): () => void {
+        if (this.flow === 'send-only') {
+            throw new Error(
+                `Cannot register message handler on channel '${this.name}': ` +
+                    `onMessage is not available in send-only mode.`,
+            )
+        }
         this.messageHandlers.add(handler)
         return () => this.messageHandlers.delete(handler)
     }
 
     /**
-     * Subscribe a client to this channel
+     * Subscribe a client (only available for subscriber scope)
      *
-     * @remarks
-     * Subscribes a client to receive messages from this channel.
-     * This is typically called automatically when a client sends a
-     * subscribe signal, but can also be called manually.
-     *
-     * @param subscriber - The subscriber (client) ID to subscribe
-     * @returns `true` if subscription was successful, `false` if already subscribed
+     * @param subscriber - The subscriber ID
+     * @returns `true` if subscribed successfully
+     * @throws {Error} If scope is 'broadcast'
      *
      * @example
      * ```ts
-     * chat.subscribe('client-123')
-     *
-     * if (chat.subscribe('client-456')) {
-     *   console.log('Subscribed successfully')
-     * }
+     * channel.subscribe('client-123')
      * ```
      */
     subscribe(subscriber: SubscriberId): boolean {
+        if (this.scope === 'broadcast') {
+            throw new Error(
+                `Cannot subscribe to channel '${this.name}': ` +
+                    `subscribe is not available for broadcast channels. ` +
+                    `Broadcast channels send to all clients automatically.`,
+            )
+        }
         return this.registry.subscribe(subscriber, this.name)
     }
 
     /**
-     * Unsubscribe a client from this channel
+     * Unsubscribe a client (only available for subscriber scope)
      *
-     * @remarks
-     * Removes a client's subscription from this channel.
-     * This is typically called automatically when a client sends an
-     * unsubscribe signal or disconnects, but can also be called manually.
-     *
-     * @param subscriber - The subscriber (client) ID to unsubscribe
-     * @returns `true` if unsubscription was successful, `false` if not subscribed
+     * @param subscriber - The subscriber ID
+     * @returns `true` if unsubscribed successfully
+     * @throws {Error} If scope is 'broadcast'
      *
      * @example
      * ```ts
-     * chat.unsubscribe('client-123')
-     *
-     * if (chat.unsubscribe('client-456')) {
-     *   console.log('Unsubscribed successfully')
-     * }
+     * channel.unsubscribe('client-123')
      * ```
      */
     unsubscribe(subscriber: SubscriberId): boolean {
+        if (this.scope === 'broadcast') {
+            throw new Error(
+                `Cannot unsubscribe from channel '${this.name}': ` +
+                    `unsubscribe is not available for broadcast channels.`,
+            )
+        }
         return this.registry.unsubscribe(subscriber, this.name)
     }
 
     /**
+     * Check if a client is subscribed (only available for subscriber scope)
+     *
+     * @param subscriber - The subscriber ID
+     * @returns `true` if subscribed
+     * @throws {Error} If scope is 'broadcast'
+     *
+     * @example
+     * ```ts
+     * if (channel.hasSubscriber('client-123')) {
+     *   console.log('Client is subscribed')
+     * }
+     * ```
+     */
+    hasSubscriber(subscriber: SubscriberId): boolean {
+        if (this.scope === 'broadcast') {
+            throw new Error(
+                `Cannot check subscribers on channel '${this.name}': ` +
+                    `hasSubscriber is not available for broadcast channels.`,
+            )
+        }
+        return this.registry.getChannelSubscribers(this.name).has(subscriber)
+    }
+
+    /**
+     * Get all subscribers (only available for subscriber scope)
+     *
+     * @returns Set of subscriber IDs
+     * @throws {Error} If scope is 'broadcast'
+     *
+     * @example
+     * ```ts
+     * const subs = channel.getSubscribers()
+     * console.log(`Subscribers: ${Array.from(subs).join(', ')}`)
+     * ```
+     */
+    getSubscribers(): Set<SubscriberId> {
+        if (this.scope === 'broadcast') {
+            throw new Error(
+                `Cannot get subscribers on channel '${this.name}': ` +
+                    `getSubscribers is not available for broadcast channels.`,
+            )
+        }
+        return new Set(this.registry.getChannelSubscribers(this.name))
+    }
+
+    /**
      * Dispatch an incoming client message
-     *
-     * @remarks
-     * Processes incoming messages from clients. The behavior depends on
-     * whether message handlers are registered:
-     *
-     * - **With handlers**: All registered handlers are executed with full
-     *   control over the message. No auto-relay occurs.
-     *
-     * - **Without handlers**: The message is automatically relayed to all
-     *   subscribers except the sender.
-     *
-     * @param data - The message data payload
-     * @param client - The client that sent the message
-     * @param message - The complete message object
-     *
-     * @example
-     * ### Auto-relay mode (no handler)
-     * ```ts
-     * // Client sends message → automatically relayed to all subscribers
-     * // No need to call publish()
-     * ```
-     *
-     * @example
-     * ### Intercept mode (with handler)
-     * ```ts
-     * chat.onMessage((data, client) => {
-     *   // Full control - implement custom logic
-     *   if (isValidMessage(data)) {
-     *     chat.publish(data, { exclude: [client.id] })
-     *   }
-     * })
-     * ```
      *
      * @internal
      */
@@ -751,8 +571,13 @@ export class MulticastChannel<T = unknown>
         client: IClientConnection,
         message: DataMessage<T>,
     ): Promise<void> {
+        // Send-only channels don't receive client messages
+        if (this.flow === 'send-only') {
+            return
+        }
+
         if (this.messageHandlers.size > 0) {
-            // Intercept mode: developer handles everything manually
+            // Intercept mode: handlers process the message
             for (const handler of this.messageHandlers) {
                 try {
                     await handler(data, client, message)
@@ -764,66 +589,11 @@ export class MulticastChannel<T = unknown>
                 }
             }
         } else {
-            // Auto-relay mode: forward to all subscribers, excluding sender
-            this.publish(data, { exclude: [client.id] })
+            // Auto-relay mode: forward to all subscribers except sender
+            // Only for subscriber scope with bidirectional flow
+            if (this.scope === 'subscribers') {
+                this.publish(data, { exclude: [client.id] })
+            }
         }
-    }
-
-    /**
-     * Check if a client is subscribed to this channel
-     *
-     * @param subscriber - The subscriber (client) ID to check
-     * @returns `true` if the client is subscribed, `false` otherwise
-     *
-     * @example
-     * ```ts
-     * if (chat.hasSubscriber('client-123')) {
-     *   console.log('Client is subscribed to chat')
-     * }
-     * ```
-     */
-    hasSubscriber(subscriber: SubscriberId): boolean {
-        return this.registry.getChannelSubscribers(this.name).has(subscriber)
-    }
-
-    /**
-     * Get all subscribers to this channel
-     *
-     * @remarks
-     * Returns a copy of the subscribers set to prevent external modification.
-     * The returned set is a snapshot and may not reflect future changes.
-     *
-     * @returns A Set of subscriber IDs
-     *
-     * @example
-     * ```ts
-     * const subscribers = chat.getSubscribers()
-     * console.log(`Subscribers: ${Array.from(subscribers).join(', ')}`)
-     *
-     * // Check if a specific client is subscribed
-     * if (subscribers.has('client-123')) {
-     *   console.log('Client 123 is subscribed')
-     * }
-     * ```
-     */
-    getSubscribers(): Set<SubscriberId> {
-        // Return a copy to prevent external modification
-        return new Set(this.registry.getChannelSubscribers(this.name))
-    }
-
-    /**
-     * Check if the channel has no subscribers
-     *
-     * @returns `true` if no clients are subscribed, `false` otherwise
-     *
-     * @example
-     * ```ts
-     * if (chat.isEmpty()) {
-     *   console.log('No one is in the chat')
-     * }
-     * ```
-     */
-    isEmpty(): boolean {
-        return this.registry.getChannelSubscribers(this.name).size === 0
     }
 }

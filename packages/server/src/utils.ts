@@ -6,7 +6,7 @@ import type {
     DataMessage,
     SignalMessage,
     SignalType,
-    ILogger
+    ILogger,
 } from './types'
 import { MessageType } from './types'
 
@@ -66,11 +66,6 @@ export function assertValidChannelName(name: ChannelName): void {
     if (!isValidChannelName(name)) {
         throw new Error(
             `Invalid channel name: must be between ${CHANNEL_NAME_MIN_LENGTH} and ${CHANNEL_NAME_MAX_LENGTH} characters`,
-        )
-    }
-    if (isReservedChannelName(name)) {
-        throw new Error(
-            `Reserved channel name: channel names starting with '${RESERVED_PREFIX}' are reserved for system use`,
         )
     }
 }
@@ -182,16 +177,20 @@ export function createDefaultLogger(
 
     return {
         debug: (message: string, ...args: unknown[]) => {
-            if (logEnabled.debug) console.log(formatMessage('debug', message), ...args)
+            if (logEnabled.debug)
+                console.log(formatMessage('debug', message), ...args)
         },
         info: (message: string, ...args: unknown[]) => {
-            if (logEnabled.info) console.log(formatMessage('info', message), ...args)
+            if (logEnabled.info)
+                console.log(formatMessage('info', message), ...args)
         },
         warn: (message: string, ...args: unknown[]) => {
-            if (logEnabled.warn) console.warn(formatMessage('warn', message), ...args)
+            if (logEnabled.warn)
+                console.warn(formatMessage('warn', message), ...args)
         },
         error: (message: string, ...args: unknown[]) => {
-            if (logEnabled.error) console.error(formatMessage('error', message), ...args)
-        }
+            if (logEnabled.error)
+                console.error(formatMessage('error', message), ...args)
+        },
     }
 }

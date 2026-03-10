@@ -1,5 +1,9 @@
 import { EventEmitter } from 'node:events'
-import { WebSocketServer as WsServer, type ServerOptions as WsServerOptions, type WebSocket } from 'ws'
+import {
+    WebSocketServer as WsServer,
+    type ServerOptions as WsServerOptions,
+    type WebSocket,
+} from 'ws'
 import {
     MessageType,
     SignalType,
@@ -209,7 +213,9 @@ export class WebSocketServerTransport extends EventEmitter {
     /** @internal */
     private pingTimer?: ReturnType<typeof setInterval>
     /** @internal */
-    private authenticator?: (request: import('node:http').IncomingMessage) => string | Promise<string>
+    private authenticator?: (
+        request: import('node:http').IncomingMessage,
+    ) => string | Promise<string>
 
     /**
      * Creates a new WebSocket Server Transport instance
@@ -289,14 +295,24 @@ export class WebSocketServerTransport extends EventEmitter {
      * })
      * ```
      */
-    setAuthenticator(authenticator: (request: import('node:http').IncomingMessage) => string | Promise<string>): void {
+    setAuthenticator(
+        authenticator: (
+            request: import('node:http').IncomingMessage,
+        ) => string | Promise<string>,
+    ): void {
         this.authenticator = authenticator
     }
 
     private setupEventHandlers(): void {
-        this.wsServer.on('connection', (socket: WebSocket, request: import('node:http').IncomingMessage) => {
-            this.handleConnection(socket, request)
-        })
+        this.wsServer.on(
+            'connection',
+            (
+                socket: WebSocket,
+                request: import('node:http').IncomingMessage,
+            ) => {
+                this.handleConnection(socket, request)
+            },
+        )
 
         this.wsServer.on('error', (error: Error) => {
             this.config.logger?.error('WebSocket Server Error:', error)
@@ -304,7 +320,10 @@ export class WebSocketServerTransport extends EventEmitter {
         })
     }
 
-    private async handleConnection(socket: WebSocket, request: import('node:http').IncomingMessage): Promise<void> {
+    private async handleConnection(
+        socket: WebSocket,
+        request: import('node:http').IncomingMessage,
+    ): Promise<void> {
         let clientId: ClientId
 
         try {
@@ -317,7 +336,10 @@ export class WebSocketServerTransport extends EventEmitter {
             }
         } catch (error) {
             try {
-                socket.close(4001, error instanceof Error ? error.message : 'Unauthorized')
+                socket.close(
+                    4001,
+                    error instanceof Error ? error.message : 'Unauthorized',
+                )
             } catch (e) {
                 // Ignore close error
             }
@@ -371,7 +393,10 @@ export class WebSocketServerTransport extends EventEmitter {
             // Emit message event
             this.emit('message', clientId, message)
         } catch (error) {
-            this.config.logger?.error(`Failed to parse message from ${clientId}:`, error as Error)
+            this.config.logger?.error(
+                `Failed to parse message from ${clientId}:`,
+                error as Error,
+            )
             this.emit('error', error as Error)
         }
     }
@@ -409,7 +434,10 @@ export class WebSocketServerTransport extends EventEmitter {
             const lastPing = connection.lastPingAt ?? connection.connectedAt
 
             // Check for timeout
-            if (now - lastPing > this.config.pingInterval + this.config.pingTimeout) {
+            if (
+                now - lastPing >
+                this.config.pingInterval + this.config.pingTimeout
+            ) {
                 socket.close(1000, 'Ping timeout')
                 continue
             }

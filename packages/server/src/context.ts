@@ -266,7 +266,9 @@ export class ContextManager {
      *
      * @internal
      */
-    getPipeline(channelInstance?: { getMiddlewares?: () => IMiddleware[] }): IMiddleware[] {
+    getPipeline(channelInstance?: {
+        getMiddlewares?: () => IMiddleware[]
+    }): IMiddleware[] {
         let pipeline = this.getMiddlewares()
         const channelMiddlewares = channelInstance?.getMiddlewares?.()
 
@@ -439,13 +441,18 @@ export class ContextManager {
                     throw new MiddlewareExecutionError(
                         action,
                         middlewareName,
-                        error instanceof Error ? error : new Error(String(error)),
+                        error instanceof Error
+                            ? error
+                            : new Error(String(error)),
                     )
                 }
             }
         })
 
-        return await compose(wrappedMiddlewares)(context, finalHandler as () => Promise<void>)
+        return await compose(wrappedMiddlewares)(
+            context,
+            finalHandler as () => Promise<void>,
+        )
     }
 
     /**
@@ -492,10 +499,7 @@ export class ContextManager {
      *
      * @internal
      */
-    createMessageContext(
-        client: IClientConnection,
-        message: Message,
-    ): Context {
+    createMessageContext(client: IClientConnection, message: Message): Context {
         return createContext({
             client,
             message,
