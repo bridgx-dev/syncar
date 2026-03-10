@@ -19,6 +19,7 @@ import { ContextManager } from '../src/context'
 import { createDefaultLogger } from '../src/utils'
 import type { IClientConnection } from '../src/types'
 import { WebSocket } from 'ws'
+import { createMockClient } from './setup'
 
 // Mock WebSocket class for testing
 class MockWebSocket {
@@ -758,5 +759,208 @@ describe('createSyncarServer', () => {
 
     // Middleware should be registered via context
     expect(server).toBeInstanceOf(SyncarServer)
+  })
+})
+
+describe('SyncarServer.createChannel', () => {
+  let registry: ClientRegistry
+  let transport: WebSocketServerTransport
+  let mockHttpServer: any
+
+  beforeEach(() => {
+    registry = new ClientRegistry()
+
+    // Create a mock HTTP server
+    mockHttpServer = {
+      listen: vi.fn((port, host, callback) => {
+        if (callback) callback()
+      }),
+      close: vi.fn((callback) => {
+        if (callback) callback()
+      }),
+      on: vi.fn(),
+    }
+
+    // Create a real transport with mock server
+    transport = new WebSocketServerTransport({
+      server: mockHttpServer,
+      path: '/test',
+      enablePing: false,
+      connections: registry.connections,
+      logger: createDefaultLogger(),
+    })
+  })
+
+  describe('createChannel', () => {
+    it('should create a channel with default options', async () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/syncar',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
+
+      const server = new SyncarServer(config)
+      await server.start()
+
+      const channel = server.createChannel('chat')
+
+      expect(channel.name).toBe('chat')
+      expect(channel.scope).toBe('subscribers')
+      expect(channel.flow).toBe('bidirectional')
+    })
+
+    it('should create a broadcast channel', async () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/syncar',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
+
+      const server = new SyncarServer(config)
+      await server.start()
+
+      const channel = server.createChannel('alerts', { scope: 'broadcast' })
+
+      // Broadcast scope returns the BroadcastChannel instance
+      expect(channel.name).toBe('__broadcast__')
+      expect(channel).toBeInstanceOf(BroadcastChannel)
+    })
+
+    it('should create a send-only subscriber channel', async () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/syncar',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
+
+      const server = new SyncarServer(config)
+      await server.start()
+
+      const channel = server.createChannel('updates', { flow: 'send-only' })
+
+      expect(channel.scope).toBe('subscribers')
+      expect(channel.flow).toBe('send-only')
+    })
+
+    it('should return existing channel if already created', async () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/syncar',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
+
+      const server = new SyncarServer(config)
+      await server.start()
+
+      const channel1 = server.createChannel('chat')
+      const channel2 = server.createChannel('chat')
+
+      expect(channel1).toBe(channel2)
+    })
+
+    it('should throw if server not started', () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/syncar',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
+
+      const server = new SyncarServer(config)
+
+      expect(() => server.createChannel('chat')).toThrow('Server must be started')
+    })
+  })
+
+  describe('broadcast', () => {
+    it('should broadcast to all clients', async () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/syncar',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
+
+      const server = new SyncarServer(config)
+      await server.start()
+
+      const mockClients = [
+        createMockClient('client-1'),
+        createMockClient('client-2'),
+      ]
+
+      for (const client of mockClients) {
+        server.getRegistry().register(client)
+      }
+
+      // Should not throw
+      expect(() => server.broadcast('Hello everyone')).not.toThrow()
+    })
+
+    it('should throw if server not started', () => {
+      const config: IServerOptions = {
+        registry,
+        logger: createDefaultLogger(),
+        port: 3000,
+        host: '0.0.0.0',
+        path: '/syncar',
+        transport,
+        enablePing: false,
+        pingInterval: 30000,
+        pingTimeout: 5000,
+        middleware: [],
+        broadcastChunkSize: 500,
+      }
+
+      const server = new SyncarServer(config)
+
+      expect(() => server.broadcast('test')).toThrow('Server must be started')
+    })
   })
 })
