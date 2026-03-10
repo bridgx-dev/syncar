@@ -7,41 +7,6 @@ import {
 } from './types'
 import type { ILogger, IdGenerator } from './types'
 import { createDefaultLogger } from './utils'
-
-/**
- * Server statistics interface
- *
- * @remarks
- * Provides real-time statistics about the server state including
- * connected clients, active channels, and total subscriptions.
- *
- * @property clientCount - Number of currently connected clients
- * @property channelCount - Number of active channels
- * @property subscriptionCount - Total number of channel subscriptions across all channels
- * @property startedAt - Unix timestamp (ms) when the server was started
- *
- * @example
- * ```ts
- * const server = createSyncarServer({ port: 3000 })
- * await server.start()
- *
- * const stats = server.getStats()
- * console.log(`Clients: ${stats.clientCount}`)
- * console.log(`Channels: ${stats.channelCount}`)
- * console.log(`Started at: ${new Date(stats.startedAt!).toLocaleString()}`)
- * ```
- */
-export interface IServerStats {
-    /** Number of currently connected clients */
-    clientCount: number
-    /** Number of active channels */
-    channelCount: number
-    /** Total number of channel subscriptions across all channels */
-    subscriptionCount: number
-    /** Unix timestamp (ms) when the server was started */
-    startedAt?: number
-}
-
 import { Channel } from './channel'
 import { ConnectionHandler, MessageHandler, SignalHandler } from './handlers'
 import { ContextManager } from './context'
@@ -53,6 +18,17 @@ import { DEFAULT_SERVER_CONFIG, DEFAULT_MAX_PAYLOAD } from './config'
 interface ServerState {
     started: boolean
     startedAt: number | undefined
+}
+
+export interface IServerStats {
+    /** Number of currently connected clients */
+    clientCount: number
+    /** Number of active channels */
+    channelCount: number
+    /** Total number of channel subscriptions across all channels */
+    subscriptionCount: number
+    /** Unix timestamp (ms) when the server was started */
+    startedAt?: number
 }
 
 /**
@@ -421,8 +397,7 @@ export class SyncarServer {
             chunkSize: this.config.broadcastChunkSize,
         })
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        this.registry.registerChannel(channel as any)
+        this.registry.registerChannel(channel)
         return channel
     }
 
