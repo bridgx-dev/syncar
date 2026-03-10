@@ -6,10 +6,10 @@ In v2.0, `BroadcastChannel` and `MulticastChannel` have been merged into a singl
 
 ### Changes
 
-| Old API (v1.x) | New API (v2.0) |
-|----------------|----------------|
-| `server.createBroadcast<T>()` | `server.createChannel('name', { scope: 'broadcast' })` |
-| `server.createMulticast<T>('name')` | `server.createChannel('name')` |
+| Old API (v1.x)                      | New API (v2.0)                                         |
+| ----------------------------------- | ------------------------------------------------------ |
+| `server.createBroadcast<T>()`       | `server.createChannel('name', { scope: 'broadcast' })` |
+| `server.createMulticast<T>('name')` | `server.createChannel('name')`                         |
 
 ### Migration Examples
 
@@ -23,8 +23,8 @@ const chat = server.createMulticast<{ text: string }>('chat')
 const chat = server.createChannel<{ text: string }>('chat')
 // or explicitly
 const chat = server.createChannel<{ text: string }>('chat', {
-  scope: 'subscribers',
-  flow: 'bidirectional'
+    scope: 'subscribers',
+    flow: 'bidirectional',
 })
 ```
 
@@ -36,7 +36,7 @@ const broadcast = server.createBroadcast<string>()
 
 // NEW (v2.0)
 const broadcast = server.createChannel<string>('announcements', {
-  scope: 'broadcast'
+    scope: 'broadcast',
 })
 
 // Or use the convenience method for one-off broadcasts
@@ -45,10 +45,10 @@ syncar.broadcast('Hello everyone')
 
 ### Channel Options
 
-| Option | Values | Default | Description |
-|--------|--------|---------|-------------|
-| `scope` | `'broadcast'` \| `'subscribers'` | `'subscribers'` | Who receives messages |
-| `flow` | `'bidirectional'` \| `'send-only'` \| `'receive-only'` | `'bidirectional'` | Message direction |
+| Option  | Values                                                 | Default           | Description           |
+| ------- | ------------------------------------------------------ | ----------------- | --------------------- |
+| `scope` | `'broadcast'` \| `'subscribers'`                       | `'subscribers'`   | Who receives messages |
+| `flow`  | `'bidirectional'` \| `'send-only'` \| `'receive-only'` | `'bidirectional'` | Message direction     |
 
 ### Breaking Changes
 

@@ -46,9 +46,9 @@ const alerts = syncar.createChannel('alerts', { scope: 'broadcast' }) // All cli
 
 // Handle incoming messages
 chat.onMessage((data, client) => {
-  console.log(`Received from ${client.id}:`, data)
-  // Relay to all other clients
-  chat.publish(data, { exclude: [client.id] })
+    console.log(`Received from ${client.id}:`, data)
+    // Relay to all other clients
+    chat.publish(data, { exclude: [client.id] })
 })
 
 httpServer.listen(3000)
@@ -80,17 +80,17 @@ import { createSyncarClient } from '@syncar/client'
 import { WebSocketClientTransport } from '@syncar/client'
 
 const client = createSyncarClient({
-  transport: new WebSocketClientTransport({
-    url: 'ws://localhost:3000/syncar',
-  }),
+    transport: new WebSocketClientTransport({
+        url: 'ws://localhost:3000/syncar',
+    }),
 })
 
 function Root() {
-  return (
-    <SyncarProvider client={client}>
-      <App />
-    </SyncarProvider>
-  )
+    return (
+        <SyncarProvider client={client}>
+            <App />
+        </SyncarProvider>
+    )
 }
 ```
 
@@ -100,19 +100,19 @@ function Root() {
 import { useChannel } from '@syncar/react'
 
 function ChatRoom() {
-  const chat = useChannel<{ text: string }>('chat', {
-    onMessage: (data) => {
-      console.log('Received:', data.text)
-    },
-  })
+    const chat = useChannel<{ text: string }>('chat', {
+        onMessage: (data) => {
+            console.log('Received:', data.text)
+        },
+    })
 
-  return (
-    <div>
-      <button onClick={() => chat.send({ text: 'Hello World' })}>
-        Send Message
-      </button>
-    </div>
-  )
+    return (
+        <div>
+            <button onClick={() => chat.send({ text: 'Hello World' })}>
+                Send Message
+            </button>
+        </div>
+    )
 }
 ```
 
@@ -123,7 +123,9 @@ Syncar enforces explicit channel creation. Channels must be created on the serve
 ```typescript
 // Server - Create channels explicitly
 const chat = syncar.createChannel('chat') // ✅ Clients CAN join
-const notifications = syncar.createChannel('notifications', { scope: 'broadcast' }) // ✅ Clients CAN join
+const notifications = syncar.createChannel('notifications', {
+    scope: 'broadcast',
+}) // ✅ Clients CAN join
 // 'admin' NOT created // ❌ Clients CANNOT join
 ```
 
@@ -144,9 +146,9 @@ const chat = syncar.createChannel<MessageType>('chat')
 
 // Receive messages from clients
 chat.onMessage((data, client) => {
-  console.log(`${client.id}: ${data.text}`)
-  // Relay to all subscribers except sender
-  chat.publish(data, { exclude: [client.id] })
+    console.log(`${client.id}: ${data.text}`)
+    // Relay to all subscribers except sender
+    chat.publish(data, { exclude: [client.id] })
 })
 
 // Publish to all subscribers
@@ -159,13 +161,13 @@ Server-to-all messaging. All connected clients receive messages, regardless of s
 
 ```typescript
 const notifications = syncar.createChannel<NotificationType>('notifications', {
-  scope: 'broadcast'
+    scope: 'broadcast',
 })
 
 // Send to all connected clients
 await notifications.publish({
-  type: 'info',
-  message: 'Server maintenance in 5 minutes',
+    type: 'info',
+    message: 'Server maintenance in 5 minutes',
 })
 
 // Or use the convenience method for one-off broadcasts
@@ -178,10 +180,10 @@ Add custom authorization logic:
 
 ```typescript
 syncar.authorize(async (clientId, channel, action) => {
-  if (channel === 'admin') {
-    return await isAdminUser(clientId)
-  }
-  return true
+    if (channel === 'admin') {
+        return await isAdminUser(clientId)
+    }
+    return true
 })
 ```
 
@@ -193,7 +195,7 @@ Listen to all messages passing through the system:
 
 ```typescript
 syncar.onMessage((client, message) => {
-  console.log(`Client ${client.id} sent message type: ${message.type}`)
+    console.log(`Client ${client.id} sent message type: ${message.type}`)
 })
 ```
 
@@ -201,15 +203,15 @@ syncar.onMessage((client, message) => {
 
 ```typescript
 syncar.on('connection', (client) => {
-  console.log(`Client connected: ${client.id}`)
+    console.log(`Client connected: ${client.id}`)
 })
 
 syncar.on('disconnection', (client) => {
-  console.log(`Client disconnected: ${client.id}`)
+    console.log(`Client disconnected: ${client.id}`)
 })
 
 syncar.on('subscribe', (client, channel) => {
-  console.log(`${client.id} subscribed to ${channel}`)
+    console.log(`${client.id} subscribed to ${channel}`)
 })
 ```
 
@@ -218,14 +220,14 @@ syncar.on('subscribe', (client, channel) => {
 ```typescript
 const stats = syncar.getStats()
 console.log({
-  clients: stats.clientCount,
-  channels: stats.channelCount,
-  subscriptions: stats.subscriptionCount,
-  messagesReceived: stats.messagesReceived,
-  messagesSent: stats.messagesSent,
-  uptime: stats.startedAt
-    ? Math.floor((Date.now() - stats.startedAt) / 1000) + 's'
-    : 'N/A',
+    clients: stats.clientCount,
+    channels: stats.channelCount,
+    subscriptions: stats.subscriptionCount,
+    messagesReceived: stats.messagesReceived,
+    messagesSent: stats.messagesSent,
+    uptime: stats.startedAt
+        ? Math.floor((Date.now() - stats.startedAt) / 1000) + 's'
+        : 'N/A',
 })
 ```
 

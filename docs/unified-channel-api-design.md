@@ -19,8 +19,8 @@ Merge `BroadcastChannel` and `MulticastChannel` into a single `Channel` class wi
 
 ```typescript
 // Two separate channel types
-const broadcast = server.createBroadcast<string>()     // all clients, receive-only
-const chat = server.createMulticast('chat')            // subscribers only, bidirectional
+const broadcast = server.createBroadcast<string>() // all clients, receive-only
+const chat = server.createMulticast('chat') // subscribers only, bidirectional
 ```
 
 ## New Design
@@ -29,62 +29,62 @@ const chat = server.createMulticast('chat')            // subscribers only, bidi
 
 ```typescript
 interface ChannelOptions {
-  /**
-   * Who receives messages
-   * - 'broadcast': All connected clients (no subscription concept)
-   * - 'subscribers': Only subscribed clients
-   * @default 'subscribers'
-   */
-  scope?: 'broadcast' | 'subscribers'
+    /**
+     * Who receives messages
+     * - 'broadcast': All connected clients (no subscription concept)
+     * - 'subscribers': Only subscribed clients
+     * @default 'subscribers'
+     */
+    scope?: 'broadcast' | 'subscribers'
 
-  /**
-   * Message direction
-   * - 'bidirectional': Server and clients can send
-   * - 'send-only': Only server can send
-   * - 'receive-only': Only clients can send
-   * @default 'bidirectional'
-   */
-  flow?: 'bidirectional' | 'send-only' | 'receive-only'
+    /**
+     * Message direction
+     * - 'bidirectional': Server and clients can send
+     * - 'send-only': Only server can send
+     * - 'receive-only': Only clients can send
+     * @default 'bidirectional'
+     */
+    flow?: 'bidirectional' | 'send-only' | 'receive-only'
 }
 ```
 
 ### Behavior Matrix
 
-| Scope | Flow | Description | Use Case |
-|-------|------|-------------|----------|
-| `broadcast` | `send-only` (enforced) | Server→all clients, no subscriptions | System announcements |
-| `subscribers` | `bidirectional` | Server↔subscribers, full API | Chat rooms (default) |
-| `subscribers` | `send-only` | Server→subscribers only | Live dashboards |
-| `subscribers` | `receive-only` | Clients→server only | Data ingestion |
+| Scope         | Flow                   | Description                          | Use Case             |
+| ------------- | ---------------------- | ------------------------------------ | -------------------- |
+| `broadcast`   | `send-only` (enforced) | Server→all clients, no subscriptions | System announcements |
+| `subscribers` | `bidirectional`        | Server↔subscribers, full API         | Chat rooms (default) |
+| `subscribers` | `send-only`            | Server→subscribers only              | Live dashboards      |
+| `subscribers` | `receive-only`         | Clients→server only                  | Data ingestion       |
 
 ### New Public API
 
 ```typescript
 class Channel<T> {
-  readonly name: string
-  readonly scope: 'broadcast' | 'subscribers'
-  readonly flow: 'bidirectional' | 'send-only' | 'receive-only'
+    readonly name: string
+    readonly scope: 'broadcast' | 'subscribers'
+    readonly flow: 'bidirectional' | 'send-only' | 'receive-only'
 
-  // Universal methods
-  publish(data: T, options?: PublishOptions): void
-  use(middleware: Middleware): void
+    // Universal methods
+    publish(data: T, options?: PublishOptions): void
+    use(middleware: Middleware): void
 
-  // Conditional: scope === 'subscribers' only
-  subscribe?(clientId: string): boolean
-  unsubscribe?(clientId: string): boolean
-  hasSubscriber?(clientId: string): boolean
-  getSubscribers?(): Set<string>
+    // Conditional: scope === 'subscribers' only
+    subscribe?(clientId: string): boolean
+    unsubscribe?(clientId: string): boolean
+    hasSubscriber?(clientId: string): boolean
+    getSubscribers?(): Set<string>
 
-  // Conditional: flow !== 'send-only' only
-  onMessage?(handler: MessageHandler<T>): () => void
+    // Conditional: flow !== 'send-only' only
+    onMessage?(handler: MessageHandler<T>): () => void
 }
 
 class SyncarServer {
-  // Unified channel creation
-  createChannel<T>(name: string, options?: ChannelOptions): Channel<T>
+    // Unified channel creation
+    createChannel<T>(name: string, options?: ChannelOptions): Channel<T>
 
-  // Convenience for one-off broadcasts
-  broadcast<T>(data: T): void
+    // Convenience for one-off broadcasts
+    broadcast<T>(data: T): void
 }
 ```
 
@@ -94,8 +94,8 @@ class SyncarServer {
 // DEFAULT: subscribers + bidirectional (chat room)
 const chat = syncar.createChannel('chat')
 chat.onMessage((data, client) => {
-  console.log(`${client.id}: ${data.text}`)
-  chat.publish(data, { exclude: [client.id] })
+    console.log(`${client.id}: ${data.text}`)
+    chat.publish(data, { exclude: [client.id] })
 })
 
 // BROADCAST: all clients, send-only (announcements)
@@ -115,21 +115,25 @@ syncar.broadcast('Emergency maintenance in 5 minutes')
 ## Implementation Plan
 
 ### Phase 1: Create Unified Channel Class
+
 1. Create `Channel<T>` class extending `BaseChannel<T>`
 2. Implement conditional methods based on `scope` and `flow`
 3. Add runtime validation for invalid combinations
 
 ### Phase 2: Update SyncarServer
+
 1. Replace `createBroadcast()` and `createMulticast()` with `createChannel()`
 2. Add `broadcast()` convenience method
 3. Update type exports
 
 ### Phase 3: Migration & Deprecation
+
 1. Mark old APIs as `@deprecated`
 2. Update all internal usage
 3. Update examples and documentation
 
 ### Phase 4: Remove Old Code (Breaking Release)
+
 1. Remove `BroadcastChannel` and `MulticastChannel` classes
 2. Remove deprecated methods
 3. Clean up unused exports
@@ -139,17 +143,17 @@ syncar.broadcast('Emergency maintenance in 5 minutes')
 ```typescript
 // At channel creation time:
 if (options.scope === 'broadcast' && options.flow !== 'send-only') {
-  throw new Error("Broadcast channels only support send-only mode")
+    throw new Error('Broadcast channels only support send-only mode')
 }
 
 // At method call time:
 if (this.scope === 'broadcast') {
-  // Hide/remove subscription methods
-  // onMessage is not available
+    // Hide/remove subscription methods
+    // onMessage is not available
 }
 
 if (this.flow === 'send-only') {
-  // onMessage throws error or is not available
+    // onMessage throws error or is not available
 }
 ```
 

@@ -69,7 +69,7 @@ describe('Channel', () => {
             })
 
             expect(() => channel.subscribe('client-1')).toThrow(
-                /subscribe is not available for broadcast channels/
+                /subscribe is not available for broadcast channels/,
             )
         })
 
@@ -81,7 +81,7 @@ describe('Channel', () => {
             })
 
             expect(() => channel.hasSubscriber('client-1')).toThrow(
-                /hasSubscriber is not available for broadcast channels/
+                /hasSubscriber is not available for broadcast channels/,
             )
         })
 
@@ -110,7 +110,7 @@ describe('Channel', () => {
 
             // Broadcast channels are send-only, so onMessage should throw
             expect(() => channel.onMessage(vi.fn())).toThrow(
-                /onMessage is not available in send-only mode/
+                /onMessage is not available in send-only mode/,
             )
         })
     })
@@ -135,7 +135,7 @@ describe('Channel', () => {
             })
 
             expect(() => channel.onMessage(vi.fn())).toThrow(
-                /onMessage is not available in send-only mode/
+                /onMessage is not available in send-only mode/,
             )
         })
 
@@ -190,19 +190,25 @@ describe('Channel', () => {
 
     describe('validation', () => {
         it('should throw when scope is broadcast and flow is not send-only', () => {
-            expect(() => new Channel({
-                name: 'invalid',
-                registry,
-                options: { scope: 'broadcast', flow: 'bidirectional' },
-            })).toThrow(/broadcast scope only supports send-only flow/)
+            expect(
+                () =>
+                    new Channel({
+                        name: 'invalid',
+                        registry,
+                        options: { scope: 'broadcast', flow: 'bidirectional' },
+                    }),
+            ).toThrow(/broadcast scope only supports send-only flow/)
         })
 
         it('should throw when scope is broadcast and flow is receive-only', () => {
-            expect(() => new Channel({
-                name: 'invalid',
-                registry,
-                options: { scope: 'broadcast', flow: 'receive-only' },
-            })).toThrow(/broadcast scope only supports send-only flow/)
+            expect(
+                () =>
+                    new Channel({
+                        name: 'invalid',
+                        registry,
+                        options: { scope: 'broadcast', flow: 'receive-only' },
+                    }),
+            ).toThrow(/broadcast scope only supports send-only flow/)
         })
     })
 
@@ -273,20 +279,19 @@ describe('Channel', () => {
 
             const publishSpy = vi.spyOn(channel, 'publish')
 
-            await channel.dispatch(
-                { text: 'hello' },
-                client1,
-                {
-                    id: 'msg-1',
-                    type: 'data' as any,
-                    channel: 'chat',
-                    timestamp: Date.now(),
-                    data: { text: 'hello' },
-                }
-            )
+            await channel.dispatch({ text: 'hello' }, client1, {
+                id: 'msg-1',
+                type: 'data' as any,
+                channel: 'chat',
+                timestamp: Date.now(),
+                data: { text: 'hello' },
+            })
 
             // Should publish to all except sender
-            expect(publishSpy).toHaveBeenCalledWith({ text: 'hello' }, { exclude: ['client-1'] })
+            expect(publishSpy).toHaveBeenCalledWith(
+                { text: 'hello' },
+                { exclude: ['client-1'] },
+            )
         })
 
         it('should call handlers when registered (bidirectional)', async () => {
@@ -302,22 +307,18 @@ describe('Channel', () => {
             const handler = vi.fn()
             channel.onMessage(handler)
 
-            await channel.dispatch(
-                { text: 'hello' },
-                client,
-                {
-                    id: 'msg-1',
-                    type: 'data' as any,
-                    channel: 'chat',
-                    timestamp: Date.now(),
-                    data: { text: 'hello' },
-                }
-            )
+            await channel.dispatch({ text: 'hello' }, client, {
+                id: 'msg-1',
+                type: 'data' as any,
+                channel: 'chat',
+                timestamp: Date.now(),
+                data: { text: 'hello' },
+            })
 
             expect(handler).toHaveBeenCalledWith(
                 { text: 'hello' },
                 client,
-                expect.objectContaining({ id: 'msg-1' })
+                expect.objectContaining({ id: 'msg-1' }),
             )
         })
     })

@@ -15,14 +15,14 @@ export const SyncarContext = createContext<SyncarContextValue | null>(null)
  * @throws {MissingProviderError} if used outside of SyncarProvider
  */
 export function useSyncarContext(): SyncarContextValue {
-  const context = useContext(SyncarContext)
+    const context = useContext(SyncarContext)
 
-  if (!context) {
-    throw new Error(
-      'Syncar hooks must be used within a SyncarProvider. ' +
-        'Wrap your component tree with <SyncarProvider client={client}>.',
-    )
-  }
+    if (!context) {
+        throw new Error(
+            'Syncar hooks must be used within a SyncarProvider. ' +
+                'Wrap your component tree with <SyncarProvider client={client}>.',
+        )
+    }
 
-  return context
+    return context
 }

@@ -15,13 +15,14 @@
 ### Task 1: Add Channel Options Type
 
 **Files:**
+
 - Modify: `src/types.ts` (after line 852)
 
 **Step 1: Add ChannelOptions interface**
 
 Add at the end of `src/types.ts` before the closing of the file:
 
-```typescript
+````typescript
 // ============================================================
 // CHANNEL TYPES
 // ============================================================
@@ -85,7 +86,7 @@ export interface ChannelOptions {
     /** Message direction: 'bidirectional', 'send-only', or 'receive-only' */
     flow?: ChannelFlow
 }
-```
+````
 
 **Step 2: Run type check**
 
@@ -106,13 +107,14 @@ git commit -m "feat(types): add ChannelOptions, ChannelScope, and ChannelFlow ty
 ### Task 2: Create New Channel Class File
 
 **Files:**
+
 - Create: `src/channel-new.ts`
 
 **Step 1: Write the Channel class with conditional methods**
 
 Create `src/channel-new.ts`:
 
-```typescript
+````typescript
 import {
     type ChannelName,
     type ClientId,
@@ -124,12 +126,13 @@ import {
     type ChannelScope,
     type ChannelFlow,
 } from './types'
-import {
-    createDataMessage,
-    assertValidChannelName
-} from './utils'
+import { createDataMessage, assertValidChannelName } from './utils'
 import { ClientRegistry } from './registry'
-import { BaseChannel, type IPublishOptions, type IMessageHandler } from './channel'
+import {
+    BaseChannel,
+    type IPublishOptions,
+    type IMessageHandler,
+} from './channel'
 
 /**
  * Unified Channel - supports both broadcast and multicast modes
@@ -218,7 +221,7 @@ export class Channel<T = unknown> extends BaseChannel<T> {
         if (scope === 'broadcast' && flow !== 'send-only') {
             throw new Error(
                 `Invalid channel configuration: broadcast scope only supports send-only flow. ` +
-                `Got scope '${scope}' and flow '${flow}'.`
+                    `Got scope '${scope}' and flow '${flow}'.`,
             )
         }
 
@@ -324,7 +327,7 @@ export class Channel<T = unknown> extends BaseChannel<T> {
         if (this.flow === 'send-only') {
             throw new Error(
                 `Cannot register message handler on channel '${this.name}': ` +
-                `onMessage is not available in send-only mode.`
+                    `onMessage is not available in send-only mode.`,
             )
         }
         this.messageHandlers.add(handler)
@@ -347,8 +350,8 @@ export class Channel<T = unknown> extends BaseChannel<T> {
         if (this.scope === 'broadcast') {
             throw new Error(
                 `Cannot subscribe to channel '${this.name}': ` +
-                `subscribe is not available for broadcast channels. ` +
-                `Broadcast channels send to all clients automatically.`
+                    `subscribe is not available for broadcast channels. ` +
+                    `Broadcast channels send to all clients automatically.`,
             )
         }
         return this.registry.subscribe(subscriber, this.name)
@@ -370,7 +373,7 @@ export class Channel<T = unknown> extends BaseChannel<T> {
         if (this.scope === 'broadcast') {
             throw new Error(
                 `Cannot unsubscribe from channel '${this.name}': ` +
-                `unsubscribe is not available for broadcast channels.`
+                    `unsubscribe is not available for broadcast channels.`,
             )
         }
         return this.registry.unsubscribe(subscriber, this.name)
@@ -394,7 +397,7 @@ export class Channel<T = unknown> extends BaseChannel<T> {
         if (this.scope === 'broadcast') {
             throw new Error(
                 `Cannot check subscribers on channel '${this.name}': ` +
-                `hasSubscriber is not available for broadcast channels.`
+                    `hasSubscriber is not available for broadcast channels.`,
             )
         }
         return this.registry.getChannelSubscribers(this.name).has(subscriber)
@@ -416,7 +419,7 @@ export class Channel<T = unknown> extends BaseChannel<T> {
         if (this.scope === 'broadcast') {
             throw new Error(
                 `Cannot get subscribers on channel '${this.name}': ` +
-                `getSubscribers is not available for broadcast channels.`
+                    `getSubscribers is not available for broadcast channels.`,
             )
         }
         return new Set(this.registry.getChannelSubscribers(this.name))
@@ -458,7 +461,7 @@ export class Channel<T = unknown> extends BaseChannel<T> {
         }
     }
 }
-```
+````
 
 **Step 2: Run type check**
 
@@ -477,6 +480,7 @@ git commit -m "feat(channel): create unified Channel class with scope and flow o
 ### Task 3: Export Channel Types from Existing channel.ts
 
 **Files:**
+
 - Modify: `src/channel.ts` (after line 112)
 
 **Step 1: Export the base types used by the new Channel class**
@@ -509,13 +513,14 @@ git commit -m "feat(channel): export IPublishOptions and IMessageHandler types"
 ### Task 4: Add createChannel Method to SyncarServer
 
 **Files:**
+
 - Modify: `src/server.ts` (after line 392, after `createBroadcast` method)
 
 **Step 1: Add createChannel method and broadcast convenience method**
 
 Add after the `createBroadcast` method:
 
-```typescript
+````typescript
     /**
      * Create or retrieve a channel with configurable scope and flow
      *
@@ -619,7 +624,7 @@ Add after the `createBroadcast` method:
         }
         this.broadcastChannel.publish(data, options)
     }
-```
+````
 
 **Step 2: Add the Channel import at the top of the file**
 
@@ -646,13 +651,14 @@ git commit -m "feat(server): add createChannel() and broadcast() methods"
 ### Task 5: Deprecate Old Methods
 
 **Files:**
+
 - Modify: `src/server.ts` (createBroadcast and createMulticast methods)
 
 **Step 1: Add @deprecated tags to old methods**
 
 Update the `createBroadcast` method JSDoc (around line 386):
 
-```typescript
+````typescript
     /**
      * @deprecated Use `createChannel(name, { scope: 'broadcast' })` instead.
      * This method will be removed in v2.0.
@@ -679,11 +685,11 @@ Update the `createBroadcast` method JSDoc (around line 386):
      * ```
      */
     createBroadcast<T = unknown>(): BroadcastChannel<T> {
-```
+````
 
 Update the `createMulticast` method JSDoc (around line 437):
 
-```typescript
+````typescript
     /**
      * @deprecated Use `createChannel(name)` instead.
      * This method will be removed in v2.0.
@@ -712,7 +718,7 @@ Update the `createMulticast` method JSDoc (around line 437):
      * ```
      */
     createMulticast<T = unknown>(name: ChannelName): MulticastChannel<T> {
-```
+````
 
 **Step 2: Run type check**
 
@@ -733,13 +739,14 @@ git commit -m "refactor(server): deprecate createBroadcast() and createMulticast
 ### Task 6: Update Public Exports
 
 **Files:**
+
 - Modify: `src/index.ts`
 
 **Step 1: Add new exports and deprecate old ones**
 
 Update the exports section (around line 100):
 
-```typescript
+````typescript
 /**
  * Syncar Server class and factory
  *
@@ -766,24 +773,24 @@ export { Channel } from './channel-new'
 export { BroadcastChannel, MulticastChannel } from './channel'
 
 export {
-  createAuthMiddleware,
-  createLoggingMiddleware,
-  createRateLimitMiddleware,
-  createChannelWhitelistMiddleware,
+    createAuthMiddleware,
+    createLoggingMiddleware,
+    createRateLimitMiddleware,
+    createChannelWhitelistMiddleware,
 } from './middleware'
 export { ContextManager, createContext } from './context'
 
 export {
-  SyncarError,
-  ConfigError,
-  TransportError,
-  ChannelError,
-  ClientError,
-  MessageError,
-  ValidationError,
-  StateError,
-  MiddlewareRejectionError,
-  MiddlewareExecutionError,
+    SyncarError,
+    ConfigError,
+    TransportError,
+    ChannelError,
+    ClientError,
+    MessageError,
+    ValidationError,
+    StateError,
+    MiddlewareRejectionError,
+    MiddlewareExecutionError,
 } from './errors'
 export { WebSocketServerTransport } from './websocket'
 
@@ -793,42 +800,33 @@ export { BroadcastChannel, MulticastChannel } from './channel'
 
 export { BROADCAST_CHANNEL, CLOSE_CODES, ERROR_CODES } from './config'
 
+export type { IClientConnection } from './types'
+
+export type { IServerOptions, IServerStats } from './server'
+
+export type { IChannelState, IPublishOptions, IMessageHandler } from './channel'
+
 export type {
-  IClientConnection,
+    MessageId,
+    ClientId,
+    SubscriberId,
+    ChannelName,
+    Timestamp,
+    Message,
+    DataMessage,
+    SignalMessage,
+    ErrorMessage,
+    AckMessage,
+    MessageType,
+    SignalType,
+    ErrorCode,
+    Context,
+    Middleware,
+    ChannelOptions,
+    ChannelScope,
+    ChannelFlow,
 } from './types'
-
-export type {
-  IServerOptions,
-  IServerStats,
-} from './server'
-
-export type {
-  IChannelState,
-  IPublishOptions,
-  IMessageHandler,
-} from './channel'
-
-export type {
-  MessageId,
-  ClientId,
-  SubscriberId,
-  ChannelName,
-  Timestamp,
-  Message,
-  DataMessage,
-  SignalMessage,
-  ErrorMessage,
-  AckMessage,
-  MessageType,
-  SignalType,
-  ErrorCode,
-  Context,
-  Middleware,
-  ChannelOptions,
-  ChannelScope,
-  ChannelFlow,
-} from './types'
-```
+````
 
 **Step 2: Run type check**
 
@@ -849,6 +847,7 @@ git commit -m "feat(exports): add Channel export, deprecate BroadcastChannel and
 ### Task 7: Write Channel Class Tests
 
 **Files:**
+
 - Create: `__tests__/channel-new.test.ts`
 
 **Step 1: Write failing test for Channel with default options**
@@ -927,7 +926,7 @@ describe('Channel', () => {
             })
 
             expect(() => channel.subscribe('client-1')).toThrow(
-                /subscribe is not available for broadcast channels/
+                /subscribe is not available for broadcast channels/,
             )
         })
 
@@ -939,7 +938,7 @@ describe('Channel', () => {
             })
 
             expect(() => channel.hasSubscriber('client-1')).toThrow(
-                /hasSubscriber is not available for broadcast channels/
+                /hasSubscriber is not available for broadcast channels/,
             )
         })
 
@@ -991,7 +990,7 @@ describe('Channel', () => {
             })
 
             expect(() => channel.onMessage(vi.fn())).toThrow(
-                /onMessage is not available in send-only mode/
+                /onMessage is not available in send-only mode/,
             )
         })
 
@@ -1046,19 +1045,25 @@ describe('Channel', () => {
 
     describe('validation', () => {
         it('should throw when scope is broadcast and flow is not send-only', () => {
-            expect(() => new Channel({
-                name: 'invalid',
-                registry,
-                options: { scope: 'broadcast', flow: 'bidirectional' },
-            })).toThrow(/broadcast scope only supports send-only flow/)
+            expect(
+                () =>
+                    new Channel({
+                        name: 'invalid',
+                        registry,
+                        options: { scope: 'broadcast', flow: 'bidirectional' },
+                    }),
+            ).toThrow(/broadcast scope only supports send-only flow/)
         })
 
         it('should throw when scope is broadcast and flow is receive-only', () => {
-            expect(() => new Channel({
-                name: 'invalid',
-                registry,
-                options: { scope: 'broadcast', flow: 'receive-only' },
-            })).toThrow(/broadcast scope only supports send-only flow/)
+            expect(
+                () =>
+                    new Channel({
+                        name: 'invalid',
+                        registry,
+                        options: { scope: 'broadcast', flow: 'receive-only' },
+                    }),
+            ).toThrow(/broadcast scope only supports send-only flow/)
         })
     })
 
@@ -1129,20 +1134,19 @@ describe('Channel', () => {
 
             const publishSpy = vi.spyOn(channel, 'publish')
 
-            await channel.dispatch(
-                { text: 'hello' },
-                client1,
-                {
-                    id: 'msg-1',
-                    type: 'data' as any,
-                    channel: 'chat',
-                    timestamp: Date.now(),
-                    data: { text: 'hello' },
-                }
-            )
+            await channel.dispatch({ text: 'hello' }, client1, {
+                id: 'msg-1',
+                type: 'data' as any,
+                channel: 'chat',
+                timestamp: Date.now(),
+                data: { text: 'hello' },
+            })
 
             // Should publish to all except sender
-            expect(publishSpy).toHaveBeenCalledWith({ text: 'hello' }, { exclude: ['client-1'] })
+            expect(publishSpy).toHaveBeenCalledWith(
+                { text: 'hello' },
+                { exclude: ['client-1'] },
+            )
         })
 
         it('should call handlers when registered (bidirectional)', async () => {
@@ -1158,22 +1162,18 @@ describe('Channel', () => {
             const handler = vi.fn()
             channel.onMessage(handler)
 
-            await channel.dispatch(
-                { text: 'hello' },
-                client,
-                {
-                    id: 'msg-1',
-                    type: 'data' as any,
-                    channel: 'chat',
-                    timestamp: Date.now(),
-                    data: { text: 'hello' },
-                }
-            )
+            await channel.dispatch({ text: 'hello' }, client, {
+                id: 'msg-1',
+                type: 'data' as any,
+                channel: 'chat',
+                timestamp: Date.now(),
+                data: { text: 'hello' },
+            })
 
             expect(handler).toHaveBeenCalledWith(
                 { text: 'hello' },
                 client,
-                expect.objectContaining({ id: 'msg-1' })
+                expect.objectContaining({ id: 'msg-1' }),
             )
         })
     })
@@ -1202,6 +1202,7 @@ git commit -m "test: add comprehensive tests for unified Channel class"
 ### Task 8: Write SyncarServer Integration Tests
 
 **Files:**
+
 - Modify: `__tests__/server.test.ts` (add new tests)
 
 **Step 1: Add tests for createChannel and broadcast methods**
@@ -1209,79 +1210,81 @@ git commit -m "test: add comprehensive tests for unified Channel class"
 Add to existing server test file:
 
 ```typescript
-    describe('createChannel', () => {
-        it('should create a channel with default options', async () => {
-            const server = createSyncarServer({ port: 0 })
-            await server.start()
+describe('createChannel', () => {
+    it('should create a channel with default options', async () => {
+        const server = createSyncarServer({ port: 0 })
+        await server.start()
 
-            const channel = server.createChannel('chat')
+        const channel = server.createChannel('chat')
 
-            expect(channel.name).toBe('chat')
-            expect(channel.scope).toBe('subscribers')
-            expect(channel.flow).toBe('bidirectional')
-        })
-
-        it('should create a broadcast channel', async () => {
-            const server = createSyncarServer({ port: 0 })
-            await server.start()
-
-            const channel = server.createChannel('alerts', { scope: 'broadcast' })
-
-            expect(channel.scope).toBe('broadcast')
-            expect(channel.flow).toBe('send-only')
-        })
-
-        it('should create a send-only subscriber channel', async () => {
-            const server = createSyncarServer({ port: 0 })
-            await server.start()
-
-            const channel = server.createChannel('updates', { flow: 'send-only' })
-
-            expect(channel.scope).toBe('subscribers')
-            expect(channel.flow).toBe('send-only')
-        })
-
-        it('should return existing channel if already created', async () => {
-            const server = createSyncarServer({ port: 0 })
-            await server.start()
-
-            const channel1 = server.createChannel('chat')
-            const channel2 = server.createChannel('chat')
-
-            expect(channel1).toBe(channel2)
-        })
-
-        it('should throw if server not started', () => {
-            const server = createSyncarServer({ port: 0 })
-
-            expect(() => server.createChannel('chat')).toThrow('Server must be started')
-        })
+        expect(channel.name).toBe('chat')
+        expect(channel.scope).toBe('subscribers')
+        expect(channel.flow).toBe('bidirectional')
     })
 
-    describe('broadcast', () => {
-        it('should broadcast to all clients', async () => {
-            const server = createSyncarServer({ port: 0 })
-            await server.start()
+    it('should create a broadcast channel', async () => {
+        const server = createSyncarServer({ port: 0 })
+        await server.start()
 
-            const mockClients = [
-                createMockClient('client-1'),
-                createMockClient('client-2'),
-            ]
+        const channel = server.createChannel('alerts', { scope: 'broadcast' })
 
-            for (const client of mockClients) {
-                server.getRegistry().add(client)
-            }
-
-            // Should not throw
-            expect(() => server.broadcast('Hello everyone')).not.toThrow()
-        })
-
-        it('should throw if server not started', () => {
-            const server = createSyncarServer({ port: 0 })
-
-            expect(() => server.broadcast('test')).toThrow('Server must be started')
-        })
+        expect(channel.scope).toBe('broadcast')
+        expect(channel.flow).toBe('send-only')
     })
+
+    it('should create a send-only subscriber channel', async () => {
+        const server = createSyncarServer({ port: 0 })
+        await server.start()
+
+        const channel = server.createChannel('updates', { flow: 'send-only' })
+
+        expect(channel.scope).toBe('subscribers')
+        expect(channel.flow).toBe('send-only')
+    })
+
+    it('should return existing channel if already created', async () => {
+        const server = createSyncarServer({ port: 0 })
+        await server.start()
+
+        const channel1 = server.createChannel('chat')
+        const channel2 = server.createChannel('chat')
+
+        expect(channel1).toBe(channel2)
+    })
+
+    it('should throw if server not started', () => {
+        const server = createSyncarServer({ port: 0 })
+
+        expect(() => server.createChannel('chat')).toThrow(
+            'Server must be started',
+        )
+    })
+})
+
+describe('broadcast', () => {
+    it('should broadcast to all clients', async () => {
+        const server = createSyncarServer({ port: 0 })
+        await server.start()
+
+        const mockClients = [
+            createMockClient('client-1'),
+            createMockClient('client-2'),
+        ]
+
+        for (const client of mockClients) {
+            server.getRegistry().add(client)
+        }
+
+        // Should not throw
+        expect(() => server.broadcast('Hello everyone')).not.toThrow()
+    })
+
+    it('should throw if server not started', () => {
+        const server = createSyncarServer({ port: 0 })
+
+        expect(() => server.broadcast('test')).toThrow('Server must be started')
+    })
+})
 ```
 
 **Step 2: Run test**
@@ -1303,13 +1306,14 @@ git commit -m "test: add tests for createChannel() and broadcast() methods"
 ### Task 9: Update README with New API
 
 **Files:**
+
 - Modify: `../../README.md`
 
 **Step 1: Update README examples**
 
 Replace the old API examples with new ones. Here are the key sections to update:
 
-```markdown
+````markdown
 ## 🚀 Quick Start
 
 ### 1. Server Setup (with Express)
@@ -1329,18 +1333,19 @@ const syncar = createSyncarServer({ server: httpServer })
 await syncar.start()
 
 // Create channels
-const chat = syncar.createChannel('chat')  // Subscribers + bidirectional (default)
-const alerts = syncar.createChannel('alerts', { scope: 'broadcast' })  // All clients
+const chat = syncar.createChannel('chat') // Subscribers + bidirectional (default)
+const alerts = syncar.createChannel('alerts', { scope: 'broadcast' }) // All clients
 
 // Handle incoming messages
 chat.onMessage((data, client) => {
-  console.log(`Received from ${client.id}:`, data)
-  // Relay to all other clients
-  chat.publish(data, { exclude: [client.id] })
+    console.log(`Received from ${client.id}:`, data)
+    // Relay to all other clients
+    chat.publish(data, { exclude: [client.id] })
 })
 
 httpServer.listen(3000)
 ```
+````
 
 ### 2. Standalone Server (no Express)
 
@@ -1357,7 +1362,8 @@ const chat = syncar.createChannel('chat')
 // One-off broadcast
 syncar.broadcast({ message: 'Welcome!' })
 ```
-```
+
+````
 
 **Step 2: Run build to verify**
 
@@ -1369,20 +1375,21 @@ Expected: Build succeeds
 ```bash
 git add ../../README.md
 git commit -m "docs: update README with unified channel API examples"
-```
+````
 
 ---
 
 ### Task 10: Create Migration Guide
 
 **Files:**
+
 - Create: `docs/MIGRATION.md`
 
 **Step 1: Write migration guide**
 
 Create migration guide:
 
-```markdown
+````markdown
 # Migration Guide: v1.x → v2.0
 
 ## Unified Channel API
@@ -1391,10 +1398,10 @@ In v2.0, `BroadcastChannel` and `MulticastChannel` have been merged into a singl
 
 ### Changes
 
-| Old API (v1.x) | New API (v2.0) |
-|----------------|----------------|
-| `server.createBroadcast<T>()` | `server.createChannel('name', { scope: 'broadcast' })` |
-| `server.createMulticast<T>('name')` | `server.createChannel('name')` |
+| Old API (v1.x)                      | New API (v2.0)                                         |
+| ----------------------------------- | ------------------------------------------------------ |
+| `server.createBroadcast<T>()`       | `server.createChannel('name', { scope: 'broadcast' })` |
+| `server.createMulticast<T>('name')` | `server.createChannel('name')`                         |
 
 ### Migration Examples
 
@@ -1408,10 +1415,11 @@ const chat = server.createMulticast<{ text: string }>('chat')
 const chat = server.createChannel<{ text: string }>('chat')
 // or explicitly
 const chat = server.createChannel<{ text: string }>('chat', {
-  scope: 'subscribers',
-  flow: 'bidirectional'
+    scope: 'subscribers',
+    flow: 'bidirectional',
 })
 ```
+````
 
 #### Broadcast Channel
 
@@ -1421,7 +1429,7 @@ const broadcast = server.createBroadcast<string>()
 
 // NEW (v2.0)
 const broadcast = server.createChannel<string>('announcements', {
-  scope: 'broadcast'
+    scope: 'broadcast',
 })
 
 // Or use the convenience method for one-off broadcasts
@@ -1430,10 +1438,10 @@ syncar.broadcast('Hello everyone')
 
 ### Channel Options
 
-| Option | Values | Default | Description |
-|--------|--------|---------|-------------|
-| `scope` | `'broadcast'` \| `'subscribers'` | `'subscribers'` | Who receives messages |
-| `flow` | `'bidirectional'` \| `'send-only'` \| `'receive-only'` | `'bidirectional'` | Message direction |
+| Option  | Values                                                 | Default           | Description           |
+| ------- | ------------------------------------------------------ | ----------------- | --------------------- |
+| `scope` | `'broadcast'` \| `'subscribers'`                       | `'subscribers'`   | Who receives messages |
+| `flow`  | `'bidirectional'` \| `'send-only'` \| `'receive-only'` | `'bidirectional'` | Message direction     |
 
 ### Breaking Changes
 
@@ -1446,14 +1454,15 @@ syncar.broadcast('Hello everyone')
 - **`flow: 'send-only'`** - Create channels where only the server can send
 - **`flow: 'receive-only'`** - Create channels where only clients can send
 - **`broadcast()` method** - Quick one-off broadcasts without channel reference
-```
+
+````
 
 **Step 2: Commit**
 
 ```bash
 git add docs/MIGRATION.md
 git commit -m "docs: add migration guide for v2.0 unified channel API"
-```
+````
 
 ---
 
@@ -1462,6 +1471,7 @@ git commit -m "docs: add migration guide for v2.0 unified channel API"
 ### Task 11: Rename channel-new.ts to unified implementation
 
 **Files:**
+
 - Rename: `src/channel-new.ts` → (merge into `src/channel.ts`)
 - Modify: All imports
 
@@ -1497,6 +1507,7 @@ git commit -m "refactor(channel): re-export unified Channel class"
 ### Task 12: Update Package.json Version for v2.0
 
 **Files:**
+
 - Modify: `package.json`
 
 **Step 1: Update version**

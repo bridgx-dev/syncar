@@ -384,7 +384,8 @@ export class StateError extends SyncarError {
  */
 export class MiddlewareRejectionError
     extends Error
-    implements IMiddlewareRejectionError {
+    implements IMiddlewareRejectionError
+{
     /**
      * The reason for rejection
      *

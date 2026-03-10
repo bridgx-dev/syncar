@@ -199,7 +199,9 @@ export interface ILogger {
  * }
  * ```
  */
-export type IdGenerator = (request: IncomingMessage) => ClientId | Promise<ClientId>
+export type IdGenerator = (
+    request: IncomingMessage,
+) => ClientId | Promise<ClientId>
 
 // ============================================================
 // BASE TYPES

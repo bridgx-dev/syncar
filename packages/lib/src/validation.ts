@@ -13,11 +13,11 @@ const RESERVED_PREFIX = '__'
  * Channel names must be non-empty strings with reasonable length
  */
 export function isValidChannelName(name: ChannelName): boolean {
-  return (
-    typeof name === 'string' &&
-    name.length >= CHANNEL_NAME_MIN_LENGTH &&
-    name.length <= CHANNEL_NAME_MAX_LENGTH
-  )
+    return (
+        typeof name === 'string' &&
+        name.length >= CHANNEL_NAME_MIN_LENGTH &&
+        name.length <= CHANNEL_NAME_MAX_LENGTH
+    )
 }
 
 /**
@@ -25,14 +25,14 @@ export function isValidChannelName(name: ChannelName): boolean {
  * Reserved channel names start with '__'
  */
 export function isReservedChannelName(name: ChannelName): boolean {
-  return name.startsWith(RESERVED_PREFIX)
+    return name.startsWith(RESERVED_PREFIX)
 }
 
 /**
  * Validate channel name is not reserved
  */
 export function isNonReservedChannelName(name: ChannelName): boolean {
-  return isValidChannelName(name) && !isReservedChannelName(name)
+    return isValidChannelName(name) && !isReservedChannelName(name)
 }
 
 /**
@@ -40,14 +40,14 @@ export function isNonReservedChannelName(name: ChannelName): boolean {
  * @throws Error if channel name is invalid
  */
 export function assertValidChannelName(name: ChannelName): void {
-  if (!isValidChannelName(name)) {
-    throw new Error(
-      `Invalid channel name: must be between ${CHANNEL_NAME_MIN_LENGTH} and ${CHANNEL_NAME_MAX_LENGTH} characters`,
-    )
-  }
-  if (isReservedChannelName(name)) {
-    throw new Error(
-      `Reserved channel name: channel names starting with '${RESERVED_PREFIX}' are reserved for system use`,
-    )
-  }
+    if (!isValidChannelName(name)) {
+        throw new Error(
+            `Invalid channel name: must be between ${CHANNEL_NAME_MIN_LENGTH} and ${CHANNEL_NAME_MAX_LENGTH} characters`,
+        )
+    }
+    if (isReservedChannelName(name)) {
+        throw new Error(
+            `Reserved channel name: channel names starting with '${RESERVED_PREFIX}' are reserved for system use`,
+        )
+    }
 }

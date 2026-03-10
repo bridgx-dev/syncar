@@ -74,13 +74,13 @@ httpServer.listen(3000)
 import { createSyncarServer } from '@syncar/server'
 
 const server = createSyncarServer({
-  port: 3000,
-  host: '0.0.0.0',
-  path: '/ws', // WebSocket endpoint path
-  enablePing: true, // Enable automatic ping/pong
-  pingInterval: 30000, // Ping every 30 seconds
-  pingTimeout: 5000, // Wait 5 seconds for pong
-  broadcastChunkSize: 500, // Chunk broadcasts into groups of 500
+    port: 3000,
+    host: '0.0.0.0',
+    path: '/ws', // WebSocket endpoint path
+    enablePing: true, // Enable automatic ping/pong
+    pingInterval: 30000, // Ping every 30 seconds
+    pingTimeout: 5000, // Wait 5 seconds for pong
+    broadcastChunkSize: 500, // Chunk broadcasts into groups of 500
 })
 
 await server.start()
@@ -99,8 +99,8 @@ const server = createSyncarServer({ port: 3000 })
 
 // Add custom middleware
 server.use(async (c, next) => {
-  console.log(`[${c.req.action}] client: ${c.req.client?.id}`)
-  await next()
+    console.log(`[${c.req.action}] client: ${c.req.client?.id}`)
+    await next()
 })
 
 await server.start()
@@ -114,27 +114,27 @@ await server.start()
 import { createSyncarServer, createAuthMiddleware } from '@syncar/server'
 
 const server = createSyncarServer({
-  port: 3000,
-  middleware: [
-    createAuthMiddleware({
-      verifyToken: async (token) => {
-        // Verify JWT or any token
-        const user = await verifyJwt(token)
-        return { id: user.sub, email: user.email, role: user.role }
-      },
-      getToken: (context) => {
-        // Extract token from message data
-        return context.message?.data?.token
-      },
-      attachProperty: 'user', // Property name on client object
-    }),
-  ],
+    port: 3000,
+    middleware: [
+        createAuthMiddleware({
+            verifyToken: async (token) => {
+                // Verify JWT or any token
+                const user = await verifyJwt(token)
+                return { id: user.sub, email: user.email, role: user.role }
+            },
+            getToken: (context) => {
+                // Extract token from message data
+                return context.message?.data?.token
+            },
+            attachProperty: 'user', // Property name on client object
+        }),
+    ],
 })
 
 // Access authenticated user in message handlers
 chat.onMessage((data, client) => {
-  const user = (client as any).user
-  console.log(`Message from ${user.email}:`, data)
+    const user = (client as any).user
+    console.log(`Message from ${user.email}:`, data)
 })
 ```
 
@@ -144,17 +144,17 @@ chat.onMessage((data, client) => {
 import { createLoggingMiddleware } from '@syncar/server'
 
 const server = createSyncarServer({
-  port: 3000,
-  middleware: [
-    createLoggingMiddleware({
-      logger: console,
-      logLevel: 'info',
-      includeMessageData: false,
-      format: (context) => {
-        return `[${context.action}] ${context.clientId} - ${context.channel}`
-      },
-    }),
-  ],
+    port: 3000,
+    middleware: [
+        createLoggingMiddleware({
+            logger: console,
+            logLevel: 'info',
+            includeMessageData: false,
+            format: (context) => {
+                return `[${context.action}] ${context.clientId} - ${context.channel}`
+            },
+        }),
+    ],
 })
 ```
 
@@ -164,14 +164,14 @@ const server = createSyncarServer({
 import { createRateLimitMiddleware } from '@syncar/server'
 
 const server = createSyncarServer({
-  port: 3000,
-  middleware: [
-    createRateLimitMiddleware({
-      maxRequests: 100, // Max requests per window
-      windowMs: 60000, // 1 minute window
-      actions: ['message'], // Rate limit message actions only
-    }),
-  ],
+    port: 3000,
+    middleware: [
+        createRateLimitMiddleware({
+            maxRequests: 100, // Max requests per window
+            windowMs: 60000, // 1 minute window
+            actions: ['message'], // Rate limit message actions only
+        }),
+    ],
 })
 ```
 
@@ -181,19 +181,19 @@ const server = createSyncarServer({
 import { createChannelWhitelistMiddleware } from '@syncar/server'
 
 const server = createSyncarServer({
-  port: 3000,
-  middleware: [
-    createChannelWhitelistMiddleware({
-      // Static list of allowed channels
-      allowedChannels: ['chat', 'notifications', 'presence'],
+    port: 3000,
+    middleware: [
+        createChannelWhitelistMiddleware({
+            // Static list of allowed channels
+            allowedChannels: ['chat', 'notifications', 'presence'],
 
-      // Or use dynamic function
-      isDynamic: (channel, client) => {
-        const user = (client as any).user
-        return user?.permissions?.includes(channel)
-      },
-    }),
-  ],
+            // Or use dynamic function
+            isDynamic: (channel, client) => {
+                const user = (client as any).user
+                return user?.permissions?.includes(channel)
+            },
+        }),
+    ],
 })
 ```
 
@@ -204,11 +204,11 @@ const server = createSyncarServer({
 const adminChannel = server.createChannel('admin')
 
 adminChannel.use(async (c, next) => {
-  const user = c.get('user')
-  if (user?.role !== 'admin') {
-    return c.reject('Unauthorized: Admin access required')
-  }
-  await next()
+    const user = c.get('user')
+    if (user?.role !== 'admin') {
+        return c.reject('Unauthorized: Admin access required')
+    }
+    await next()
 })
 ```
 
@@ -223,15 +223,15 @@ const server = createSyncarServer({ port: 3000 })
 
 // Set handshake authentication hook
 server.authenticate(async (request) => {
-  const token = request.headers['authorization']?.replace('Bearer ', '')
+    const token = request.headers['authorization']?.replace('Bearer ', '')
 
-  if (!token) {
-    throw new Error('Authentication required')
-  }
+    if (!token) {
+        throw new Error('Authentication required')
+    }
 
-  // Verify token and return client ID
-  const userId = await verifyToken(token)
-  return userId // This becomes the client.id
+    // Verify token and return client ID
+    const userId = await verifyToken(token)
+    return userId // This becomes the client.id
 })
 
 await server.start()
@@ -248,10 +248,10 @@ await server.start()
 // Check server statistics
 const stats = server.getStats()
 console.log({
-  clientCount: stats.clientCount,
-  channelCount: stats.channelCount,
-  subscriptionCount: stats.subscriptionCount,
-  startedAt: stats.startedAt,
+    clientCount: stats.clientCount,
+    channelCount: stats.channelCount,
+    subscriptionCount: stats.subscriptionCount,
+    startedAt: stats.startedAt,
 })
 
 // Stop the server (closes all connections)
@@ -269,7 +269,7 @@ console.log(`Server running on port ${config.port}`)
 const registry = server.getRegistry()
 const client = registry.get('client-123')
 if (client) {
-  console.log(`Client connected at: ${client.connectedAt}`)
+    console.log(`Client connected at: ${client.connectedAt}`)
 }
 ```
 
@@ -279,13 +279,13 @@ if (client) {
 import { createSyncarServer } from '@syncar/server'
 
 const server = createSyncarServer({
-  port: 3000,
-  logger: {
-    debug: (msg, ...args) => console.debug('[DEBUG]', msg, ...args),
-    info: (msg, ...args) => console.info('[INFO]', msg, ...args),
-    warn: (msg, ...args) => console.warn('[WARN]', msg, ...args),
-    error: (msg, ...args) => console.error('[ERROR]', msg, ...args),
-  },
+    port: 3000,
+    logger: {
+        debug: (msg, ...args) => console.debug('[DEBUG]', msg, ...args),
+        info: (msg, ...args) => console.info('[INFO]', msg, ...args),
+        warn: (msg, ...args) => console.warn('[WARN]', msg, ...args),
+        error: (msg, ...args) => console.error('[ERROR]', msg, ...args),
+    },
 })
 ```
 
@@ -295,26 +295,26 @@ Syncar provides built-in error types for handling different scenarios:
 
 ```typescript
 import {
-  SyncarError,
-  ConfigError,
-  TransportError,
-  ChannelError,
-  ClientError,
-  ValidationError,
-  StateError,
-  MiddlewareRejectionError,
+    SyncarError,
+    ConfigError,
+    TransportError,
+    ChannelError,
+    ClientError,
+    ValidationError,
+    StateError,
+    MiddlewareRejectionError,
 } from '@syncar/server'
 
 try {
-  await server.start()
+    await server.start()
 } catch (error) {
-  if (error instanceof ConfigError) {
-    console.error('Server configuration error:', error.message)
-  } else if (error instanceof TransportError) {
-    console.error('WebSocket transport error:', error.message)
-  } else if (error instanceof StateError) {
-    console.error('Server state error:', error.message)
-  }
+    if (error instanceof ConfigError) {
+        console.error('Server configuration error:', error.message)
+    } else if (error instanceof TransportError) {
+        console.error('WebSocket transport error:', error.message)
+    } else if (error instanceof StateError) {
+        console.error('Server state error:', error.message)
+    }
 }
 ```
 
@@ -322,19 +322,19 @@ try {
 
 ### Server Methods
 
-| Method                     | Description                                 |
-| :------------------------- | :------------------------------------------ |
-| `start()`                  | Starts the WebSocket server                 |
-| `stop()`                   | Stops the server and closes all connections |
-| `use(middleware)`          | Registers global middleware                 |
-| `authenticate(hook)`       | Sets handshake authentication hook          |
+| Method                            | Description                                        |
+| :-------------------------------- | :------------------------------------------------- |
+| `start()`                         | Starts the WebSocket server                        |
+| `stop()`                          | Stops the server and closes all connections        |
+| `use(middleware)`                 | Registers global middleware                        |
+| `authenticate(hook)`              | Sets handshake authentication hook                 |
 | `createChannel<T>(name, options)` | Creates a channel with configurable scope and flow |
 
-| `hasChannel(name)`         | Checks if a channel exists                  |
-| `getChannels()`            | Returns all active channel names            |
-| `getStats()`               | Returns server statistics                   |
-| `getConfig()`              | Returns read-only server configuration      |
-| `getRegistry()`            | Returns the client registry                 |
+| `hasChannel(name)` | Checks if a channel exists |
+| `getChannels()` | Returns all active channel names |
+| `getStats()` | Returns server statistics |
+| `getConfig()` | Returns read-only server configuration |
+| `getRegistry()` | Returns the client registry |
 
 ### Server Options
 

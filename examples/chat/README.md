@@ -133,36 +133,36 @@ const notifications = server.createBroadcast<NotificationMessage>()
 // Handle incoming messages with onMessage
 // V2: Messages are NOT auto-relayed - you must explicitly publish
 chat.onMessage(async (data, client) => {
-  console.log(`[Chat] ${data.user}: ${data.text}`)
+    console.log(`[Chat] ${data.user}: ${data.text}`)
 
-  // Explicitly publish to all subscribers
-  chat.publish(data)
+    // Explicitly publish to all subscribers
+    chat.publish(data)
 })
 
 // Or use receive() (same as onMessage)
 chat.receive(async (data, client) => {
-  // Handle message
-  chat.publish(data)
+    // Handle message
+    chat.publish(data)
 })
 
 // Connection events
 server.on('connection', (client) => {
-  const stats = server.getStats()
-  notifications.publish({
-    type: 'info',
-    message: `Users online: ${stats.clientCount}`,
-    timestamp: Date.now(),
-  })
+    const stats = server.getStats()
+    notifications.publish({
+        type: 'info',
+        message: `Users online: ${stats.clientCount}`,
+        timestamp: Date.now(),
+    })
 })
 
 // Authorization
 server.authorize(async (clientId, channel, action) => {
-  return true // Allow all
+    return true // Allow all
 })
 
 // Global message interceptor
 server.onMessage((client, message) => {
-  console.log(`[Message] ${client.id} sent:`, message)
+    console.log(`[Message] ${client.id} sent:`, message)
 })
 ```
 

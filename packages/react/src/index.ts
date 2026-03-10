@@ -15,21 +15,21 @@ export { useBroadcast } from './use-broadcast.js'
 
 // Export types
 export type {
-  SyncarContextValue,
-  UseChannelState,
-  UseChannelOptions,
-  UseChannelReturn,
-  UseBroadcastOptions,
-  UseBroadcastReturn,
-  SyncarProviderProps,
-  MissingProviderError,
+    SyncarContextValue,
+    UseChannelState,
+    UseChannelOptions,
+    UseChannelReturn,
+    UseBroadcastOptions,
+    UseBroadcastReturn,
+    SyncarProviderProps,
+    MissingProviderError,
 } from './types.js'
 
 // Re-export client types for convenience
 export type {
-  SyncarClient,
-  ClientStatus,
-  ChannelSubscription,
-  SubscriptionState,
-  ChannelName,
+    SyncarClient,
+    ClientStatus,
+    ChannelSubscription,
+    SubscriptionState,
+    ChannelName,
 } from '@syncar/client'

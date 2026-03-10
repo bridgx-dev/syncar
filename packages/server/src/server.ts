@@ -8,7 +8,6 @@ import {
 import type { ILogger, IdGenerator } from './types'
 import { createDefaultLogger } from './utils'
 
-
 /**
  * Server statistics interface
  *
@@ -303,9 +302,17 @@ export class SyncarServer {
         this.transport = this.config.transport
 
         // Create handlers
-        this.connectionHandler = new ConnectionHandler({ registry: this.registry })
-        this.messageHandler = new MessageHandler({ registry: this.registry, context: this.context })
-        this.signalHandler = new SignalHandler({ registry: this.registry, context: this.context })
+        this.connectionHandler = new ConnectionHandler({
+            registry: this.registry,
+        })
+        this.messageHandler = new MessageHandler({
+            registry: this.registry,
+            context: this.context,
+        })
+        this.signalHandler = new SignalHandler({
+            registry: this.registry,
+            context: this.context,
+        })
 
         // Set up transport event handlers
         this.setupTransportHandlers()
@@ -391,13 +398,20 @@ export class SyncarServer {
      * updates.publish({ cpu: 45, memory: 67 })
      * ```
      */
-    createChannel<T = unknown>(name: ChannelName, options?: ChannelOptions): Channel<T> {
+    createChannel<T = unknown>(
+        name: ChannelName,
+        options?: ChannelOptions,
+    ): Channel<T> {
         if (!this.status.started || !this.transport) {
-            throw new StateError('Server must be started before creating channels')
+            throw new StateError(
+                'Server must be started before creating channels',
+            )
         }
 
         // Check if channel already exists
-        const existing = this.registry.getChannel<T>(name) as Channel<T> | undefined
+        const existing = this.registry.getChannel<T>(name) as
+            | Channel<T>
+            | undefined
         if (existing) return existing
 
         const channel = new Channel<T>({
@@ -493,12 +507,18 @@ export class SyncarServer {
      * })
      * ```
      */
-    authenticate(authenticator: (request: import('node:http').IncomingMessage) => string | Promise<string>): void {
+    authenticate(
+        authenticator: (
+            request: import('node:http').IncomingMessage,
+        ) => string | Promise<string>,
+    ): void {
         const transport = this.transport || this.config.transport
         if (transport && 'setAuthenticator' in transport) {
-            ; (transport as any).setAuthenticator(authenticator)
+            ;(transport as any).setAuthenticator(authenticator)
         } else {
-            this.config.logger.warn('Current transport does not support setting an authenticator.')
+            this.config.logger.warn(
+                'Current transport does not support setting an authenticator.',
+            )
         }
     }
 
@@ -578,7 +598,10 @@ export class SyncarServer {
                 await this.context.executeConnection(connection, 'connect')
                 await this.connectionHandler!.handleConnection(connection)
             } catch (error) {
-                this.config.logger.error('Error handling connection:', error as Error)
+                this.config.logger.error(
+                    'Error handling connection:',
+                    error as Error,
+                )
             }
         })
 
@@ -590,7 +613,10 @@ export class SyncarServer {
                     await this.connectionHandler!.handleDisconnection(clientId)
                 }
             } catch (error) {
-                this.config.logger.error('Error handling disconnection:', error as Error)
+                this.config.logger.error(
+                    'Error handling disconnection:',
+                    error as Error,
+                )
             }
         })
 
@@ -605,7 +631,10 @@ export class SyncarServer {
                     await this.signalHandler!.handleSignal(client, message)
                 }
             } catch (error) {
-                this.config.logger.error('Error handling message:', error as Error)
+                this.config.logger.error(
+                    'Error handling message:',
+                    error as Error,
+                )
             }
         })
 
@@ -722,7 +751,9 @@ export class SyncarServer {
  * @see {@link SyncarServer} for server class API
  * @see {@link DEFAULT_SERVER_CONFIG} for default configuration values
  */
-export function createSyncarServer(config: Partial<IServerOptions> = {}): SyncarServer {
+export function createSyncarServer(
+    config: Partial<IServerOptions> = {},
+): SyncarServer {
     // Ensure registry exists
     const registry = config.registry ?? new ClientRegistry()
     const logger = config.logger ?? createDefaultLogger()
@@ -748,7 +779,9 @@ export function createSyncarServer(config: Partial<IServerOptions> = {}): Syncar
         serverOptions.transport = new WebSocketServerTransport({
             server: serverOptions.server,
             path: serverOptions.path,
-            maxPayload: (config as { maxPayload?: number }).maxPayload ?? DEFAULT_MAX_PAYLOAD,
+            maxPayload:
+                (config as { maxPayload?: number }).maxPayload ??
+                DEFAULT_MAX_PAYLOAD,
             enablePing: serverOptions.enablePing,
             pingInterval: serverOptions.pingInterval,
             pingTimeout: serverOptions.pingTimeout,

@@ -36,11 +36,11 @@ export type MergeTypes<T, U> = Omit<T, keyof U> & U
  * ```
  */
 export type DeepPartial<T> = {
-  [P in keyof T]?: T[P] extends object
-    ? T[P] extends Array<infer U>
-      ? Array<DeepPartial<U>>
-      : DeepPartial<T[P]>
-    : T[P]
+    [P in keyof T]?: T[P] extends object
+        ? T[P] extends Array<infer U>
+            ? Array<DeepPartial<U>>
+            : DeepPartial<T[P]>
+        : T[P]
 }
 
 // ============================================================
@@ -59,11 +59,11 @@ export type DeepPartial<T> = {
  * ```
  */
 export type DeepReadonly<T> = {
-  readonly [P in keyof T]: T[P] extends object
-    ? T[P] extends Array<infer U>
-      ? ReadonlyArray<DeepReadonly<U>>
-      : DeepReadonly<T[P]>
-    : T[P]
+    readonly [P in keyof T]: T[P] extends object
+        ? T[P] extends Array<infer U>
+            ? ReadonlyArray<DeepReadonly<U>>
+            : DeepReadonly<T[P]>
+        : T[P]
 }
 
 // ============================================================
@@ -82,7 +82,7 @@ export type DeepReadonly<T> = {
  * ```
  */
 export type Prettify<T> = {
-  [K in keyof T]: T[K]
+    [K in keyof T]: T[K]
 } & {}
 
 // ============================================================
@@ -105,7 +105,7 @@ export type Prettify<T> = {
  * ```
  */
 export type KeysOfType<T, U> = {
-  [K in keyof T]: T[K] extends U ? K : never
+    [K in keyof T]: T[K] extends U ? K : never
 }[keyof T]
 
 // ============================================================
@@ -189,7 +189,7 @@ export type RequiredKeys<T, K extends keyof T> = T & Required<Pick<T, K>>
  * ```
  */
 export type OptionalKeys<T, K extends keyof T> = Omit<T, K> &
-  Partial<Pick<T, K>>
+    Partial<Pick<T, K>>
 
 // ============================================================
 // BRANDED TYPE
@@ -247,10 +247,10 @@ export type Awaited<T> = T extends Promise<infer U> ? U : T
  * ```
  */
 export type FnParameters<T extends (...args: any[]) => any> = T extends (
-  ...args: infer P
+    ...args: infer P
 ) => any
-  ? P
-  : never
+    ? P
+    : never
 
 // ============================================================
 // FUNCTION RETURN TYPE
@@ -267,10 +267,10 @@ export type FnParameters<T extends (...args: any[]) => any> = T extends (
  * ```
  */
 export type FnReturnType<T extends (...args: any[]) => any> = T extends (
-  ...args: any[]
+    ...args: any[]
 ) => infer R
-  ? R
-  : any
+    ? R
+    : any
 
 // ============================================================
 // FUNCTION PROPERTY NAMES
@@ -291,7 +291,7 @@ export type FnReturnType<T extends (...args: any[]) => any> = T extends (
  * ```
  */
 export type FunctionPropertyNames<T> = {
-  [K in keyof T]: T[K] extends Function ? K : never
+    [K in keyof T]: T[K] extends Function ? K : never
 }[keyof T]
 
 // ============================================================
@@ -334,7 +334,7 @@ export type OnlyMethods<T> = Pick<T, FunctionPropertyNames<T>>
  * ```
  */
 export type OptionalKeysOf<T extends object> = {
-  [K in keyof T]-?: {} extends Pick<T, K> ? K : never
+    [K in keyof T]-?: {} extends Pick<T, K> ? K : never
 }[keyof T]
 
 // ============================================================
@@ -357,7 +357,7 @@ export type OptionalKeysOf<T extends object> = {
  * ```
  */
 export type RequiredKeysOf<T extends object> = {
-  [K in keyof T]-?: {} extends Pick<T, K> ? never : K
+    [K in keyof T]-?: {} extends Pick<T, K> ? never : K
 }[keyof T]
 
 // ============================================================
@@ -379,12 +379,12 @@ export type RequiredKeysOf<T extends object> = {
  * ```
  */
 export type ArrayElement<T> = T extends (infer U)[]
-  ? U
-  : T extends readonly (infer U)[]
     ? U
-    : T extends { 0: infer U }
+    : T extends readonly (infer U)[]
       ? U
-      : never
+      : T extends { 0: infer U }
+        ? U
+        : never
 
 // ============================================================
 // VALUE OF TYPE
@@ -422,10 +422,10 @@ export type ValueOf<T> = T[keyof T]
  * ```
  */
 export type UnionToIntersection<U> = (
-  U extends any ? (k: U) => void : never
+    U extends any ? (k: U) => void : never
 ) extends (k: infer I) => void
-  ? I
-  : never
+    ? I
+    : never
 
 // ============================================================
 // LAST OF TUPLE
@@ -442,11 +442,11 @@ export type UnionToIntersection<U> = (
  * ```
  */
 export type LastOfTuple<T extends readonly unknown[]> = T extends readonly [
-  ...any[],
-  infer L,
+    ...any[],
+    infer L,
 ]
-  ? L
-  : never
+    ? L
+    : never
 
 // ============================================================
 // TUPLE TO UNION

@@ -115,61 +115,54 @@ export { SyncarServer as Syncar } from './server'
 export { Channel } from './channel'
 
 export {
-  createAuthMiddleware,
-  createLoggingMiddleware,
-  createRateLimitMiddleware,
-  createChannelWhitelistMiddleware,
+    createAuthMiddleware,
+    createLoggingMiddleware,
+    createRateLimitMiddleware,
+    createChannelWhitelistMiddleware,
 } from './middleware'
 export { ContextManager, createContext } from './context'
 
 export {
-  SyncarError,
-  ConfigError,
-  TransportError,
-  ChannelError,
-  ClientError,
-  MessageError,
-  ValidationError,
-  StateError,
-  MiddlewareRejectionError,
-  MiddlewareExecutionError,
+    SyncarError,
+    ConfigError,
+    TransportError,
+    ChannelError,
+    ClientError,
+    MessageError,
+    ValidationError,
+    StateError,
+    MiddlewareRejectionError,
+    MiddlewareExecutionError,
 } from './errors'
 export { WebSocketServerTransport } from './websocket'
 
 export { BROADCAST_CHANNEL, CLOSE_CODES, ERROR_CODES } from './config'
 
 export type {
-  IClientConnection,
-  ChannelOptions,
-  ChannelScope,
-  ChannelFlow,
+    IClientConnection,
+    ChannelOptions,
+    ChannelScope,
+    ChannelFlow,
 } from './types'
 
-export type {
-  IServerOptions,
-  IServerStats,
-} from './server'
+export type { IServerOptions, IServerStats } from './server'
+
+export type { IChannelState, IPublishOptions, IMessageHandler } from './channel'
 
 export type {
-  IChannelState,
-  IPublishOptions,
-  IMessageHandler,
-} from './channel'
-
-export type {
-  MessageId,
-  ClientId,
-  SubscriberId,
-  ChannelName,
-  Timestamp,
-  Message,
-  DataMessage,
-  SignalMessage,
-  ErrorMessage,
-  AckMessage,
-  MessageType,
-  SignalType,
-  ErrorCode,
-  Context,
-  Middleware,
+    MessageId,
+    ClientId,
+    SubscriberId,
+    ChannelName,
+    Timestamp,
+    Message,
+    DataMessage,
+    SignalMessage,
+    ErrorMessage,
+    AckMessage,
+    MessageType,
+    SignalType,
+    ErrorCode,
+    Context,
+    Middleware,
 } from './types'

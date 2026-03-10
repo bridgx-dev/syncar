@@ -46,40 +46,40 @@ export { WebSocketClientTransport } from './base.js'
 
 // Types
 export type {
-  // Config
-  ClientConfig,
-  SubscribeOptions,
-  SubscriptionCallbacks,
+    // Config
+    ClientConfig,
+    SubscribeOptions,
+    SubscriptionCallbacks,
 
-  // Core types (re-exported from @syncar/types)
-  Transport,
-  ClientStatus,
-  SubscriptionState,
-  ChannelName,
+    // Core types (re-exported from @syncar/types)
+    Transport,
+    ClientStatus,
+    SubscriptionState,
+    ChannelName,
 
-  // Events
-  ClientEventType,
-  ClientEventMap,
+    // Events
+    ClientEventType,
+    ClientEventMap,
 
-  // Interfaces
-  ChannelSubscription,
-  ClientMessageHandler as MessageHandler,
-  MessageFilter,
+    // Interfaces
+    ChannelSubscription,
+    ClientMessageHandler as MessageHandler,
+    MessageFilter,
 
-  // Stats
-  ClientStats,
+    // Stats
+    ClientStats,
 
-  // Transport types
-  ClientTransportConfig,
-  TransportEventType,
-  TransportEventMap,
-  TransportCloseEvent,
-  ConnectionStatus,
+    // Transport types
+    ClientTransportConfig,
+    TransportEventType,
+    TransportEventMap,
+    TransportCloseEvent,
+    ConnectionStatus,
 
-  // Message types (re-exported from @syncar/types)
-  Message,
-  DataMessage,
-  MessageType,
-  SignalType,
-  SubscriberId,
+    // Message types (re-exported from @syncar/types)
+    Message,
+    DataMessage,
+    MessageType,
+    SignalType,
+    SubscriberId,
 } from './types.js'

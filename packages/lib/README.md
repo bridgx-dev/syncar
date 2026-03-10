@@ -17,10 +17,10 @@ bun add @syncar/lib
 
 ```typescript
 import {
-  generateMessageId,
-  isValidChannelName,
-  createDefaultLogger,
-  calculateBackoff,
+    generateMessageId,
+    isValidChannelName,
+    createDefaultLogger,
+    calculateBackoff,
 } from '@syncar/lib'
 
 // Generate a unique message ID
@@ -28,7 +28,7 @@ const messageId = generateMessageId()
 
 // Validate channel name
 if (isValidChannelName('chat')) {
-  // ...
+    // ...
 }
 
 // Create a logger
@@ -37,8 +37,8 @@ logger('info', 'Application started')
 
 // Calculate reconnection delay
 const delay = calculateBackoff(3, {
-  initialDelay: 1000,
-  maxDelay: 30000,
+    initialDelay: 1000,
+    maxDelay: 30000,
 })
 ```
 

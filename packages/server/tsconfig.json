@@ -1,10 +1,10 @@
 {
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "outDir": "./dist-ts",
-    "composite": false,
-    "incremental": false,
-    "noEmit": false
-  },
-  "include": ["src"]
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "outDir": "./dist-ts",
+        "composite": false,
+        "incremental": false,
+        "noEmit": false
+    },
+    "include": ["src"]
 }
