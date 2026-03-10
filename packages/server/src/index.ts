@@ -18,8 +18,8 @@
  * await server.start()
  *
  * // Create channels
- * const broadcast = server.createBroadcast<string>()
- * const chat = server.createMulticast<string>('chat')
+ * const alerts = server.createChannel('alerts', { scope: 'broadcast' })
+ * const chat = server.createChannel<string>('chat')
  *
  * // Listen for events
  * server.on('connection', (client) => {
@@ -27,8 +27,8 @@
  * })
  *
  * // Publish messages
- * broadcast.publish('Hello everyone!')
- * chat.publish('Welcome to chat!')
+ * alerts.publish('Hello everyone!')
+ * chat.publish('Welcome!')
  * ```
  *
  * @example
@@ -59,7 +59,7 @@
  * ## Features
  *
  * - **Real-time WebSocket Communication** - Fast, bidirectional messaging
- * - **Broadcast & Multicast Channels** - Server-to-all and topic-based messaging
+ * - **Unified Channel API** - Single channel interface with configurable scope and flow
  * - **Middleware System** - Composable middleware for auth, logging, rate limiting
  * - **Type-Safe API** - Full TypeScript support with comprehensive types
  * - **Event-Driven Architecture** - Rich event system for lifecycle events
@@ -80,7 +80,7 @@
  * ## Modules
  *
  * - **Server** - {@link SyncarServer} | {@link createSyncarServer}
- * - **Channels** - {@link BroadcastChannel} | {@link MulticastChannel}
+ * - **Channels** - {@link Channel}
  * - **Middleware** - {@link createAuthMiddleware} | {@link createLoggingMiddleware} | {@link createRateLimitMiddleware}
  * - **Errors** - {@link SyncarError} | {@link MiddlewareRejectionError}
  * - **Types** - {@link IClientConnection} | {@link Message} | {@link Context} | {@link Middleware}
@@ -113,12 +113,6 @@ export { SyncarServer as Syncar } from './server'
 
 // New unified channel API
 export { Channel } from './channel-new'
-
-// Old channel types (deprecated)
-/** @deprecated Use `Channel` instead. Will be removed in v2.0. */
-export { BroadcastChannel } from './channel'
-/** @deprecated Use `Channel` instead. Will be removed in v2.0. */
-export { MulticastChannel } from './channel'
 
 export {
   createAuthMiddleware,

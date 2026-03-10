@@ -86,10 +86,6 @@ describe('index.ts exports', () => {
     expect(typeof WebSocketServerTransport).toBe('function')
   })
 
-  it('should export channel classes', () => {
-    expect(MulticastChannel).toBeDefined()
-    expect(BroadcastChannel).toBeDefined()
-  })
 
   it('should export channel constants', () => {
     expect(BROADCAST_CHANNEL).toBeDefined()

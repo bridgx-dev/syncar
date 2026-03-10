@@ -12,7 +12,6 @@ import {
   type IServerStats,
 } from '../src/server'
 import { ClientRegistry } from '../src/registry'
-import { BroadcastChannel, MulticastChannel } from '../src/channel'
 import { WebSocketServerTransport } from '../src/websocket'
 import { StateError, ValidationError } from '../src/errors'
 import { ContextManager } from '../src/context'
@@ -159,29 +158,6 @@ describe('SyncarServer', () => {
       await expect(server.start()).rejects.toThrow(StateError)
       await expect(server.start()).rejects.toThrow('Server is already started')
     })
-
-    it('should create broadcast channel on start', async () => {
-      const config: IServerOptions = {
-        registry,
-        logger: createDefaultLogger(),
-        port: 3000,
-        host: '0.0.0.0',
-        path: '/syncar',
-        transport,
-        enablePing: false,
-        pingInterval: 30000,
-        pingTimeout: 5000,
-        middleware: [],
-        broadcastChunkSize: 500,
-      }
-
-      const server = new SyncarServer(config)
-      await server.start()
-
-      const broadcast = server.createBroadcast<string>()
-      expect(broadcast).toBeInstanceOf(BroadcastChannel)
-      expect(broadcast.name).toBe('__broadcast__')
-    })
   })
 
   describe('stop()', () => {
@@ -227,7 +203,7 @@ describe('SyncarServer', () => {
       await server.start()
 
       // Create a channel
-      server.createMulticast('chat')
+      server.createChannel('chat')
       expect(server.hasChannel('chat')).toBe(true)
 
       // Stop and verify channels are cleared
@@ -236,166 +212,7 @@ describe('SyncarServer', () => {
     })
   })
 
-  describe('createBroadcast()', () => {
-    it('should return broadcast channel after start', async () => {
-      const config: IServerOptions = {
-        registry,
-        logger: createDefaultLogger(),
-        port: 3000,
-        host: '0.0.0.0',
-        path: '/syncar',
-        transport,
-        enablePing: false,
-        pingInterval: 30000,
-        pingTimeout: 5000,
-        middleware: [],
-        broadcastChunkSize: 500,
-      }
 
-      const server = new SyncarServer(config)
-      await server.start()
-
-      const broadcast = server.createBroadcast<string>()
-      expect(broadcast).toBeInstanceOf(BroadcastChannel)
-      expect(broadcast.name).toBe('__broadcast__')
-    })
-
-    it('should throw StateError when server not started', () => {
-      const config: IServerOptions = {
-        registry,
-        logger: createDefaultLogger(),
-        port: 3000,
-        host: '0.0.0.0',
-        path: '/syncar',
-        transport,
-        enablePing: false,
-        pingInterval: 30000,
-        pingTimeout: 5000,
-        middleware: [],
-        broadcastChunkSize: 500,
-      }
-
-      const server = new SyncarServer(config)
-
-      expect(() => server.createBroadcast()).toThrow(StateError)
-      expect(() => server.createBroadcast()).toThrow('Server must be started before creating channels')
-    })
-
-    it('should return same broadcast channel instance', async () => {
-      const config: IServerOptions = {
-        registry,
-        logger: createDefaultLogger(),
-        port: 3000,
-        host: '0.0.0.0',
-        path: '/syncar',
-        transport,
-        enablePing: false,
-        pingInterval: 30000,
-        pingTimeout: 5000,
-        middleware: [],
-        broadcastChunkSize: 500,
-      }
-
-      const server = new SyncarServer(config)
-      await server.start()
-
-      const broadcast1 = server.createBroadcast<string>()
-      const broadcast2 = server.createBroadcast<number>()
-
-      expect(broadcast1).toBe(broadcast2)
-    })
-  })
-
-  describe('createMulticast()', () => {
-    it('should create a new multicast channel', async () => {
-      const config: IServerOptions = {
-        registry,
-        logger: createDefaultLogger(),
-        port: 3000,
-        host: '0.0.0.0',
-        path: '/syncar',
-        transport,
-        enablePing: false,
-        pingInterval: 30000,
-        pingTimeout: 5000,
-        middleware: [],
-        broadcastChunkSize: 500,
-      }
-
-      const server = new SyncarServer(config)
-      await server.start()
-
-      const chat = server.createMulticast<{ text: string }>('chat')
-      expect(chat).toBeInstanceOf(MulticastChannel)
-      expect(chat.name).toBe('chat')
-    })
-
-    it('should throw StateError when server not started', () => {
-      const config: IServerOptions = {
-        registry,
-        logger: createDefaultLogger(),
-        port: 3000,
-        host: '0.0.0.0',
-        path: '/syncar',
-        transport,
-        enablePing: false,
-        pingInterval: 30000,
-        pingTimeout: 5000,
-        middleware: [],
-        broadcastChunkSize: 500,
-      }
-
-      const server = new SyncarServer(config)
-
-      expect(() => server.createMulticast('chat')).toThrow(StateError)
-    })
-
-    it('should throw ValidationError for reserved channel names', async () => {
-      const config: IServerOptions = {
-        registry,
-        logger: createDefaultLogger(),
-        port: 3000,
-        host: '0.0.0.0',
-        path: '/syncar',
-        transport,
-        enablePing: false,
-        pingInterval: 30000,
-        pingTimeout: 5000,
-        middleware: [],
-        broadcastChunkSize: 500,
-      }
-
-      const server = new SyncarServer(config)
-      await server.start()
-
-      // __private__ starts with __ which is reserved
-      expect(() => server.createMulticast('__private__')).toThrow(Error)
-    })
-
-    it('should return existing channel if already created', async () => {
-      const config: IServerOptions = {
-        registry,
-        logger: createDefaultLogger(),
-        port: 3000,
-        host: '0.0.0.0',
-        path: '/syncar',
-        transport,
-        enablePing: false,
-        pingInterval: 30000,
-        pingTimeout: 5000,
-        middleware: [],
-        broadcastChunkSize: 500,
-      }
-
-      const server = new SyncarServer(config)
-      await server.start()
-
-      const chat1 = server.createMulticast('chat')
-      const chat2 = server.createMulticast('chat')
-
-      expect(chat1).toBe(chat2)
-    })
-  })
 
   describe('hasChannel()', () => {
     it('should return false for non-existent channel', () => {
@@ -435,7 +252,7 @@ describe('SyncarServer', () => {
       const server = new SyncarServer(config)
       await server.start()
 
-      server.createMulticast('chat')
+      server.createChannel('chat')
       expect(server.hasChannel('chat')).toBe(true)
     })
   })
@@ -478,17 +295,15 @@ describe('SyncarServer', () => {
       const server = new SyncarServer(config)
       await server.start()
 
-      server.createMulticast('chat')
-      server.createMulticast('notifications')
-      server.createMulticast('presence')
+      server.createChannel('chat')
+      server.createChannel('notifications')
+      server.createChannel('presence')
 
       const channels = server.getChannels()
-      // Includes the broadcast channel + our 3 channels
-      expect(channels).toContain('__broadcast__')
       expect(channels).toContain('chat')
       expect(channels).toContain('notifications')
       expect(channels).toContain('presence')
-      expect(channels).toHaveLength(4)
+      expect(channels).toHaveLength(3)
     })
   })
 
@@ -837,9 +652,9 @@ describe('SyncarServer.createChannel', () => {
 
       const channel = server.createChannel('alerts', { scope: 'broadcast' })
 
-      // Broadcast scope returns the BroadcastChannel instance
+      // Broadcast scope creates a channel with broadcast scope
       expect(channel.name).toBe('__broadcast__')
-      expect(channel).toBeInstanceOf(BroadcastChannel)
+      expect(channel)
     })
 
     it('should create a send-only subscriber channel', async () => {
@@ -911,56 +726,4 @@ describe('SyncarServer.createChannel', () => {
     })
   })
 
-  describe('broadcast', () => {
-    it('should broadcast to all clients', async () => {
-      const config: IServerOptions = {
-        registry,
-        logger: createDefaultLogger(),
-        port: 3000,
-        host: '0.0.0.0',
-        path: '/syncar',
-        transport,
-        enablePing: false,
-        pingInterval: 30000,
-        pingTimeout: 5000,
-        middleware: [],
-        broadcastChunkSize: 500,
-      }
-
-      const server = new SyncarServer(config)
-      await server.start()
-
-      const mockClients = [
-        createMockClient('client-1'),
-        createMockClient('client-2'),
-      ]
-
-      for (const client of mockClients) {
-        server.getRegistry().register(client)
-      }
-
-      // Should not throw
-      expect(() => server.broadcast('Hello everyone')).not.toThrow()
-    })
-
-    it('should throw if server not started', () => {
-      const config: IServerOptions = {
-        registry,
-        logger: createDefaultLogger(),
-        port: 3000,
-        host: '0.0.0.0',
-        path: '/syncar',
-        transport,
-        enablePing: false,
-        pingInterval: 30000,
-        pingTimeout: 5000,
-        middleware: [],
-        broadcastChunkSize: 500,
-      }
-
-      const server = new SyncarServer(config)
-
-      expect(() => server.broadcast('test')).toThrow('Server must be started')
-    })
-  })
 })

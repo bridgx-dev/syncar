@@ -10,7 +10,7 @@
 
 - **Real-time WebSocket Communication** - Fast, bidirectional messaging powered by `ws`
 - **Composable Middleware** - Hono-style middleware for auth, logging, rate limiting, and more
-- **Broadcast & Multicast Channels** - Topic-based messaging patterns with automatic chunking
+- **Unified Channel API** - Topic-based messaging patterns with automatic chunking
 - **Handshake Authentication** - Dedicated hook for authenticating clients during connection
 - **Type-Safe API** - Full TypeScript support with comprehensive types
 - **Automatic Chunking** - Handles high-volume broadcasts without blocking the event loop
@@ -36,11 +36,11 @@ const server = createSyncarServer({ port: 3000 })
 await server.start()
 
 // Create a broadcast channel (sends to all connected clients)
-const broadcast = server.createBroadcast<string>()
+const broadcast = server.createChannel('alerts', { scope: 'broadcast' })
 broadcast.publish('Server started!')
 
 // Create a multicast channel (sends to subscribed clients only)
-const chat = server.createMulticast<{ text: string; user: string }>('chat')
+const chat = server.createChannel('{ text: string; user: string }>('chat')
 
 // Handle incoming messages from clients
 chat.onMessage((data, client) => {
@@ -201,7 +201,7 @@ const server = createSyncarServer({
 
 ```typescript
 // Add middleware to a specific channel only
-const adminChannel = server.createMulticast('admin')
+const adminChannel = server.createChannel('admin')
 
 adminChannel.use(async (c, next) => {
   const user = c.get('user')
@@ -238,81 +238,6 @@ await server.start()
 ```
 
 ## Channels
-
-### Broadcast Channel
-
-Sends messages to **all** connected clients automatically. No subscription required.
-
-```typescript
-const broadcast = server.createBroadcast<string>()
-
-// Send to all clients
-await broadcast.publish('Server maintenance in 5 minutes')
-
-// Send to all except specific clients
-await broadcast.publish('Admin message', {
-  exclude: ['client-123', 'client-456'],
-})
-
-// Send to specific clients only
-await broadcast.publish('Private message', {
-  to: ['client-1', 'client-2'],
-})
-```
-
-### Multicast Channel
-
-Topic-based messaging for **subscribed** clients only. Clients must explicitly subscribe to receive messages.
-
-```typescript
-interface ChatMessage {
-  text: string
-  user: string
-  timestamp: number
-}
-
-const chat = server.createMulticast<ChatMessage>('chat')
-
-// Handle incoming messages
-chat.onMessage((data, client) => {
-  console.log(`${client.id}: ${data.text}`)
-
-  // Echo back to sender only
-  chat.publish(data, { to: [client.id] })
-
-  // Or broadcast to all except sender
-  chat.publish(data, { exclude: [client.id] })
-})
-
-// Publish from server
-await chat.publish({
-  text: 'Welcome!',
-  user: 'System',
-  timestamp: Date.now(),
-})
-```
-
-### Channel Options
-
-```typescript
-// Check if channel exists
-if (server.hasChannel('chat')) {
-  console.log('Chat channel exists')
-}
-
-// Get all active channel names
-const channels = server.getChannels()
-console.log('Active channels:', channels)
-// ['chat', 'notifications', 'presence']
-
-// Manually subscribe a client (server-side)
-chat.subscribe('client-id')
-
-// Manually unsubscribe a client
-chat.unsubscribe('client-id')
-```
-
-## Server Management
 
 ### Server Lifecycle
 
@@ -403,35 +328,13 @@ try {
 | `stop()`                   | Stops the server and closes all connections |
 | `use(middleware)`          | Registers global middleware                 |
 | `authenticate(hook)`       | Sets handshake authentication hook          |
-| `createBroadcast<T>()`     | Gets/creates the global broadcast channel   |
-| `createMulticast<T>(name)` | Gets/creates a named multicast channel      |
+| `createChannel<T>(name, options)` | Creates a channel with configurable scope and flow |
+
 | `hasChannel(name)`         | Checks if a channel exists                  |
 | `getChannels()`            | Returns all active channel names            |
 | `getStats()`               | Returns server statistics                   |
 | `getConfig()`              | Returns read-only server configuration      |
 | `getRegistry()`            | Returns the client registry                 |
-
-### BroadcastChannel Methods
-
-| Method                    | Description                            |
-| :------------------------ | :------------------------------------- |
-| `publish(data, options?)` | Sends message to all connected clients |
-| `onMessage(handler)`      | Registers a custom message handler     |
-| `use(middleware)`         | Registers channel-specific middleware  |
-| `subscribe(clientId)`     | Manually subscribes a client           |
-| `unsubscribe(clientId)`   | Manually unsubscribes a client         |
-| `getState()`              | Returns channel state information      |
-
-### MulticastChannel Methods
-
-| Method                    | Description                           |
-| :------------------------ | :------------------------------------ |
-| `publish(data, options?)` | Sends message to all subscribers      |
-| `onMessage(handler)`      | Registers a custom message handler    |
-| `use(middleware)`         | Registers channel-specific middleware |
-| `subscribe(clientId)`     | Manually subscribes a client          |
-| `unsubscribe(clientId)`   | Manually unsubscribes a client        |
-| `getState()`              | Returns channel state information     |
 
 ### Server Options
 

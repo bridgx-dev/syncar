@@ -6,7 +6,7 @@ import {
     MessageType,
 } from './types'
 import type { ILogger, IdGenerator } from './types'
-import { createDefaultLogger, assertValidChannelName } from './utils'
+import { createDefaultLogger } from './utils'
 
 
 /**
@@ -43,7 +43,6 @@ export interface IServerStats {
     startedAt?: number
 }
 
-import { MulticastChannel, BroadcastChannel, type IPublishOptions } from './channel'
 import { Channel } from './channel-new'
 import { ConnectionHandler, MessageHandler, SignalHandler } from './handlers'
 import { ContextManager } from './context'
@@ -223,8 +222,8 @@ export interface IServerOptions {
  * Syncar Server - Real-time WebSocket server with pub/sub channels
  *
  * @remarks
- * The main server class providing WebSocket communication with broadcast
- * and multicast channels, middleware support, and connection management.
+ * The main server class providing WebSocket communication with channels,
+ * middleware support, and connection management.
  *
  * @example
  * ```ts
@@ -234,8 +233,8 @@ export interface IServerOptions {
  * await server.start()
  *
  * // Create channels
- * const broadcast = server.createBroadcast<string>()
- * const chat = server.createMulticast<{ text: string }>('chat')
+ * const chat = server.createChannel<{ text: string }>('chat')
+ * const alerts = server.createChannel<{ message: string }>('alerts', { scope: 'broadcast' })
  *
  * // Listen for events
  * server.on('connection', (client) => {
@@ -243,8 +242,8 @@ export interface IServerOptions {
  * })
  *
  * // Publish messages
- * broadcast.publish('Hello everyone!')
  * chat.publish({ text: 'Welcome!' })
+ * alerts.publish({ message: 'Server maintenance in 5 min' })
  * ```
  *
  * @see {@link createSyncarServer} for factory function
@@ -261,7 +260,6 @@ export class SyncarServer {
     private connectionHandler: ConnectionHandler | undefined
     private messageHandler: MessageHandler | undefined
     private signalHandler: SignalHandler | undefined
-    private broadcastChannel: BroadcastChannel<unknown> | undefined
 
     constructor(config: IServerOptions) {
         this.config = config
@@ -285,7 +283,7 @@ export class SyncarServer {
      *
      * @remarks
      * Initializes the WebSocket transport layer, sets up event handlers,
-     * creates the broadcast channel, and prepares the server for connections.
+     * and prepares the server for connections.
      *
      * @throws {StateError} If the server is already started
      *
@@ -311,10 +309,6 @@ export class SyncarServer {
 
         // Set up transport event handlers
         this.setupTransportHandlers()
-
-        // Create broadcast channel and register it
-        this.broadcastChannel = new BroadcastChannel(this.registry, this.config.broadcastChunkSize)
-        this.registry.registerChannel(this.broadcastChannel)
 
         // Update state
         this.status.started = true
@@ -347,7 +341,6 @@ export class SyncarServer {
 
         // Clear channels from registry
         this.registry.clear()
-        this.broadcastChannel = undefined
 
         // Update state
         this.status.started = false
@@ -355,53 +348,10 @@ export class SyncarServer {
     }
 
     /**
-     * @deprecated Use `createChannel(name, { scope: 'broadcast' })` instead.
-     * This method will be removed in v2.0.
-     *
-     * Get or create the broadcast channel
-     *
-     * @remarks
-     * Returns the singleton broadcast channel that sends messages to ALL
-     * connected clients. No subscription is required - all clients receive
-     * broadcast messages automatically.
-     *
-     * @template T - Type of data to be broadcast (default: unknown)
-     * @returns The broadcast channel instance
-     *
-     * @throws {StateError} If the server hasn't been started yet
-     *
-     * @example
-     * ```ts
-     * // Broadcast a string to all clients
-     * const broadcast = server.createBroadcast<string>()
-     * broadcast.publish('Server maintenance in 5 minutes')
-     *
-     * // Broadcast an object
-     * const alerts = server.createBroadcast<{ type: string; message: string }>()
-     * alerts.publish({ type: 'warning', message: 'High load detected' })
-     *
-     * // Exclude specific clients
-     * broadcast.publish('Admin message', { exclude: ['client-123'] })
-     *
-     * // Send to specific clients only
-     * broadcast.publish('Private message', { to: ['client-1', 'client-2'] })
-     * ```
-     *
-     * @see {@link BroadcastChannel} for channel API
-     */
-    createBroadcast<T = unknown>(): BroadcastChannel<T> {
-        if (!this.status.started || !this.broadcastChannel) {
-            throw new StateError('Server must be started before creating channels')
-        }
-        return this.broadcastChannel as BroadcastChannel<T>
-    }
-
-    /**
      * Create or retrieve a channel with configurable scope and flow
      *
      * @remarks
-     * Unified channel creation that replaces `createBroadcast()` and `createMulticast()`.
-     * Channels are configured using `scope` and `flow` options:
+     * Unified channel creation. Channels are configured using `scope` and `flow` options:
      *
      * - **scope: 'broadcast'** - Sends to ALL clients (no subscriptions)
      * - **scope: 'subscribers'** - Sends only to subscribed clients (default)
@@ -411,7 +361,7 @@ export class SyncarServer {
      * - **flow: 'receive-only'** - Only clients can send
      *
      * @template T - Type of data to be published on this channel (default: unknown)
-     * @param name - Unique channel name (ignored for broadcast scope)
+     * @param name - Unique channel name
      * @param options - Channel configuration options
      * @returns The channel instance
      *
@@ -446,15 +396,7 @@ export class SyncarServer {
             throw new StateError('Server must be started before creating channels')
         }
 
-        // For broadcast scope, check if we already have the broadcast channel
-        if (options?.scope === 'broadcast') {
-            if (this.broadcastChannel) {
-                return this.broadcastChannel as unknown as Channel<T>
-            }
-            throw new StateError('Broadcast channel not initialized')
-        }
-
-        // For subscriber scope, check if channel already exists
+        // Check if channel already exists
         const existing = this.registry.getChannel<T>(name) as Channel<T> | undefined
         if (existing) return existing
 
@@ -471,104 +413,6 @@ export class SyncarServer {
     }
 
     /**
-     * Send a one-off broadcast message to all connected clients
-     *
-     * @remarks
-     * Convenience method for sending a single message to all clients without
-     * creating a channel reference. This is useful for announcements and alerts.
-     *
-     * @template T - Type of data to broadcast (default: unknown)
-     * @param data - The data to broadcast
-     * @param options - Optional publish options for client filtering
-     *
-     * @throws {StateError} If the server hasn't been started yet
-     *
-     * @example
-     * ```ts
-     * server.broadcast('Server maintenance at midnight')
-     *
-     * server.broadcast({ type: 'warning', message: 'High load detected' })
-     *
-     * // Exclude specific clients
-     * server.broadcast('Admin message', { exclude: ['client-123'] })
-     * ```
-     */
-    broadcast<T = unknown>(data: T, options?: IPublishOptions): void {
-        if (!this.status.started || !this.broadcastChannel) {
-            throw new StateError('Server must be started before broadcasting')
-        }
-        this.broadcastChannel.publish(data, options)
-    }
-
-    /**
-     * @deprecated Use `createChannel(name)` instead.
-     * This method will be removed in v2.0.
-     *
-     * Create or retrieve a multicast channel
-     *
-     * @remarks
-     * Creates a named channel that delivers messages only to subscribed clients.
-     * Clients must explicitly subscribe to receive messages. If a channel with
-     * the given name already exists, it will be returned instead of creating a new one.
-     *
-     * @template T - Type of data to be published on this channel (default: unknown)
-     * @param name - Unique channel name (must not start with `__` which is reserved)
-     * @returns The multicast channel instance
-     *
-     * @throws {StateError} If the server hasn't been started yet
-     * @throws {ValidationError} If the channel name is invalid (starts with `__`)
-     *
-     * @example
-     * ```ts
-     * // Create a chat channel
-     * const chat = server.createMulticast<{ text: string; user: string }>('chat')
-     *
-     * // Handle incoming messages
-     * chat.onMessage((data, client) => {
-     *   console.log(`${client.id}: ${data.text}`)
-     *   // Relay to all subscribers except sender
-     *   chat.publish(data, { exclude: [client.id] })
-     * })
-     *
-     * // Publish to all subscribers
-     * chat.publish({ text: 'Hello!', user: 'System' })
-     *
-     * // Check channel existence
-     * if (server.hasChannel('chat')) {
-     *   const existingChat = server.createMulticast('chat')
-     * }
-     *
-     * // Get all channel names
-     * const channels = server.getChannels()
-     * // ['chat', 'notifications', 'presence']
-     * ```
-     *
-     * @see {@link MulticastChannel} for channel API
-     * @see {@link BROADCAST_CHANNEL} for reserved channel name
-     */
-    createMulticast<T = unknown>(name: ChannelName): MulticastChannel<T> {
-        assertValidChannelName(name)
-        if (!this.status.started || !this.transport) {
-            throw new StateError('Server must be started before creating channels')
-        }
-
-        const existing = this.registry.getChannel<T>(name) as MulticastChannel<T> | undefined
-        if (existing) return existing
-
-        const channel = new MulticastChannel<T>({
-            name,
-            registry: this.registry,
-            options: {
-                chunkSize: this.config.broadcastChunkSize,
-            },
-        })
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        this.registry.registerChannel(channel as any)
-        return channel
-    }
-
-    /**
      * Check if a channel exists
      *
      * @param name - The channel name to check
@@ -577,7 +421,7 @@ export class SyncarServer {
      * @example
      * ```ts
      * if (!server.hasChannel('chat')) {
-     *   const chat = server.createMulticast('chat')
+     *   const chat = server.createChannel('chat')
      * }
      * ```
      */

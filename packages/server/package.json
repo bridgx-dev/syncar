@@ -1,6 +1,6 @@
 {
   "name": "@syncar/server",
-  "version": "2.0.0-alpha.1",
+  "version": "1.0.0-alpha.3",
   "description": "Node.js server for Syncar real-time synchronization",
   "author": "M16BAPPI - [m16bappi@gmail.com]",
   "type": "module",
