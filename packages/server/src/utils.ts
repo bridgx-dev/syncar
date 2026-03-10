@@ -68,11 +68,6 @@ export function assertValidChannelName(name: ChannelName): void {
             `Invalid channel name: must be between ${CHANNEL_NAME_MIN_LENGTH} and ${CHANNEL_NAME_MAX_LENGTH} characters`,
         )
     }
-    if (isReservedChannelName(name)) {
-        throw new Error(
-            `Reserved channel name: channel names starting with '${RESERVED_PREFIX}' are reserved for system use`,
-        )
-    }
 }
 
 // ============================================================
