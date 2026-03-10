@@ -6,11 +6,8 @@
  */
 
 export type { Context, Middleware } from '../types'
-export {
-    createAuthMiddleware,
-    createLoggingMiddleware,
-    createRateLimitMiddleware,
-    createChannelWhitelistMiddleware,
-    clearRateLimitStore,
-    getRateLimitState,
-} from './factories'
+
+export { authenticate, type AuthOptions } from './authenticate'
+export { logger, type LoggingOptions } from './logger'
+export { rateLimit, type RateLimitOptions, clearRateLimitStore, getRateLimitState } from './rate-limit'
+export { channelWhitelist, type ChannelWhitelistOptions } from './channel-whitelist'

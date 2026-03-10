@@ -36,19 +36,19 @@
  * ```ts
  * import {
  *   createSyncarServer,
- *   createAuthMiddleware,
- *   createLoggingMiddleware,
- *   createRateLimitMiddleware
+ *   authenticate,
+ *   logger,
+ *   rateLimit
  * } from '@syncar/server'
  *
  * const server = createSyncarServer({
  *   port: 3000,
  *   middleware: [
- *     createAuthMiddleware({
+ *     authenticate({
  *       verifyToken: async (token) => jwt.verify(token, SECRET)
  *     }),
- *     createLoggingMiddleware(),
- *     createRateLimitMiddleware({ maxRequests: 100 })
+ *     logger(),
+ *     rateLimit({ maxRequests: 100 })
  *   ]
  * })
  *
@@ -69,10 +69,6 @@
  *
  * ## Installation
  *
- * ```bash
- * npm install @syncar/server ws
- * ```
- *
  * ## Peer Dependencies
  *
  * - `ws@^8.0.0` - WebSocket library
@@ -81,7 +77,7 @@
  *
  * - **Server** - {@link SyncarServer} | {@link createSyncarServer}
  * - **Channels** - {@link Channel}
- * - **Middleware** - {@link createAuthMiddleware} | {@link createLoggingMiddleware} | {@link createRateLimitMiddleware}
+ * - **Middleware** - {@link authenticate} | {@link logger} | {@link rateLimit}
  * - **Errors** - {@link SyncarError} | {@link MiddlewareRejectionError}
  * - **Types** - {@link IClientConnection} | {@link Message} | {@link Context} | {@link Middleware}
  *
@@ -113,13 +109,6 @@ export { SyncarServer as Syncar } from './server'
 
 // New unified channel API
 export { Channel } from './channel'
-
-export {
-    createAuthMiddleware,
-    createLoggingMiddleware,
-    createRateLimitMiddleware,
-    createChannelWhitelistMiddleware,
-} from './middleware'
 export { ContextManager, createContext } from './context'
 
 export {

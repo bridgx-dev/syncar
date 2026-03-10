@@ -10,10 +10,10 @@ import {
     MiddlewareExecutionError,
 } from '../src/errors'
 import {
-    createAuthMiddleware,
-    createLoggingMiddleware,
-    createRateLimitMiddleware,
-    createChannelWhitelistMiddleware,
+    authenticate,
+    logger,
+    rateLimit,
+    channelWhitelist,
     clearRateLimitStore,
     getRateLimitState,
 } from '../src/middleware'
@@ -56,7 +56,7 @@ describe('ContextManager', () => {
         })
 
         it('should remove middleware', () => {
-            const middleware = async () => {}
+            const middleware = async () => { }
             manager.use(middleware)
 
             expect(manager.remove(middleware)).toBe(true)
@@ -396,9 +396,9 @@ describe('Middleware Factories', () => {
         mockClient = createMockClient('client-1')
     })
 
-    describe('createAuthMiddleware', () => {
+    describe('authenticate', () => {
         it('should verify token when provided', async () => {
-            const middleware = createAuthMiddleware({
+            const middleware = authenticate({
                 verifyToken: async (token) => {
                     if (token === 'valid-token') {
                         return { userId: 'user-123' }
@@ -430,7 +430,7 @@ describe('Middleware Factories', () => {
                 .fn()
                 .mockResolvedValue({ userId: 'user-123' })
 
-            const middleware = createAuthMiddleware({
+            const middleware = authenticate({
                 verifyToken: verifyTokenSpy,
                 // Don't provide getToken - use default
                 actions: ['message'],
@@ -452,7 +452,7 @@ describe('Middleware Factories', () => {
         })
 
         it('should reject when token is missing', async () => {
-            const middleware = createAuthMiddleware({
+            const middleware = authenticate({
                 verifyToken: async () => {
                     throw new Error('Should not be called')
                 },
@@ -477,7 +477,7 @@ describe('Middleware Factories', () => {
         })
 
         it('should reject invalid token', async () => {
-            const middleware = createAuthMiddleware({
+            const middleware = authenticate({
                 verifyToken: async () => {
                     throw new Error('Invalid token')
                 },
@@ -502,7 +502,7 @@ describe('Middleware Factories', () => {
         })
 
         it('should attach user data to client', async () => {
-            const middleware = createAuthMiddleware({
+            const middleware = authenticate({
                 verifyToken: async () => {
                     return { userId: 'user-123', role: 'admin' }
                 },
@@ -531,7 +531,7 @@ describe('Middleware Factories', () => {
         })
 
         it('should only check specified actions', async () => {
-            const middleware = createAuthMiddleware({
+            const middleware = authenticate({
                 verifyToken: async () => {
                     throw new Error('Should not be called')
                 },
@@ -545,41 +545,41 @@ describe('Middleware Factories', () => {
         })
     })
 
-    describe('createLoggingMiddleware', () => {
+    describe('logger', () => {
         it('should log connections when enabled', async () => {
-            const logger = {
+            const mockLogger = {
                 log: vi.fn(),
                 info: vi.fn(),
                 warn: vi.fn(),
                 error: vi.fn(),
             }
-            const middleware = createLoggingMiddleware({
+            const middleware = logger({
                 actions: ['connect'],
-                logger,
+                logger: mockLogger,
                 logLevel: 'log',
             })
 
             manager.use(middleware)
             await manager.executeConnection(mockClient, 'connect')
 
-            expect(logger.log).toHaveBeenCalledWith(
+            expect(mockLogger.log).toHaveBeenCalledWith(
                 expect.stringContaining('connect'),
             )
-            expect(logger.log).toHaveBeenCalledWith(
+            expect(mockLogger.log).toHaveBeenCalledWith(
                 expect.stringContaining('client-1'),
             )
         })
 
         it('should log messages when enabled', async () => {
-            const logger = {
+            const mockLogger = {
                 log: vi.fn(),
                 info: vi.fn(),
                 warn: vi.fn(),
                 error: vi.fn(),
             }
-            const middleware = createLoggingMiddleware({
+            const middleware = logger({
                 actions: ['message'],
-                logger,
+                logger: mockLogger,
                 logLevel: 'info',
             })
 
@@ -594,45 +594,45 @@ describe('Middleware Factories', () => {
             manager.use(middleware)
             await manager.executeMessage(mockClient, message)
 
-            expect(logger.info).toHaveBeenCalled()
-            const logMessage = logger.info.mock.calls[0][0] as string
+            expect(mockLogger.info).toHaveBeenCalled()
+            const logMessage = mockLogger.info.mock.calls[0][0] as string
             expect(logMessage).toContain('message')
             expect(logMessage).toContain('client-1')
         })
 
         it('should log subscriptions when enabled', async () => {
-            const logger = {
+            const mockLogger = {
                 log: vi.fn(),
                 info: vi.fn(),
                 warn: vi.fn(),
                 error: vi.fn(),
             }
-            const middleware = createLoggingMiddleware({
+            const middleware = logger({
                 actions: ['subscribe'],
-                logger,
+                logger: mockLogger,
                 logLevel: 'warn',
             })
 
             manager.use(middleware)
             await manager.executeSubscribe(mockClient, 'chat')
 
-            expect(logger.warn).toHaveBeenCalledWith(
+            expect(mockLogger.warn).toHaveBeenCalledWith(
                 expect.stringContaining('subscribe'),
             )
-            expect(logger.warn).toHaveBeenCalledWith(
+            expect(mockLogger.warn).toHaveBeenCalledWith(
                 expect.stringContaining('chat'),
             )
         })
 
         it('should use custom format function', async () => {
-            const logger = {
+            const mockLogger = {
                 log: vi.fn(),
                 info: vi.fn(),
                 warn: vi.fn(),
                 error: vi.fn(),
             }
-            const middleware = createLoggingMiddleware({
-                logger,
+            const middleware = logger({
+                logger: mockLogger,
                 logLevel: 'log',
                 format: ({ action, clientId }) => `[${action}] ${clientId}`,
             })
@@ -640,18 +640,18 @@ describe('Middleware Factories', () => {
             manager.use(middleware)
             await manager.executeConnection(mockClient, 'connect')
 
-            expect(logger.log).toHaveBeenCalledWith('[connect] client-1')
+            expect(mockLogger.log).toHaveBeenCalledWith('[connect] client-1')
         })
 
         it('should only log specified actions', async () => {
-            const logger = {
+            const mockLogger = {
                 log: vi.fn(),
                 info: vi.fn(),
                 warn: vi.fn(),
                 error: vi.fn(),
             }
-            const middleware = createLoggingMiddleware({
-                logger,
+            const middleware = logger({
+                logger: mockLogger,
                 logLevel: 'log',
                 actions: ['message'], // Only log messages
             })
@@ -659,18 +659,18 @@ describe('Middleware Factories', () => {
             manager.use(middleware)
 
             await manager.executeConnection(mockClient, 'connect')
-            expect(logger.log).not.toHaveBeenCalled()
+            expect(mockLogger.log).not.toHaveBeenCalled()
         })
     })
 
-    describe('createRateLimitMiddleware', () => {
+    describe('rateLimit', () => {
         beforeEach(() => {
             // Clear rate limit store before each test
             clearRateLimitStore()
         })
 
         it('should allow requests within limit', async () => {
-            const middleware = createRateLimitMiddleware({
+            const middleware = rateLimit({
                 maxRequests: 5,
                 windowMs: 1000,
             })
@@ -694,7 +694,7 @@ describe('Middleware Factories', () => {
         })
 
         it('should reject requests exceeding limit', async () => {
-            const middleware = createRateLimitMiddleware({
+            const middleware = rateLimit({
                 maxRequests: 3,
                 windowMs: 1000,
             })
@@ -721,7 +721,7 @@ describe('Middleware Factories', () => {
         })
 
         it('should use custom getMessageId', async () => {
-            const middleware = createRateLimitMiddleware({
+            const middleware = rateLimit({
                 maxRequests: 2,
                 windowMs: 1000,
                 getMessageId: () => 'shared-id', // All requests share same ID
@@ -748,7 +748,7 @@ describe('Middleware Factories', () => {
         })
 
         it('should only rate limit specified actions', async () => {
-            const middleware = createRateLimitMiddleware({
+            const middleware = rateLimit({
                 maxRequests: 1,
                 windowMs: 1000,
                 actions: ['message'], // Only rate limit messages
@@ -762,7 +762,7 @@ describe('Middleware Factories', () => {
         })
 
         it('should provide rate limit state via getRateLimitState', async () => {
-            const middleware = createRateLimitMiddleware({
+            const middleware = rateLimit({
                 maxRequests: 5,
                 windowMs: 1000,
             })
@@ -794,7 +794,7 @@ describe('Middleware Factories', () => {
         })
 
         it('should delete expired rate limit state', async () => {
-            const middleware = createRateLimitMiddleware({
+            const middleware = rateLimit({
                 maxRequests: 5,
                 windowMs: 100, // Very short window
             })
@@ -825,7 +825,7 @@ describe('Middleware Factories', () => {
         })
 
         it('should provide cleanup method', () => {
-            const middleware = createRateLimitMiddleware({
+            const middleware = rateLimit({
                 maxRequests: 5,
                 windowMs: 1000,
             })
@@ -838,8 +838,8 @@ describe('Middleware Factories', () => {
                 typeof (middleware as { cleanup?: () => void }).cleanup,
             ).toBe('function')
 
-            // Call cleanup - should not throw
-            ;(middleware as { cleanup?: () => void }).cleanup!()
+                // Call cleanup - should not throw
+                ; (middleware as { cleanup?: () => void }).cleanup!()
 
             // Store should be cleared
             const state = getRateLimitState('client-1')
@@ -847,7 +847,7 @@ describe('Middleware Factories', () => {
         })
 
         it('should skip rate limiting when getMessageId returns falsy', async () => {
-            const middleware = createRateLimitMiddleware({
+            const middleware = rateLimit({
                 maxRequests: 5,
                 windowMs: 1000,
                 getMessageId: () => '', // Return empty string (falsy)
@@ -873,7 +873,7 @@ describe('Middleware Factories', () => {
         })
 
         it('should skip rate limiting when action is not in list', async () => {
-            const middleware = createRateLimitMiddleware({
+            const middleware = rateLimit({
                 maxRequests: 5,
                 windowMs: 1000,
                 actions: ['subscribe'], // Only rate limit subscribe actions
@@ -892,7 +892,7 @@ describe('Middleware Factories', () => {
         it('should execute cleanup interval callback', async () => {
             // This test is designed to wait for the cleanup interval to run
             // The cleanup interval runs every windowMs * 10
-            const middleware = createRateLimitMiddleware({
+            const middleware = rateLimit({
                 maxRequests: 5,
                 windowMs: 10, // Very short window
             })
@@ -918,9 +918,9 @@ describe('Middleware Factories', () => {
         })
     })
 
-    describe('createChannelWhitelistMiddleware', () => {
+    describe('channelWhitelist', () => {
         it('should allow whitelisted channels on subscribe', async () => {
-            const middleware = createChannelWhitelistMiddleware({
+            const middleware = channelWhitelist({
                 allowedChannels: ['chat', 'notifications'],
             })
 
@@ -931,7 +931,7 @@ describe('Middleware Factories', () => {
         })
 
         it('should reject non-whitelisted channels on subscribe', async () => {
-            const middleware = createChannelWhitelistMiddleware({
+            const middleware = channelWhitelist({
                 allowedChannels: ['chat', 'notifications'],
             })
 
@@ -943,7 +943,7 @@ describe('Middleware Factories', () => {
         })
 
         it('should use dynamic check function', async () => {
-            const middleware = createChannelWhitelistMiddleware({
+            const middleware = channelWhitelist({
                 isDynamic: (channel, client) => {
                     // Only allow channels starting with 'public-'
                     return channel.startsWith('public-')
@@ -962,7 +962,7 @@ describe('Middleware Factories', () => {
         })
 
         it('should not restrict unsubscribe by default', async () => {
-            const middleware = createChannelWhitelistMiddleware({
+            const middleware = channelWhitelist({
                 allowedChannels: ['chat'], // Only chat is whitelisted
             })
 
@@ -973,7 +973,7 @@ describe('Middleware Factories', () => {
         })
 
         it('should restrict unsubscribe when enabled', async () => {
-            const middleware = createChannelWhitelistMiddleware({
+            const middleware = channelWhitelist({
                 allowedChannels: ['chat'],
                 restrictUnsubscribe: true,
             })
@@ -986,7 +986,7 @@ describe('Middleware Factories', () => {
         })
 
         it('should not check message actions', async () => {
-            const middleware = createChannelWhitelistMiddleware({
+            const middleware = channelWhitelist({
                 allowedChannels: ['chat'],
             })
 
@@ -1005,7 +1005,7 @@ describe('Middleware Factories', () => {
         })
 
         it('should handle undefined channel gracefully', async () => {
-            const middleware = createChannelWhitelistMiddleware({
+            const middleware = channelWhitelist({
                 allowedChannels: ['chat'],
             })
 

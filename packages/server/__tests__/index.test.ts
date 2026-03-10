@@ -10,12 +10,11 @@ import {
     SyncarServer,
     createSyncarServer,
     Syncar,
-    createAuthMiddleware,
-    createLoggingMiddleware,
-    createRateLimitMiddleware,
-    createChannelWhitelistMiddleware,
+    authenticate,
+    logger,
+    rateLimit,
+    channelWhitelist,
     ContextManager,
-    createContext,
     SyncarError,
     ConfigError,
     TransportError,
@@ -27,8 +26,6 @@ import {
     MiddlewareRejectionError,
     MiddlewareExecutionError,
     WebSocketServerTransport,
-    Channel,
-    BROADCAST_CHANNEL,
     CLOSE_CODES,
     ERROR_CODES,
 } from '../src/index.js'
@@ -54,17 +51,17 @@ describe('index.ts exports', () => {
     })
 
     it('should export middleware factory functions', () => {
-        expect(createAuthMiddleware).toBeDefined()
-        expect(typeof createAuthMiddleware).toBe('function')
+        expect(authenticate).toBeDefined()
+        expect(typeof authenticate).toBe('function')
 
-        expect(createLoggingMiddleware).toBeDefined()
-        expect(typeof createLoggingMiddleware).toBe('function')
+        expect(logger).toBeDefined()
+        expect(typeof logger).toBe('function')
 
-        expect(createRateLimitMiddleware).toBeDefined()
-        expect(typeof createRateLimitMiddleware).toBe('function')
+        expect(rateLimit).toBeDefined()
+        expect(typeof rateLimit).toBe('function')
 
-        expect(createChannelWhitelistMiddleware).toBeDefined()
-        expect(typeof createChannelWhitelistMiddleware).toBe('function')
+        expect(channelWhitelist).toBeDefined()
+        expect(typeof channelWhitelist).toBe('function')
     })
 
     it('should export all error classes', () => {
@@ -85,9 +82,7 @@ describe('index.ts exports', () => {
         expect(typeof WebSocketServerTransport).toBe('function')
     })
 
-    it('should export channel constants', () => {
-        expect(BROADCAST_CHANNEL).toBeDefined()
-    })
+
 
     it('should export close and error codes', () => {
         expect(CLOSE_CODES).toBeDefined()

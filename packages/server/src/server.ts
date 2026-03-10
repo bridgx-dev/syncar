@@ -157,9 +157,9 @@ export interface IServerOptions {
      * @example
      * ```ts
      * middleware: [
-     *   createAuthMiddleware({ verifyToken }),
-     *   createLoggingMiddleware(),
-     *   createRateLimitMiddleware({ maxRequests: 100 })
+     *   authenticate({ verifyToken }),
+     *   logger(),
+     *   rateLimit({ maxRequests: 100 })
      * ]
      * ```
      */
@@ -411,9 +411,9 @@ export class SyncarServer {
      *
      * @example
      * ```ts
-     * import { createAuthMiddleware } from '@syncar/server'
+     * import { authenticate } from '@syncar/server'
      *
-     * server.use(createAuthMiddleware({
+     * server.use(authenticate({
      *   verifyToken: async (token) => jwt.verify(token, SECRET)
      * }))
      * ```
