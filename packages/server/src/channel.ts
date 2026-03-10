@@ -827,3 +827,28 @@ export class MulticastChannel<T = unknown>
         return this.registry.getChannelSubscribers(this.name).size === 0
     }
 }
+
+// ============================================================
+// RE-EXPORT UNIFIED CHANNEL CLASS
+// ============================================================
+
+/**
+ * Unified Channel - supports both broadcast and multicast modes
+ *
+ * @remarks
+ * This is a re-export of the new unified Channel class from channel-new.ts.
+ * The Channel class replaces BroadcastChannel and MulticastChannel with a
+ * single API that supports configurable scope and flow options.
+ *
+ * @example
+ * ```ts
+ * import { Channel } from '@syncar/server'
+ *
+ * const chat = new Channel({
+ *   name: 'chat',
+ *   registry: registry,
+ *   options: { scope: 'subscribers', flow: 'bidirectional' }
+ * })
+ * ```
+ */
+export { Channel } from './channel-new'
