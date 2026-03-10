@@ -355,6 +355,9 @@ export class SyncarServer {
     }
 
     /**
+     * @deprecated Use `createChannel(name, { scope: 'broadcast' })` instead.
+     * This method will be removed in v2.0.
+     *
      * Get or create the broadcast channel
      *
      * @remarks
@@ -498,6 +501,9 @@ export class SyncarServer {
     }
 
     /**
+     * @deprecated Use `createChannel(name)` instead.
+     * This method will be removed in v2.0.
+     *
      * Create or retrieve a multicast channel
      *
      * @remarks
