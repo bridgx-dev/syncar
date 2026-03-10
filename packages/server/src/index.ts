@@ -136,7 +136,7 @@ export {
 } from './errors'
 export { WebSocketServerTransport } from './websocket'
 
-export { BROADCAST_CHANNEL, CLOSE_CODES, ERROR_CODES } from './config'
+export { CLOSE_CODES, ERROR_CODES } from './config'
 
 export type {
     IClientConnection,
@@ -147,7 +147,7 @@ export type {
 
 export type { IServerOptions, IServerStats } from './server'
 
-export type { IChannelState, IPublishOptions, IMessageHandler } from './channel'
+export type { IChannelState, IMessageHandler } from './channel'
 
 export type {
     MessageId,

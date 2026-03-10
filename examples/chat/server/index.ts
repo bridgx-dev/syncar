@@ -10,7 +10,7 @@
 
 import express from 'express'
 import { createServer } from 'http'
-import { createSyncaServer } from '@syncar/server'
+import { createSyncarServer } from '@syncar/server'
 
 // Message types
 interface ChatMessage {
@@ -27,12 +27,6 @@ interface PresenceMessage {
     status: 'online' | 'offline' | 'typing'
 }
 
-interface NotificationMessage {
-    type: 'info' | 'warning' | 'success'
-    message: string
-    timestamp: number
-}
-
 // Store connected users (clientId -> username)
 const users = new Map<string, { username: string; status: string }>()
 
@@ -41,23 +35,20 @@ const app = express()
 const httpServer = createServer(app)
 
 // Initialize Syncar synca
-const synca = createSyncaServer({ server: httpServer })
+const synca = createSyncarServer({ server: httpServer })
 
 async function main() {
-    await synca.start()
+    synca.start()
 
     // ============================================================
     // CHANNELS
     // ============================================================
 
     // Chat - intercept to enrich messages, then relay to all subscribers
-    const chat = synca.createMulticast<ChatMessage>('chat')
+    const chat = synca.createChannel<ChatMessage>('chat')
 
     // Presence - auto-relay (no onMessage needed)
-    const presence = synca.createMulticast<PresenceMessage>('presence')
-
-    // Notifications - broadcast to all connected clients
-    const notifications = synca.createBroadcast<NotificationMessage>()
+    const presence = synca.createChannel<PresenceMessage>('presence')
 
     // ============================================================
     // SUBSCRIBE / UNSUBSCRIBE LIFECYCLE — via middleware
@@ -71,17 +62,14 @@ async function main() {
             console.log(`[Chat] ${client.id} joined. Members: ${memberCount}`)
 
             // Send system welcome message only to the joining client
-            chat.publish(
-                {
-                    id: `sys-${Date.now()}`,
-                    type: 'system',
-                    text: `Welcome!`,
-                    user: 'System',
-                    timestamp: Date.now(),
-                    count: memberCount,
-                } as ChatMessage & { count: number },
-                { to: [client.id] },
-            )
+            chat.publish({
+                id: `sys-${Date.now()}`,
+                type: 'system',
+                text: `Welcome!`,
+                user: 'System',
+                timestamp: Date.now(),
+                count: memberCount,
+            } as ChatMessage & { count: number })
         }
 
         if (action === 'unsubscribe' && client) {
@@ -121,12 +109,6 @@ async function main() {
 
         if (action === 'connect' && client) {
             console.log(`[Server] Client connected: ${client.id}`)
-            // Notify all clients about new connection
-            notifications.publish({
-                type: 'info',
-                message: `A new user connected. Total: ${synca.getStats().clientCount}`,
-                timestamp: Date.now(),
-            })
         }
 
         if (action === 'disconnect' && client) {

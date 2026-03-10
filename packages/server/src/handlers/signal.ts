@@ -3,7 +3,6 @@ import type { IClientConnection, SignalMessage } from '../types'
 import { createSignalMessage, isReservedChannelName } from '../utils'
 import { SignalType } from '../types'
 import { ChannelError, MessageError } from '../errors'
-import { BROADCAST_CHANNEL } from '../config'
 import { ContextManager } from '../context'
 import { ClientRegistry } from '../registry'
 
@@ -84,7 +83,7 @@ export class SignalHandler {
 
         // 4. Get the unified pipeline (Global + Channel specific if applicable)
         let channelInstance = undefined
-        if (message.channel && message.channel !== BROADCAST_CHANNEL) {
+        if (message.channel) {
             channelInstance = this.registry.getChannel(message.channel)
         }
 
@@ -111,7 +110,8 @@ export class SignalHandler {
         }
 
         // Cannot subscribe to broadcast channel (it's for all clients)
-        if (channel === BROADCAST_CHANNEL) {
+        const channelInstance = this.registry.getChannel(channel)
+        if (channelInstance?.scope === 'broadcast') {
             throw new ChannelError('Cannot subscribe to broadcast channel')
         }
 
@@ -133,7 +133,7 @@ export class SignalHandler {
                 undefined,
                 message.id,
             )
-            client.socket.send(JSON.stringify(ackMessage), () => {})
+            client.socket.send(JSON.stringify(ackMessage))
         }
     }
 
@@ -161,7 +161,7 @@ export class SignalHandler {
                 undefined,
                 message.id,
             )
-            client.socket.send(JSON.stringify(ackMessage), () => {})
+            client.socket.send(JSON.stringify(ackMessage), () => { })
         }
     }
 
@@ -180,7 +180,7 @@ export class SignalHandler {
                 undefined,
                 message.id,
             )
-            client.socket.send(JSON.stringify(pongMessage), () => {})
+            client.socket.send(JSON.stringify(pongMessage), () => { })
         }
     }
 

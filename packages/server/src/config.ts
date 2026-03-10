@@ -5,22 +5,6 @@
  * @module config
  */
 
-// ============================================================
-// CONSTANTS
-// ============================================================
-
-/**
- * Broadcast channel name
- * Messages sent to this channel reach ALL connected clients
- * No subscription required for broadcast channel
- */
-export const BROADCAST_CHANNEL = '__broadcast__' as const
-
-/**
- * Type for the broadcast channel name
- */
-export type BroadcastChannel = typeof BROADCAST_CHANNEL
-
 /**
  * WebSocket close codes
  * Based on RFC 6455 and custom codes for application-specific closures

@@ -1,5 +1,5 @@
 import type { IClientConnection, ClientId, ChannelName, ILogger } from './types'
-import { BaseChannel } from './channel'
+import { Channel } from './channel'
 import { assertValidChannelName } from './utils'
 
 /**
@@ -10,7 +10,7 @@ export class ClientRegistry {
     public readonly connections: Map<ClientId, IClientConnection> = new Map()
     private readonly subscriptions: Map<ClientId, Set<ChannelName>> = new Map()
     private readonly channels: Map<ChannelName, Set<ClientId>> = new Map()
-    private readonly channelInstances: Map<ChannelName, BaseChannel<unknown>> =
+    private readonly channelInstances: Map<ChannelName, Channel<any>> =
         new Map()
     public readonly logger?: ILogger
 
@@ -54,7 +54,7 @@ export class ClientRegistry {
         return this.connections.size
     }
 
-    registerChannel(channel: BaseChannel<unknown>): void {
+    registerChannel(channel: Channel<any>): void {
         // Create channel in internal map if not exists
         if (!this.channels.has(channel.name)) {
             this.channels.set(channel.name, new Set())
@@ -63,8 +63,8 @@ export class ClientRegistry {
         this.channelInstances.set(channel.name, channel)
     }
 
-    getChannel<T = unknown>(name: ChannelName): BaseChannel<T> | undefined {
-        return this.channelInstances.get(name) as BaseChannel<T> | undefined
+    getChannel<T = unknown>(name: ChannelName): Channel<T> | undefined {
+        return this.channelInstances.get(name) as Channel<T> | undefined
     }
 
     removeChannel(name: ChannelName): boolean {

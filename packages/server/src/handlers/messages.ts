@@ -1,5 +1,5 @@
 import type { IClientConnection, DataMessage } from '../types'
-import { BaseChannel } from '../channel'
+import { Channel } from '../channel'
 
 import { MessageError, ChannelError } from '../errors'
 import { isDataMessage } from '../utils'
@@ -79,7 +79,7 @@ export class MessageHandler {
 
     getChannelForMessage<T = unknown>(
         message: DataMessage<T>,
-    ): BaseChannel<T> | undefined {
+    ): Channel<T> | undefined {
         return this.registry.getChannel<T>(message.channel)
     }
 

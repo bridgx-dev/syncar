@@ -9,7 +9,7 @@ import {
     type ChannelFlow,
 } from './types'
 import { ClientRegistry } from './registry'
-import { createDataMessage, assertValidChannelName } from './utils'
+import { createDataMessage } from './utils'
 
 /**
  * Channel state information
@@ -22,16 +22,6 @@ import { createDataMessage, assertValidChannelName } from './utils'
  * @property subscriberCount - Current number of subscribers
  * @property createdAt - Unix timestamp (ms) when the channel was created
  * @property lastMessageAt - Unix timestamp (ms) of the last published message
- *
- * @example
- * ```ts
- * const state: IChannelState = {
- *   name: 'chat',
- *   subscriberCount: 42,
- *   createdAt: 1699123456789,
- *   lastMessageAt: 1699123459999
- * }
- * ```
  */
 export interface IChannelState {
     /** The channel name */
@@ -45,48 +35,6 @@ export interface IChannelState {
 }
 
 /**
- * Publish options for channel messages
- *
- * @remarks
- * Controls which clients receive a published message through
- * inclusion/exclusion filtering.
- *
- * @property to - Optional list of client IDs to receive the message (exclusive mode)
- * @property exclude - Optional list of client IDs to exclude from receiving the message
- *
- * @example
- * ```ts
- * // Send to specific clients only
- * channel.publish('Hello', { to: ['client-1', 'client-2'] })
- *
- * // Send to all except specific clients
- * channel.publish('Hello', { exclude: ['client-123'] })
- *
- * // Both options can be combined (to takes precedence)
- * channel.publish('Hello', { to: ['client-1'], exclude: ['client-2'] })
- * ```
- */
-export interface IPublishOptions {
-    /**
-     * Optional list of client IDs to receive the message
-     *
-     * @remarks
-     * When provided, only clients in this list will receive the message.
-     * This creates an "exclusive mode" where `exclude` is still applied
-     * as a secondary filter.
-     */
-    to?: readonly ClientId[]
-    /**
-     * Optional list of client IDs to exclude from receiving the message
-     *
-     * @remarks
-     * Clients in this list will not receive the message, even if they
-     * are subscribed to the channel. Useful for excluding the sender.
-     */
-    exclude?: readonly ClientId[]
-}
-
-/**
  * Base message handler signature
  *
  * @remarks
@@ -94,16 +42,6 @@ export interface IPublishOptions {
  * Handlers receive the message data, sending client, and the original message object.
  *
  * @template T - Type of data expected in messages
- *
- * @example
- * ```ts
- * const handler: IMessageHandler<{ text: string }> = (data, client, message) => {
- *   console.log(`${client.id} sent: ${data.text}`)
- *   console.log(`Message ID: ${message.id}`)
- * }
- *
- * channel.onMessage(handler)
- * ```
  */
 export type IMessageHandler<T> = (
     /** The message data payload */
@@ -114,184 +52,16 @@ export type IMessageHandler<T> = (
     message: DataMessage<T>,
 ) => void | Promise<void>
 
-// ============================================================
-// BASE CHANNEL
-// ============================================================
-
 /**
- * Base Channel implementation
+ * Unified Channel implementation
  *
  * @remarks
- * Abstract base class for all channel types. Handles the complexities of
- * chunked publishing, client filtering, and message delivery. Provides
- * automatic chunking for large broadcasts to avoid event loop blocking.
+ * Handles the complexities of chunked publishing, message routing, and
+ * connection management. Provides automatic chunking for large broadcasts
+ * to avoid event loop blocking.
  *
  * @template T - Type of data published on this channel (default: unknown)
- * @template N - Type of the channel name (default: ChannelName)
  *
- * @example
- * ```ts
- * // Extend BaseChannel for custom channel types
- * class CustomChannel<T> extends BaseChannel<T> {
- *   get subscriberCount() { return 0 }
- *   isEmpty() { return true }
- *   getMiddlewares() { return [] }
- *   protected getTargetClients() { return [] }
- * }
- * ```
- *
- * @see {@link Channel} for the unified channel implementation
- */
-export abstract class BaseChannel<
-    T = unknown,
-    N extends ChannelName = ChannelName,
-> {
-    /**
-     * Creates a new BaseChannel instance
-     *
-     * @param name - The channel name
-     * @param registry - The client registry for connection management
-     * @param chunkSize - Number of clients to process per chunk for large broadcasts (default: 500)
-     */
-    constructor(
-        /** The channel name */
-        public readonly name: N,
-        /** The client registry for connection management */
-        protected readonly registry: ClientRegistry,
-        /** Number of clients to process per chunk for large broadcasts (default: 500) */
-        protected readonly chunkSize: number = 500,
-    ) { }
-
-    /**
-     * Get the current subscriber count
-     *
-     * @remarks
-     * Abstract method that must be implemented by subclasses.
-     * Returns the number of clients currently receiving messages from this channel.
-     */
-    abstract get subscriberCount(): number
-
-    /**
-     * Check if the channel has no subscribers
-     *
-     * @remarks
-     * Abstract method that must be implemented by subclasses.
-     * Returns `true` if the channel has no subscribers.
-     */
-    abstract isEmpty(): boolean
-
-    /**
-     * Get the middleware for this channel
-     *
-     * @remarks
-     * Abstract method that must be implemented by subclasses.
-     * Returns an array of middleware functions applied to this channel.
-     */
-    abstract getMiddlewares(): IMiddleware[]
-
-    /**
-     * Publish data to the channel
-     *
-     * @remarks
-     * Sends the data to all target clients. If the number of clients exceeds
-     * `chunkSize`, messages are sent in chunks using `setImmediate` to avoid
-     * blocking the event loop.
-     *
-     * @param data - The data to publish
-     * @param options - Optional publish options for client filtering
-     *
-     * @example
-     * ```ts
-     * // Publish to all clients
-     * channel.publish('Hello everyone!')
-     *
-     * // Publish excluding specific clients
-     * channel.publish('Hello', { exclude: ['client-123'] })
-     *
-     * // Publish to specific clients only
-     * channel.publish('Private message', { to: ['client-1', 'client-2'] })
-     * ```
-     */
-    publish(data: T, options?: IPublishOptions): void {
-        const clients = this.getTargetClients(options)
-        if (clients.length > this.chunkSize) {
-            this.publishInChunks(data, clients, options)
-        } else {
-            this.publishToClients(data, clients, options)
-        }
-    }
-
-    /**
-     * Dispatch an incoming client message
-     *
-     * @remarks
-     * Called when a client sends a message to this channel.
-     * Override in subclasses to handle incoming messages.
-     * Default implementation is a no-op (e.g., BroadcastChannel doesn't receive messages).
-     *
-     * @param data - The message data
-     * @param client - The client that sent the message
-     * @param message - The complete message object
-     */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    async dispatch(
-        _data: T,
-        _client: IClientConnection,
-        _message: DataMessage<T>,
-    ): Promise<void> { }
-
-    protected abstract getTargetClients(options?: IPublishOptions): ClientId[]
-
-    protected publishToClients(
-        data: T,
-        clientIds: ClientId[],
-        options?: IPublishOptions,
-    ): void {
-        const message = createDataMessage<T>(this.name, data)
-
-        for (const clientId of clientIds) {
-            // Apply filters (if present in options)
-            if (options?.to && !options.to.includes(clientId)) continue
-            if (options?.exclude && options.exclude.includes(clientId)) continue
-
-            const client = this.registry.connections.get(clientId)
-            if (client) {
-                try {
-                    client.socket.send(JSON.stringify(message))
-                } catch (error) {
-                    this.registry.logger?.error(
-                        `[${this.name}] Failed to send to ${clientId}:`,
-                        error as Error,
-                    )
-                }
-            }
-        }
-    }
-
-    protected publishInChunks(
-        data: T,
-        clientIds: ClientId[],
-        options?: IPublishOptions,
-    ): void {
-        let index = 0
-
-        const nextChunk = () => {
-            const chunk = clientIds.slice(index, index + this.chunkSize)
-            if (chunk.length === 0) return
-
-            this.publishToClients(data, chunk, options)
-            index += this.chunkSize
-
-            if (index < clientIds.length) {
-                setImmediate(nextChunk)
-            }
-        }
-        nextChunk()
-    }
-}
-
-/**
- * @template T - Type of data published on this channel (default: unknown)
  * @example
  * ### Default: subscribers + bidirectional (chat room)
  * ```ts
@@ -302,9 +72,14 @@ export abstract class BaseChannel<
  * })
  * ```
  */
-export class Channel<T = unknown> extends BaseChannel<T> {
+export class Channel<T = unknown> {
     private readonly middlewares: IMiddleware[] = []
     private readonly messageHandlers: Set<IMessageHandler<T>> = new Set()
+    private _lastMessageAt?: number
+    private _createdAt: number
+
+    /** The channel name */
+    public readonly name: ChannelName
 
     /** The channel scope: 'broadcast' or 'subscribers' */
     public readonly scope: ChannelScope
@@ -318,18 +93,9 @@ export class Channel<T = unknown> extends BaseChannel<T> {
      * @param config.name - The channel name
      * @param config.registry - The client registry
      * @param config.options - Channel options (scope, flow)
-     * @param config.chunkSize - Broadcast chunk size
+     * @param config.chunkSize - Broadcast chunk size (default: 500)
      *
      * @throws {Error} If scope is 'broadcast' and flow is not 'send-only'
-     *
-     * @example
-     * ```ts
-     * new Channel({
-     *   name: 'chat',
-     *   registry: registry,
-     *   options: { scope: 'subscribers', flow: 'bidirectional' }
-     * })
-     * ```
      */
     constructor(config: {
         name: ChannelName
@@ -337,10 +103,9 @@ export class Channel<T = unknown> extends BaseChannel<T> {
         options?: ChannelOptions
         chunkSize?: number
     }) {
-        const { name, registry, options, chunkSize } = config
+        const { name, registry, options, chunkSize = 500 } = config
 
         // Apply defaults
-        // Broadcast scope automatically sets flow to send-only
         const scope = options?.scope ?? 'subscribers'
         const flow =
             options?.flow ??
@@ -354,39 +119,16 @@ export class Channel<T = unknown> extends BaseChannel<T> {
             )
         }
 
-        // For broadcast scope, use the broadcast channel name
-        const channelName = scope === 'broadcast' ? '__broadcast__' : name
-
-        // Validate channel name
-        assertValidChannelName(channelName)
-
-        super(channelName, registry, chunkSize)
-
+        this.name = name
+        this.registry = registry
+        this.chunkSize = chunkSize
         this.scope = scope
         this.flow = flow
+        this._createdAt = Date.now()
     }
 
     /**
-     * Get target clients based on scope
-     *
-     * @internal
-     */
-    protected getTargetClients(_options?: IPublishOptions): ClientId[] {
-        if (this.scope === 'broadcast') {
-            return Array.from(this.registry.connections.keys())
-        }
-        return Array.from(this.registry.getChannelSubscribers(this.name))
-    }
-
-    /**
-     * Get the number of subscribers/clients
-     *
-     * @returns Number of clients that will receive messages
-     *
-     * @example
-     * ```ts
-     * console.log(`Channel reach: ${channel.subscriberCount}`)
-     * ```
+     * Get the current subscriber count
      */
     get subscriberCount(): number {
         if (this.scope === 'broadcast') {
@@ -396,25 +138,26 @@ export class Channel<T = unknown> extends BaseChannel<T> {
     }
 
     /**
-     * Check if channel has no subscribers/clients
-     *
-     * @returns `true` if no clients will receive messages
-     *
-     * @example
-     * ```ts
-     * if (channel.isEmpty()) {
-     *   console.log('No one is listening')
-     * }
-     * ```
+     * Check if the channel has no subscribers
      */
     isEmpty(): boolean {
         return this.subscriberCount === 0
     }
 
     /**
-     * Get middleware for this channel
-     *
-     * @internal
+     * Get the current state of the channel
+     */
+    getState(): IChannelState {
+        return {
+            name: this.name,
+            subscriberCount: this.subscriberCount,
+            createdAt: this._createdAt,
+            lastMessageAt: this._lastMessageAt,
+        }
+    }
+
+    /**
+     * Get the middleware for this channel
      */
     getMiddlewares(): IMiddleware[] {
         return [...this.middlewares]
@@ -422,19 +165,30 @@ export class Channel<T = unknown> extends BaseChannel<T> {
 
     /**
      * Register channel-specific middleware
-     *
-     * @param middleware - The middleware function
-     *
-     * @example
-     * ```ts
-     * channel.use(async (context, next) => {
-     *   console.log(`Action: ${context.req.action}`)
-     *   await next()
-     * })
-     * ```
      */
     use(middleware: IMiddleware): void {
         this.middlewares.push(middleware)
+    }
+
+    /**
+     * Publish data to the channel
+     *
+     * @remarks
+     * Sends the data to all target clients. If the number of clients exceeds
+     * `chunkSize`, messages are sent in chunks using `setImmediate` to avoid
+     * blocking the event loop.
+     *
+     * @param data - The data to publish
+     */
+    publish(data: T): void {
+        this._lastMessageAt = Date.now()
+        const clients = this.getTargetClients()
+
+        if (clients.length > this.chunkSize) {
+            this.publishInChunks(data, clients)
+        } else {
+            this.publishToClients(data, clients)
+        }
     }
 
     /**
@@ -442,17 +196,6 @@ export class Channel<T = unknown> extends BaseChannel<T> {
      *
      * @param handler - The message handler function
      * @returns Unsubscribe function
-     * @throws {Error} If flow is 'send-only'
-     *
-     * @example
-     * ```ts
-     * const unsubscribe = channel.onMessage((data, client) => {
-     *   console.log(`Received from ${client.id}:`, data)
-     * })
-     *
-     * // Later
-     * unsubscribe()
-     * ```
      */
     onMessage(handler: IMessageHandler<T>): () => void {
         if (this.flow === 'send-only') {
@@ -467,22 +210,12 @@ export class Channel<T = unknown> extends BaseChannel<T> {
 
     /**
      * Subscribe a client (only available for subscriber scope)
-     *
-     * @param subscriber - The subscriber ID
-     * @returns `true` if subscribed successfully
-     * @throws {Error} If scope is 'broadcast'
-     *
-     * @example
-     * ```ts
-     * channel.subscribe('client-123')
-     * ```
      */
     subscribe(subscriber: ClientId): boolean {
         if (this.scope === 'broadcast') {
             throw new Error(
                 `Cannot subscribe to channel '${this.name}': ` +
-                `subscribe is not available for broadcast channels. ` +
-                `Broadcast channels send to all clients automatically.`,
+                `subscribe is not available for broadcast channels.`,
             )
         }
         return this.registry.subscribe(subscriber, this.name)
@@ -490,15 +223,6 @@ export class Channel<T = unknown> extends BaseChannel<T> {
 
     /**
      * Unsubscribe a client (only available for subscriber scope)
-     *
-     * @param subscriber - The subscriber ID
-     * @returns `true` if unsubscribed successfully
-     * @throws {Error} If scope is 'broadcast'
-     *
-     * @example
-     * ```ts
-     * channel.unsubscribe('client-123')
-     * ```
      */
     unsubscribe(subscriber: ClientId): boolean {
         if (this.scope === 'broadcast') {
@@ -512,17 +236,6 @@ export class Channel<T = unknown> extends BaseChannel<T> {
 
     /**
      * Check if a client is subscribed (only available for subscriber scope)
-     *
-     * @param subscriber - The subscriber ID
-     * @returns `true` if subscribed
-     * @throws {Error} If scope is 'broadcast'
-     *
-     * @example
-     * ```ts
-     * if (channel.hasSubscriber('client-123')) {
-     *   console.log('Client is subscribed')
-     * }
-     * ```
      */
     hasSubscriber(subscriber: ClientId): boolean {
         if (this.scope === 'broadcast') {
@@ -536,15 +249,6 @@ export class Channel<T = unknown> extends BaseChannel<T> {
 
     /**
      * Get all subscribers (only available for subscriber scope)
-     *
-     * @returns Set of subscriber IDs
-     * @throws {Error} If scope is 'broadcast'
-     *
-     * @example
-     * ```ts
-     * const subs = channel.getSubscribers()
-     * console.log(`Subscribers: ${Array.from(subs).join(', ')}`)
-     * ```
      */
     getSubscribers(): Set<ClientId> {
         if (this.scope === 'broadcast') {
@@ -561,18 +265,16 @@ export class Channel<T = unknown> extends BaseChannel<T> {
      *
      * @internal
      */
-    override async dispatch(
+    async dispatch(
         data: T,
         client: IClientConnection,
         message: DataMessage<T>,
     ): Promise<void> {
-        // Send-only channels don't receive client messages
         if (this.flow === 'send-only') {
             return
         }
 
         if (this.messageHandlers.size > 0) {
-            // Intercept mode: handlers process the message
             for (const handler of this.messageHandlers) {
                 try {
                     await handler(data, client, message)
@@ -583,12 +285,68 @@ export class Channel<T = unknown> extends BaseChannel<T> {
                     )
                 }
             }
-        } else {
+        } else if (this.scope === 'subscribers' && this.flow === 'bidirectional') {
             // Auto-relay mode: forward to all subscribers except sender
-            // Only for subscriber scope with bidirectional flow
-            if (this.scope === 'subscribers') {
-                this.publish(data, { exclude: [client.id] })
+            const clients = Array.from(this.registry.getChannelSubscribers(this.name))
+                .filter(id => id !== client.id)
+            this.publishToClients(data, clients)
+        }
+    }
+
+    /**
+     * Get target clients based on scope
+     */
+    protected getTargetClients(): ClientId[] {
+        if (this.scope === 'broadcast') {
+            return Array.from(this.registry.connections.keys())
+        }
+        return Array.from(this.registry.getChannelSubscribers(this.name))
+    }
+
+    /**
+     * Send message to a small group of clients
+     */
+    protected publishToClients(data: T, clientIds: ClientId[]): void {
+        const message = createDataMessage<T>(this.name, data)
+
+        for (const clientId of clientIds) {
+            const client = this.registry.connections.get(clientId)
+            if (client) {
+                try {
+                    client.socket.send(JSON.stringify(message))
+                } catch (error) {
+                    this.registry.logger?.error(
+                        `[${this.name}] Failed to send to ${clientId}:`,
+                        error as Error,
+                    )
+                }
             }
         }
     }
+
+    /**
+     * Send message in chunks for large subscriber lists
+     */
+    protected publishInChunks(data: T, clientIds: ClientId[]): void {
+        let index = 0
+
+        const nextChunk = () => {
+            const chunk = clientIds.slice(index, index + this.chunkSize)
+            if (chunk.length === 0) return
+
+            this.publishToClients(data, chunk)
+            index += this.chunkSize
+
+            if (index < clientIds.length) {
+                setImmediate(nextChunk)
+            }
+        }
+        nextChunk()
+    }
+
+    /**
+     * Client registry and chunking config
+     */
+    protected readonly registry: ClientRegistry
+    protected readonly chunkSize: number
 }

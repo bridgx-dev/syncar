@@ -56,7 +56,7 @@ describe('Channel', () => {
                 options: { scope: 'broadcast' },
             })
 
-            expect(channel.name).toBe('__broadcast__')
+            expect(channel.name).toBe('alerts')
             expect(channel.scope).toBe('broadcast')
             expect(channel.flow).toBe('send-only')
         })
@@ -277,7 +277,7 @@ describe('Channel', () => {
             channel.subscribe('client-1')
             channel.subscribe('client-2')
 
-            const publishSpy = vi.spyOn(channel, 'publish')
+            const publishSpy = vi.spyOn(channel as any, 'publishToClients')
 
             await channel.dispatch({ text: 'hello' }, client1, {
                 id: 'msg-1',
@@ -288,10 +288,10 @@ describe('Channel', () => {
             })
 
             // Should publish to all except sender
-            expect(publishSpy).toHaveBeenCalledWith(
-                { text: 'hello' },
-                { exclude: ['client-1'] },
-            )
+            expect(publishSpy).toHaveBeenCalled()
+            const calledIds = publishSpy.mock.calls[0][1]
+            expect(calledIds).not.toContain('client-1')
+            expect(calledIds).toContain('client-2')
         })
 
         it('should call handlers when registered (bidirectional)', async () => {
