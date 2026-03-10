@@ -112,7 +112,7 @@ export { SyncarServer, createSyncarServer } from './server'
 export { SyncarServer as Syncar } from './server'
 
 // New unified channel API
-export { Channel } from './channel-new'
+export { Channel } from './channel'
 
 export {
   createAuthMiddleware,

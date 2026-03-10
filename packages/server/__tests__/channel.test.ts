@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { Channel } from '../src/channel-new'
+import { Channel } from '../src/channel'
 import { ClientRegistry } from '../src/registry'
 import { createMockClient } from './setup'
 

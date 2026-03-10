@@ -10,7 +10,7 @@ import { MessageHandler } from '../src/handlers/messages'
 import { SignalHandler } from '../src/handlers/signal'
 import { ClientRegistry } from '../src/registry'
 import { ContextManager } from '../src/context'
-import { MulticastChannel } from '../src/channel'
+import { Channel } from '../src/channel'
 import { MessageType, SignalType, type IClientConnection, type DataMessage } from '../src/types'
 import { ChannelError, MessageError } from '../src/errors'
 import { CLOSE_CODES } from '../src/config'
@@ -139,7 +139,7 @@ describe('MessageHandler', () => {
   let registry: ClientRegistry
   let context: ContextManager
   let messageHandler: MessageHandler
-  let testChannel: MulticastChannel<{ text: string }>
+  let testChannel: Channel<{ text: string }>
 
   beforeEach(() => {
     registry = new ClientRegistry()
@@ -150,7 +150,7 @@ describe('MessageHandler', () => {
     })
 
     // Create a test channel
-    testChannel = new MulticastChannel({
+    testChannel = new Channel({
       name: 'test-channel',
       registry,
     })
@@ -368,7 +368,7 @@ describe('SignalHandler', () => {
   let registry: ClientRegistry
   let context: ContextManager
   let signalHandler: SignalHandler
-  let testChannel: MulticastChannel<string>
+  let testChannel: Channel<string>
 
   beforeEach(() => {
     registry = new ClientRegistry()
@@ -379,7 +379,7 @@ describe('SignalHandler', () => {
     })
 
     // Create a test channel
-    testChannel = new MulticastChannel({
+    testChannel = new Channel({
       name: 'test-channel',
       registry,
     })

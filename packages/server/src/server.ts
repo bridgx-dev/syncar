@@ -43,7 +43,7 @@ export interface IServerStats {
     startedAt?: number
 }
 
-import { Channel } from './channel-new'
+import { Channel } from './channel'
 import { ConnectionHandler, MessageHandler, SignalHandler } from './handlers'
 import { ContextManager } from './context'
 import { StateError } from './errors'
