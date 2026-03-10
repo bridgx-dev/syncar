@@ -1,52 +1,52 @@
 {
-  "name": "@syncar/client",
-  "version": "1.0.0-alpha.1",
-  "description": "Framework-agnostic client for Syncar real-time synchronization",
-  "private": true,
-  "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "bun": "./src/index.ts",
-      "development": "./src/index.ts",
-      "import": "./dist/index.js",
-      "default": "./src/index.ts"
+    "name": "@syncar/client",
+    "version": "1.0.0-alpha.1",
+    "description": "Framework-agnostic client for Syncar real-time synchronization",
+    "private": true,
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "bun": "./src/index.ts",
+            "development": "./src/index.ts",
+            "import": "./dist/index.js",
+            "default": "./src/index.ts"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc --watch",
+        "test": "vitest",
+        "test:ui": "vitest --ui",
+        "test:run": "vitest run",
+        "typecheck": "tsc --noEmit"
+    },
+    "keywords": [
+        "realtime",
+        "websocket",
+        "synchronization",
+        "pubsub",
+        "client"
+    ],
+    "author": "Syncar",
+    "license": "MIT",
+    "dependencies": {
+        "@syncar/types": "workspace:*",
+        "@syncar/lib": "workspace:*"
+    },
+    "devDependencies": {
+        "@types/node": "^22.13.10",
+        "typescript": "^5.8.2",
+        "vitest": "^3.0.7"
+    },
+    "peerDependencies": {
+        "typescript": "^5"
     }
-  },
-  "files": [
-    "dist",
-    "README.md"
-  ],
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "test:run": "vitest run",
-    "typecheck": "tsc --noEmit"
-  },
-  "keywords": [
-    "realtime",
-    "websocket",
-    "synchronization",
-    "pubsub",
-    "client"
-  ],
-  "author": "Syncar",
-  "license": "MIT",
-  "dependencies": {
-    "@syncar/types": "workspace:*",
-    "@syncar/lib": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/node": "^22.13.10",
-    "typescript": "^5.8.2",
-    "vitest": "^3.0.7"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  }
 }

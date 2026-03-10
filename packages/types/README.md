@@ -17,11 +17,11 @@ bun add @syncar/types
 
 ```typescript
 import type {
-  Message,
-  DataMessage,
-  ChannelName,
-  ConnectionStatus,
-  TransportConfig,
+    Message,
+    DataMessage,
+    ChannelName,
+    ConnectionStatus,
+    TransportConfig,
 } from '@syncar/types'
 
 // Use the types in your code

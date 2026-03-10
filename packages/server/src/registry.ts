@@ -1,9 +1,4 @@
-import type {
-    IClientConnection,
-    ClientId,
-    ChannelName,
-    ILogger,
-} from './types'
+import type { IClientConnection, ClientId, ChannelName, ILogger } from './types'
 import { BaseChannel } from './channel'
 import { assertValidChannelName } from './utils'
 
@@ -15,7 +10,8 @@ export class ClientRegistry {
     public readonly connections: Map<ClientId, IClientConnection> = new Map()
     private readonly subscriptions: Map<ClientId, Set<ChannelName>> = new Map()
     private readonly channels: Map<ChannelName, Set<ClientId>> = new Map()
-    private readonly channelInstances: Map<ChannelName, BaseChannel<unknown>> = new Map()
+    private readonly channelInstances: Map<ChannelName, BaseChannel<unknown>> =
+        new Map()
     public readonly logger?: ILogger
 
     constructor(logger?: ILogger) {
@@ -40,7 +36,7 @@ export class ClientRegistry {
         if (!clientChannels) return
 
         for (const channelName of clientChannels) {
-            this.channels.get(channelName)?.delete(connection.id);
+            this.channels.get(channelName)?.delete(connection.id)
         }
 
         this.subscriptions.delete(connection.id)

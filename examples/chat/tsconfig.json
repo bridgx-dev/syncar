@@ -1,45 +1,29 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "useDefineForClassFields": true,
-    "lib": [
-      "ESNext",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "module": "ESNext",
-    "skipLibCheck": true,
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx",
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "baseUrl": ".",
-    "paths": {
-      "@syncar/core": [
-        "../../packages/core/src"
-      ],
-      "@syncar/client": [
-        "../../packages/client/src"
-      ],
-      "@syncar/react": [
-        "../../packages/react/src"
-      ],
-      "@syncar/server": [
-        "../../packages/server/src"
-      ]
-    }
-  },
-  "include": [
-    "client",
-    "server",
-    "vite.config.ts"
-  ]
+    "compilerOptions": {
+        "target": "ES2022",
+        "useDefineForClassFields": true,
+        "lib": ["ESNext", "DOM", "DOM.Iterable"],
+        "module": "ESNext",
+        "skipLibCheck": true,
+        "moduleResolution": "bundler",
+        "allowImportingTsExtensions": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "noEmit": true,
+        "jsx": "react-jsx",
+        "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "baseUrl": ".",
+        "paths": {
+            "@syncar/core": ["../../packages/core/src"],
+            "@syncar/client": ["../../packages/client/src"],
+            "@syncar/react": ["../../packages/react/src"],
+            "@syncar/server": ["../../packages/server/src"]
+        }
+    },
+    "include": ["client", "server", "vite.config.ts"]
 }

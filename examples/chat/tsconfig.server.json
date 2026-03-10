@@ -1,49 +1,35 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ES2022",
-    "moduleResolution": "bundler",
-    "outDir": "./dist",
-    "rootDir": "./server",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "declaration": true,
-    "sourceMap": true,
-    "baseUrl": ".",
-    "paths": {
-      "@syncar/core": [
-        "../../packages/core/src/index.ts"
-      ],
-      "@syncar/client": [
-        "../../packages/client/src/index.ts"
-      ],
-      "@syncar/server": [
-        "../../packages/server/src/index.ts"
-      ],
-      "@syncar/types": [
-        "../../packages/types/src/index.ts"
-      ]
-    }
-  },
-  "include": [
-    "server/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "client"
-  ],
-  "references": [
-    {
-      "path": "../../packages/core"
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "ES2022",
+        "moduleResolution": "bundler",
+        "outDir": "./dist",
+        "rootDir": "./server",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "declaration": true,
+        "sourceMap": true,
+        "baseUrl": ".",
+        "paths": {
+            "@syncar/core": ["../../packages/core/src/index.ts"],
+            "@syncar/client": ["../../packages/client/src/index.ts"],
+            "@syncar/server": ["../../packages/server/src/index.ts"],
+            "@syncar/types": ["../../packages/types/src/index.ts"]
+        }
     },
-    {
-      "path": "../../packages/client"
-    },
-    {
-      "path": "../../packages/server"
-    }
-  ]
+    "include": ["server/**/*"],
+    "exclude": ["node_modules", "dist", "client"],
+    "references": [
+        {
+            "path": "../../packages/core"
+        },
+        {
+            "path": "../../packages/client"
+        },
+        {
+            "path": "../../packages/server"
+        }
+    ]
 }

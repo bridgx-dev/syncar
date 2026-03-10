@@ -1,49 +1,49 @@
 {
-  "name": "@syncar/lib",
-  "version": "1.0.0-alpha.1",
-  "private": true,
-  "description": "Internal utility functions for Syncar packages (not for publication)",
-  "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "bun": "./src/index.ts",
-      "development": "./src/index.ts",
-      "import": "./dist/index.js",
-      "default": "./src/index.ts"
+    "name": "@syncar/lib",
+    "version": "1.0.0-alpha.1",
+    "private": true,
+    "description": "Internal utility functions for Syncar packages (not for publication)",
+    "type": "module",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "bun": "./src/index.ts",
+            "development": "./src/index.ts",
+            "import": "./dist/index.js",
+            "default": "./src/index.ts"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc --watch",
+        "test": "vitest",
+        "test:ui": "vitest --ui",
+        "test:run": "vitest run",
+        "typecheck": "tsc --noEmit"
+    },
+    "keywords": [
+        "utilities",
+        "helpers",
+        "internal"
+    ],
+    "author": "Syncar",
+    "license": "MIT",
+    "dependencies": {
+        "@syncar/types": "workspace:*"
+    },
+    "devDependencies": {
+        "@types/node": "^22.13.10",
+        "typescript": "^5.8.2",
+        "vitest": "^3.0.7"
+    },
+    "peerDependencies": {
+        "typescript": "^5"
     }
-  },
-  "files": [
-    "dist",
-    "README.md"
-  ],
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "test:run": "vitest run",
-    "typecheck": "tsc --noEmit"
-  },
-  "keywords": [
-    "utilities",
-    "helpers",
-    "internal"
-  ],
-  "author": "Syncar",
-  "license": "MIT",
-  "dependencies": {
-    "@syncar/types": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/node": "^22.13.10",
-    "typescript": "^5.8.2",
-    "vitest": "^3.0.7"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  }
 }

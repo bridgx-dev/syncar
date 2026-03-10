@@ -1,42 +1,42 @@
 {
-  "$schema": "https://json.schemastore.org/tsconfig",
-  "compilerOptions": {
-    // Environment setup & latest features
-    "lib": ["ES2022"],
-    "target": "ES2020",
-    "module": "ESNext",
-    "moduleDetection": "force",
-    "allowJs": true,
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "compilerOptions": {
+        // Environment setup & latest features
+        "lib": ["ES2022"],
+        "target": "ES2020",
+        "module": "ESNext",
+        "moduleDetection": "force",
+        "allowJs": true,
 
-    // Bundler mode
-    "moduleResolution": "Bundler",
-    "resolveJsonModule": true,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
+        // Bundler mode
+        "moduleResolution": "Bundler",
+        "resolveJsonModule": true,
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
 
-    // Best practices
-    "strict": true,
-    "strictFunctionTypes": true,
-    "skipLibCheck": true,
-    "noFallthroughCasesInSwitch": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitOverride": true,
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "allowUnreachableCode": false,
-    "allowUnusedLabels": false,
+        // Best practices
+        "strict": true,
+        "strictFunctionTypes": true,
+        "skipLibCheck": true,
+        "noFallthroughCasesInSwitch": true,
+        "noUncheckedIndexedAccess": true,
+        "noImplicitOverride": true,
+        "noImplicitReturns": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "allowUnreachableCode": false,
+        "allowUnusedLabels": false,
 
-    // Declaration-only build (tsup handles JS)
-    "declaration": true,
-    "declarationMap": true,
-    "emitDeclarationOnly": true,
-    "incremental": true,
-    "isolatedModules": true,
-    "composite": true,
-    "noEmit": false
-  },
-  "include": ["*.config.*"],
-  "exclude": ["node_modules", "dist", "dist-ts"]
+        // Declaration-only build (tsup handles JS)
+        "declaration": true,
+        "declarationMap": true,
+        "emitDeclarationOnly": true,
+        "incremental": true,
+        "isolatedModules": true,
+        "composite": true,
+        "noEmit": false
+    },
+    "include": ["*.config.*"],
+    "exclude": ["node_modules", "dist", "dist-ts"]
 }

@@ -57,98 +57,105 @@ const BROADCAST_CHANNEL = '__broadcast__'
  * ```
  */
 export function useBroadcast<T = unknown>(
-  options?: UseBroadcastOptions<T>,
+    options?: UseBroadcastOptions<T>,
 ): UseBroadcastReturn<T> {
-  const client = useSyncarClient()
-  const enabled = options?.enabled ?? true
+    const client = useSyncarClient()
+    const enabled = options?.enabled ?? true
 
-  // State for broadcast data and error
-  const [data, setData] = useState<T | null>(null)
-  const [error, setError] = useState<Error | null>(null)
+    // State for broadcast data and error
+    const [data, setData] = useState<T | null>(null)
+    const [error, setError] = useState<Error | null>(null)
 
-  // Refs to store mounted state and callbacks
-  const mountedRef = useRef(true)
-  const onMessageRef = useRef(options?.onMessage)
-  const onErrorRef = useRef(options?.onError)
+    // Refs to store mounted state and callbacks
+    const mountedRef = useRef(true)
+    const onMessageRef = useRef(options?.onMessage)
+    const onErrorRef = useRef(options?.onError)
 
-  // Update callback refs when options change
-  useEffect(() => {
-    onMessageRef.current = options?.onMessage
-    onErrorRef.current = options?.onError
-  }, [options])
+    // Update callback refs when options change
+    useEffect(() => {
+        onMessageRef.current = options?.onMessage
+        onErrorRef.current = options?.onError
+    }, [options])
 
-  // Listen for broadcast messages
-  useEffect(() => {
-    if (!enabled) {
-      return
+    // Listen for broadcast messages
+    useEffect(() => {
+        if (!enabled) {
+            return
+        }
+
+        mountedRef.current = true
+
+        // Subscribe to broadcast messages
+        const unsubscribe = client.on('message', (message: Message) => {
+            if (!mountedRef.current) return
+
+            // Filter for broadcast data messages
+            if (
+                message.type === 'data' &&
+                message.channel === BROADCAST_CHANNEL
+            ) {
+                const dataMessage = message as DataMessage<T>
+                const newData = dataMessage.data
+
+                // Update state
+                setData(newData)
+                setError(null)
+
+                // Call callback
+                if (onMessageRef.current) {
+                    onMessageRef.current(newData, dataMessage)
+                }
+            }
+        })
+
+        return () => {
+            mountedRef.current = false
+            unsubscribe()
+        }
+    }, [client, enabled])
+
+    // Broadcast data to all clients
+    const broadcast = useCallback(
+        async (data: T) => {
+            if (!enabled) return
+
+            try {
+                await client.publish(BROADCAST_CHANNEL, data)
+            } catch (error) {
+                const err =
+                    error instanceof Error ? error : new Error(String(error))
+                setError(err)
+
+                if (onErrorRef.current) {
+                    onErrorRef.current(err)
+                }
+            }
+        },
+        [client, enabled],
+    )
+
+    // Register a message handler
+    const onMessage = useCallback(
+        (handler: (data: T, message: DataMessage<T>) => void) => {
+            return client.on('message', (message: Message) => {
+                if (
+                    message.type === 'data' &&
+                    message.channel === BROADCAST_CHANNEL
+                ) {
+                    const dataMessage = message as DataMessage<T>
+                    handler(dataMessage.data, dataMessage)
+                }
+            })
+        },
+        [client],
+    )
+
+    return {
+        status: client.status,
+        isConnected: client.status === 'connected',
+        data,
+        error,
+        broadcast,
+        onMessage,
     }
-
-    mountedRef.current = true
-
-    // Subscribe to broadcast messages
-    const unsubscribe = client.on('message', (message: Message) => {
-      if (!mountedRef.current) return
-
-      // Filter for broadcast data messages
-      if (message.type === 'data' && message.channel === BROADCAST_CHANNEL) {
-        const dataMessage = message as DataMessage<T>
-        const newData = dataMessage.data
-
-        // Update state
-        setData(newData)
-        setError(null)
-
-        // Call callback
-        if (onMessageRef.current) {
-          onMessageRef.current(newData, dataMessage)
-        }
-      }
-    })
-
-    return () => {
-      mountedRef.current = false
-      unsubscribe()
-    }
-  }, [client, enabled])
-
-  // Broadcast data to all clients
-  const broadcast = useCallback(
-    async (data: T) => {
-      if (!enabled) return
-
-      try {
-        await client.publish(BROADCAST_CHANNEL, data)
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error(String(error))
-        setError(err)
-
-        if (onErrorRef.current) {
-          onErrorRef.current(err)
-        }
-      }
-    },
-    [client, enabled],
-  )
-
-  // Register a message handler
-  const onMessage = useCallback(
-    (handler: (data: T, message: DataMessage<T>) => void) => {
-      return client.on('message', (message: Message) => {
-        if (message.type === 'data' && message.channel === BROADCAST_CHANNEL) {
-          const dataMessage = message as DataMessage<T>
-          handler(dataMessage.data, dataMessage)
-        }
-      })
-    },
-    [client],
-  )
-
-  return {
-    status: client.status,
-    isConnected: client.status === 'connected',
-    data,
-    error,
-    broadcast,
-    onMessage,
-  }
 }

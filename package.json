@@ -1,21 +1,21 @@
 {
-  "name": "syncar",
-  "module": "index.ts",
-  "type": "module",
-  "private": true,
-  "workspaces": [
-    "packages/*",
-    "examples/*"
-  ],
-  "scripts": {
-    "format": "prettier --write ."
-  },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "@types/node": "^25.3.0",
-    "prettier": "^3.0.0"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  }
+    "name": "syncar",
+    "module": "index.ts",
+    "type": "module",
+    "private": true,
+    "workspaces": [
+        "packages/*",
+        "examples/*"
+    ],
+    "scripts": {
+        "format": "prettier --write ."
+    },
+    "devDependencies": {
+        "@types/bun": "latest",
+        "@types/node": "^25.3.0",
+        "prettier": "^3.0.0"
+    },
+    "peerDependencies": {
+        "typescript": "^5"
+    }
 }

@@ -30,14 +30,14 @@ import { WebSocketClientTransport } from '@syncar/client-v2'
 
 // Create transport
 const transport = new WebSocketClientTransport({
-  url: 'ws://localhost:3000',
-  reconnect: true,
+    url: 'ws://localhost:3000',
+    reconnect: true,
 })
 
 // Create client
 const client = createSyncarrClient({
-  transport,
-  autoReconnect: true,
+    transport,
+    autoReconnect: true,
 })
 
 // Connect
@@ -45,8 +45,8 @@ await client.connect()
 
 // Subscribe to a channel
 await client.subscribe('chat', {
-  onMessage: (msg) => console.log('Received:', msg.data),
-  onSubscribed: () => console.log('Subscribed!'),
+    onMessage: (msg) => console.log('Received:', msg.data),
+    onSubscribed: () => console.log('Subscribed!'),
 })
 
 // Publish a message
@@ -63,15 +63,15 @@ Creates a new Syncarr client instance.
 import { createSyncarrClient } from '@syncar/client-v2'
 
 const client = createSyncarrClient({
-  transport: myTransport,
-  id: 'my-app', // optional, auto-generated if not provided
-  autoConnect: false, // optional, connect immediately
-  autoReconnect: true, // optional, auto-reconnect on disconnect
-  maxReconnectAttempts: 10, // optional
-  reconnectDelay: 1000, // optional, initial delay in ms
-  maxReconnectDelay: 30000, // optional, max delay in ms
-  debug: true, // optional, enable debug logging
-  logger: (level, message, ...args) => {}, // optional, custom logger
+    transport: myTransport,
+    id: 'my-app', // optional, auto-generated if not provided
+    autoConnect: false, // optional, connect immediately
+    autoReconnect: true, // optional, auto-reconnect on disconnect
+    maxReconnectAttempts: 10, // optional
+    reconnectDelay: 1000, // optional, initial delay in ms
+    maxReconnectDelay: 30000, // optional, max delay in ms
+    debug: true, // optional, enable debug logging
+    logger: (level, message, ...args) => {}, // optional, custom logger
 })
 ```
 
@@ -99,17 +99,17 @@ Subscribe to a channel.
 
 ```typescript
 const subscription = await client.subscribe(
-  'chat',
-  {
-    onMessage: (msg) => console.log(msg.data),
-    onSubscribed: () => console.log('Subscribed'),
-    onUnsubscribed: () => console.log('Unsubscribed'),
-    onError: (err) => console.error(err),
-  },
-  {
-    autoResubscribe: true, // Re-subscribe after reconnection
-    data: { token: 'abc' }, // Data sent with subscribe message
-  },
+    'chat',
+    {
+        onMessage: (msg) => console.log(msg.data),
+        onSubscribed: () => console.log('Subscribed'),
+        onUnsubscribed: () => console.log('Unsubscribed'),
+        onError: (err) => console.error(err),
+    },
+    {
+        autoResubscribe: true, // Re-subscribe after reconnection
+        data: { token: 'abc' }, // Data sent with subscribe message
+    },
 )
 ```
 
@@ -161,7 +161,7 @@ Register an event handler.
 
 ```typescript
 const unsubscribe = client.on('message', (message) => {
-  console.log('Received:', message)
+    console.log('Received:', message)
 })
 
 // Unsubscribe later
@@ -245,7 +245,7 @@ Register a message handler.
 
 ```typescript
 const unsubscribe = subscription.onMessage((msg) => {
-  console.log(msg.data)
+    console.log(msg.data)
 })
 ```
 
@@ -272,7 +272,7 @@ import { createSyncarrClient } from '@syncar/client-v2'
 import { WebSocketClientTransport } from '@syncar/client-v2'
 
 const transport = new WebSocketClientTransport({
-  url: 'ws://localhost:3000',
+    url: 'ws://localhost:3000',
 })
 
 const client = createSyncarrClient({ transport })
@@ -280,16 +280,16 @@ const client = createSyncarrClient({ transport })
 await client.connect()
 
 await client.subscribe('chat', {
-  onMessage: (msg) => {
-    document.getElementById('messages').innerHTML +=
-      `<div>${msg.data.text}</div>`
-  },
+    onMessage: (msg) => {
+        document.getElementById('messages').innerHTML +=
+            `<div>${msg.data.text}</div>`
+    },
 })
 
 document.getElementById('send').onclick = async () => {
-  const input = document.getElementById('messageInput')
-  await client.publish('chat', { text: input.value })
-  input.value = ''
+    const input = document.getElementById('messageInput')
+    await client.publish('chat', { text: input.value })
+    input.value = ''
 }
 ```
 
@@ -306,26 +306,26 @@ const messages = ref([])
 let client
 
 onMounted(async () => {
-  const transport = new WebSocketClientTransport({
-    url: 'ws://localhost:3000',
-  })
+    const transport = new WebSocketClientTransport({
+        url: 'ws://localhost:3000',
+    })
 
-  client = createSyncarrClient({ transport })
-  await client.connect()
+    client = createSyncarrClient({ transport })
+    await client.connect()
 
-  await client.subscribe('chat', {
-    onMessage: (msg) => {
-      messages.value.push(msg.data)
-    },
-  })
+    await client.subscribe('chat', {
+        onMessage: (msg) => {
+            messages.value.push(msg.data)
+        },
+    })
 })
 
 onUnmounted(async () => {
-  await client.destroy()
+    await client.destroy()
 })
 
 const sendMessage = async () => {
-  await client.publish('chat', { text: 'Hello!' })
+    await client.publish('chat', { text: 'Hello!' })
 }
 </script>
 ```
@@ -372,11 +372,11 @@ async function sendMessage() {
 
 ```typescript
 const client = createSyncarrClient({
-  transport,
-  logger: (level, message, ...args) => {
-    // Custom logging implementation
-    myLogger.log(level, message, ...args)
-  },
+    transport,
+    logger: (level, message, ...args) => {
+        // Custom logging implementation
+        myLogger.log(level, message, ...args)
+    },
 })
 ```
 
@@ -394,11 +394,11 @@ await client.connect()
 
 ```typescript
 await client.subscribe('chat', {
-  onMessage: (msg) => console.log('Chat:', msg.data),
+    onMessage: (msg) => console.log('Chat:', msg.data),
 })
 
 await client.subscribe('notifications', {
-  onMessage: (msg) => console.log('Notification:', msg.data),
+    onMessage: (msg) => console.log('Notification:', msg.data),
 })
 
 const channels = client.getSubscribedChannels()

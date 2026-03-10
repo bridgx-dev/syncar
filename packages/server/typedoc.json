@@ -1,50 +1,50 @@
 {
-  "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["src/index.ts"],
-  "out": "docs",
-  "readme": "README.md",
-  "excludePrivate": true,
-  "excludeProtected": false,
-  "excludeExternals": true,
-  "hideGenerator": true,
-  "sort": ["source-order"],
-  "kindSortOrder": [
-    "Document",
-    "Project",
-    "Module",
-    "Namespace",
-    "Enum",
-    "EnumMember",
-    "Class",
-    "Interface",
-    "TypeAlias",
-    "Constructor",
-    "Property",
-    "Method",
-    "Function",
-    "Variable"
-  ],
-  "categorizeByGroup": true,
-  "defaultCategory": "General",
-  "categoryOrder": [
-    "Server",
-    "Channels",
-    "Middleware",
-    "Types",
-    "Errors",
-    "Transport",
-    "Context",
-    "*"
-  ],
-  "includeVersion": true,
-  "plugin": ["typedoc-plugin-markdown"],
-  "theme": "markdown",
-  "navigation": {
-    "includeCategories": true,
-    "includeGroups": true
-  },
-  "markdownItOptions": {
-    "html": true,
-    "linkify": true
-  }
+    "$schema": "https://typedoc.org/schema.json",
+    "entryPoints": ["src/index.ts"],
+    "out": "docs",
+    "readme": "README.md",
+    "excludePrivate": true,
+    "excludeProtected": false,
+    "excludeExternals": true,
+    "hideGenerator": true,
+    "sort": ["source-order"],
+    "kindSortOrder": [
+        "Document",
+        "Project",
+        "Module",
+        "Namespace",
+        "Enum",
+        "EnumMember",
+        "Class",
+        "Interface",
+        "TypeAlias",
+        "Constructor",
+        "Property",
+        "Method",
+        "Function",
+        "Variable"
+    ],
+    "categorizeByGroup": true,
+    "defaultCategory": "General",
+    "categoryOrder": [
+        "Server",
+        "Channels",
+        "Middleware",
+        "Types",
+        "Errors",
+        "Transport",
+        "Context",
+        "*"
+    ],
+    "includeVersion": true,
+    "plugin": ["typedoc-plugin-markdown"],
+    "theme": "markdown",
+    "navigation": {
+        "includeCategories": true,
+        "includeGroups": true
+    },
+    "markdownItOptions": {
+        "html": true,
+        "linkify": true
+    }
 }

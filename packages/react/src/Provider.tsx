@@ -31,12 +31,12 @@ import type { SyncarProviderProps } from './types.js'
  * ```
  */
 export function SyncarProvider({
-  client,
-  children,
+    client,
+    children,
 }: SyncarProviderProps): ReactNode {
-  return (
-    <SyncarContext.Provider value={{ client }}>
-      {children}
-    </SyncarContext.Provider>
-  )
+    return (
+        <SyncarContext.Provider value={{ client }}>
+            {children}
+        </SyncarContext.Provider>
+    )
 }

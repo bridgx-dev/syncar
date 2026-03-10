@@ -10,393 +10,397 @@ import { SignalType } from '@syncar/types'
 
 // Mock transport
 class MockTransport {
-  public _status:
-    | 'disconnected'
-    | 'connecting'
-    | 'connected'
-    | 'disconnecting' = 'disconnected'
-  public eventHandlers: Map<string, Set<(...args: any[]) => void>> = new Map()
-  public sentMessages: Message[] = []
+    public _status:
+        | 'disconnected'
+        | 'connecting'
+        | 'connected'
+        | 'disconnecting' = 'disconnected'
+    public eventHandlers: Map<string, Set<(...args: any[]) => void>> = new Map()
+    public sentMessages: Message[] = []
 
-  get status() {
-    return this._status
-  }
-
-  async connect(): Promise<void> {
-    this._status = 'connecting'
-
-    // Simulate async connection
-    await new Promise((resolve) => setTimeout(resolve, 10))
-
-    this._status = 'connected'
-    this.emit('open')
-  }
-
-  async disconnect(): Promise<void> {
-    this._status = 'disconnecting'
-
-    // Simulate async disconnection
-    await new Promise((resolve) => setTimeout(resolve, 10))
-
-    this._status = 'disconnected'
-    this.emit('close')
-  }
-
-  async send(message: Message): Promise<void> {
-    if (this._status !== 'connected') {
-      throw new Error('Not connected')
+    get status() {
+        return this._status
     }
-    this.sentMessages.push(message)
-  }
 
-  on(event: string, handler: (...args: any[]) => void): () => void {
-    if (!this.eventHandlers.has(event)) {
-      this.eventHandlers.set(event, new Set())
+    async connect(): Promise<void> {
+        this._status = 'connecting'
+
+        // Simulate async connection
+        await new Promise((resolve) => setTimeout(resolve, 10))
+
+        this._status = 'connected'
+        this.emit('open')
     }
-    this.eventHandlers.get(event)!.add(handler)
 
-    return () => {
-      this.eventHandlers.get(event)?.delete(handler)
+    async disconnect(): Promise<void> {
+        this._status = 'disconnecting'
+
+        // Simulate async disconnection
+        await new Promise((resolve) => setTimeout(resolve, 10))
+
+        this._status = 'disconnected'
+        this.emit('close')
     }
-  }
 
-  emit(event: string, ...args: any[]): void {
-    const handlers = this.eventHandlers.get(event)
-    if (handlers) {
-      for (const handler of handlers) {
-        handler(...args)
-      }
+    async send(message: Message): Promise<void> {
+        if (this._status !== 'connected') {
+            throw new Error('Not connected')
+        }
+        this.sentMessages.push(message)
     }
-  }
 
-  getConnectionInfo() {
-    return {
-      connectedAt: this._status === 'connected' ? Date.now() : undefined,
-      url: 'ws://localhost:3000',
+    on(event: string, handler: (...args: any[]) => void): () => void {
+        if (!this.eventHandlers.has(event)) {
+            this.eventHandlers.set(event, new Set())
+        }
+        this.eventHandlers.get(event)!.add(handler)
+
+        return () => {
+            this.eventHandlers.get(event)?.delete(handler)
+        }
     }
-  }
 
-  // Test helper
-  simulateMessage(message: Message): void {
-    this.emit('message', message)
-  }
+    emit(event: string, ...args: any[]): void {
+        const handlers = this.eventHandlers.get(event)
+        if (handlers) {
+            for (const handler of handlers) {
+                handler(...args)
+            }
+        }
+    }
 
-  simulateClose(code?: number, reason?: string): void {
-    this._status = 'disconnected'
-    this.emit('close', { code, reason })
-  }
+    getConnectionInfo() {
+        return {
+            connectedAt: this._status === 'connected' ? Date.now() : undefined,
+            url: 'ws://localhost:3000',
+        }
+    }
+
+    // Test helper
+    simulateMessage(message: Message): void {
+        this.emit('message', message)
+    }
+
+    simulateClose(code?: number, reason?: string): void {
+        this._status = 'disconnected'
+        this.emit('close', { code, reason })
+    }
 }
 
 describe('SyncarClient', () => {
-  let client: SyncarClient
-  let transport: MockTransport
+    let client: SyncarClient
+    let transport: MockTransport
 
-  beforeEach(() => {
-    transport = new MockTransport()
+    beforeEach(() => {
+        transport = new MockTransport()
 
-    const config: ClientConfig = {
-      transport,
-      autoConnect: false,
-      autoReconnect: false,
-    }
+        const config: ClientConfig = {
+            transport,
+            autoConnect: false,
+            autoReconnect: false,
+        }
 
-    client = new SyncarClient(config)
-  })
-
-  afterEach(async () => {
-    await client.destroy()
-  })
-
-  describe('constructor', () => {
-    it('should initialize with disconnected status', () => {
-      expect(client.status).toBe('disconnected')
+        client = new SyncarClient(config)
     })
 
-    it('should generate client ID if not provided', () => {
-      const stats = client.getStats()
-      expect(stats.id).toBeDefined()
-      expect(typeof stats.id).toBe('string')
+    afterEach(async () => {
+        await client.destroy()
     })
 
-    it('should use provided client ID', () => {
-      const customClient = new SyncarClient({
-        transport,
-        id: 'custom-id',
-      })
+    describe('constructor', () => {
+        it('should initialize with disconnected status', () => {
+            expect(client.status).toBe('disconnected')
+        })
 
-      expect(customClient.getStats().id).toBe('custom-id')
-    })
-  })
+        it('should generate client ID if not provided', () => {
+            const stats = client.getStats()
+            expect(stats.id).toBeDefined()
+            expect(typeof stats.id).toBe('string')
+        })
 
-  describe('createSyncarClient factory', () => {
-    it('should create a client instance', () => {
-      const factoryClient = createSyncarClient({ transport })
+        it('should use provided client ID', () => {
+            const customClient = new SyncarClient({
+                transport,
+                id: 'custom-id',
+            })
 
-      expect(factoryClient).toBeInstanceOf(SyncarClient)
-      expect(factoryClient.status).toBe('disconnected')
-    })
-  })
-
-  describe('connect', () => {
-    it('should connect to the server', async () => {
-      await client.connect()
-
-      expect(client.status).toBe('connected')
+            expect(customClient.getStats().id).toBe('custom-id')
+        })
     })
 
-    it('should emit connected event', async () => {
-      const connectedHandler = vi.fn()
-      client.on('connected', connectedHandler)
+    describe('createSyncarClient factory', () => {
+        it('should create a client instance', () => {
+            const factoryClient = createSyncarClient({ transport })
 
-      await client.connect()
-
-      expect(connectedHandler).toHaveBeenCalled()
-    })
-  })
-
-  describe('disconnect', () => {
-    it('should disconnect from the server', async () => {
-      await client.connect()
-
-      expect(client.status).toBe('connected')
-
-      await client.disconnect()
-
-      expect(client.status).toBe('disconnected')
+            expect(factoryClient).toBeInstanceOf(SyncarClient)
+            expect(factoryClient.status).toBe('disconnected')
+        })
     })
 
-    it('should emit disconnected event', async () => {
-      const disconnectedHandler = vi.fn()
-      client.on('disconnected', disconnectedHandler)
+    describe('connect', () => {
+        it('should connect to the server', async () => {
+            await client.connect()
 
-      await client.connect()
+            expect(client.status).toBe('connected')
+        })
 
-      await client.disconnect()
+        it('should emit connected event', async () => {
+            const connectedHandler = vi.fn()
+            client.on('connected', connectedHandler)
 
-      expect(disconnectedHandler).toHaveBeenCalled()
-    })
-  })
+            await client.connect()
 
-  describe('subscribe', () => {
-    it('should subscribe to a channel', async () => {
-      await client.connect()
-
-      const subscription = await client.subscribe('chat')
-
-      expect(subscription.channel).toBe('chat')
-      expect(client.getSubscription('chat')).toBeDefined()
+            expect(connectedHandler).toHaveBeenCalled()
+        })
     })
 
-    it('should call message handlers when message received', async () => {
-      await client.connect()
+    describe('disconnect', () => {
+        it('should disconnect from the server', async () => {
+            await client.connect()
 
-      const onMessage = vi.fn()
-      await client.subscribe('chat', { onMessage })
+            expect(client.status).toBe('connected')
 
-      // Simulate receiving a message
-      const message: DataMessage = {
-        id: 'msg-1',
-        type: 'data',
-        channel: 'chat',
-        data: { text: 'hello' },
-        timestamp: Date.now(),
-      }
+            await client.disconnect()
 
-      transport.simulateMessage(message)
+            expect(client.status).toBe('disconnected')
+        })
 
-      expect(onMessage).toHaveBeenCalledWith(message)
+        it('should emit disconnected event', async () => {
+            const disconnectedHandler = vi.fn()
+            client.on('disconnected', disconnectedHandler)
+
+            await client.connect()
+
+            await client.disconnect()
+
+            expect(disconnectedHandler).toHaveBeenCalled()
+        })
     })
 
-    it('should reuse existing subscription', async () => {
-      await client.connect()
+    describe('subscribe', () => {
+        it('should subscribe to a channel', async () => {
+            await client.connect()
 
-      const sub1 = await client.subscribe('chat')
-      const sub2 = await client.subscribe('chat')
+            const subscription = await client.subscribe('chat')
 
-      expect(sub1).toBe(sub2)
-      expect(client.getStats().subscriptions).toBe(1)
-    })
-  })
+            expect(subscription.channel).toBe('chat')
+            expect(client.getSubscription('chat')).toBeDefined()
+        })
 
-  describe('unsubscribe', () => {
-    it('should unsubscribe from a channel', async () => {
-      await client.connect()
+        it('should call message handlers when message received', async () => {
+            await client.connect()
 
-      await client.subscribe('chat')
-      expect(client.getSubscription('chat')).toBeDefined()
+            const onMessage = vi.fn()
+            await client.subscribe('chat', { onMessage })
 
-      await client.unsubscribe('chat')
+            // Simulate receiving a message
+            const message: DataMessage = {
+                id: 'msg-1',
+                type: 'data',
+                channel: 'chat',
+                data: { text: 'hello' },
+                timestamp: Date.now(),
+            }
 
-      // Subscription should be removed after UNSUBSCRIBED signal
-      // For now, check that unsubscribe was called
-    })
+            transport.simulateMessage(message)
 
-    it('should handle unsubscribing from non-existent channel', async () => {
-      await expect(client.unsubscribe('nonexistent')).resolves.toBeUndefined()
-    })
+            expect(onMessage).toHaveBeenCalledWith(message)
+        })
 
-    it('should unsubscribe from all channels', async () => {
-      await client.connect()
+        it('should reuse existing subscription', async () => {
+            await client.connect()
 
-      await client.subscribe('chat')
-      await client.subscribe('notifications')
+            const sub1 = await client.subscribe('chat')
+            const sub2 = await client.subscribe('chat')
 
-      expect(client.getStats().subscriptions).toBe(2)
-
-      await client.unsubscribeAll()
-
-      expect(client.getStats().subscriptions).toBe(0)
-    })
-  })
-
-  describe('publish', () => {
-    it('should publish a message to a channel', async () => {
-      await client.connect()
-
-      await client.publish('chat', { text: 'hello' })
-
-      expect(transport.sentMessages.length).toBe(1)
-      expect(transport.sentMessages[0].channel).toBe('chat')
+            expect(sub1).toBe(sub2)
+            expect(client.getStats().subscriptions).toBe(1)
+        })
     })
 
-    it('should throw if not connected', async () => {
-      await expect(client.publish('chat', { text: 'hello' })).rejects.toThrow()
-    })
-  })
+    describe('unsubscribe', () => {
+        it('should unsubscribe from a channel', async () => {
+            await client.connect()
 
-  describe('getSubscribedChannels', () => {
-    it('should return list of subscribed channels', async () => {
-      await client.connect()
+            await client.subscribe('chat')
+            expect(client.getSubscription('chat')).toBeDefined()
 
-      await client.subscribe('chat')
-      await client.subscribe('notifications')
+            await client.unsubscribe('chat')
 
-      // Simulate subscription confirmation
-      const sub1 = client.getSubscription('chat')
-      const sub2 = client.getSubscription('notifications')
+            // Subscription should be removed after UNSUBSCRIBED signal
+            // For now, check that unsubscribe was called
+        })
 
-      sub1?.handleSignal(SignalType.SUBSCRIBED)
-      sub2?.handleSignal(SignalType.SUBSCRIBED)
+        it('should handle unsubscribing from non-existent channel', async () => {
+            await expect(
+                client.unsubscribe('nonexistent'),
+            ).resolves.toBeUndefined()
+        })
 
-      const channels = client.getSubscribedChannels()
+        it('should unsubscribe from all channels', async () => {
+            await client.connect()
 
-      expect(channels).toContain('chat')
-      expect(channels).toContain('notifications')
-    })
+            await client.subscribe('chat')
+            await client.subscribe('notifications')
 
-    it('should return empty array if no subscriptions', () => {
-      const channels = client.getSubscribedChannels()
-      expect(channels).toEqual([])
-    })
-  })
+            expect(client.getStats().subscriptions).toBe(2)
 
-  describe('event handlers', () => {
-    it('should register multiple event handlers', async () => {
-      const handler1 = vi.fn()
-      const handler2 = vi.fn()
+            await client.unsubscribeAll()
 
-      client.on('message', handler1)
-      client.on('message', handler2)
-
-      await client.connect()
-
-      const message: DataMessage = {
-        id: 'msg-1',
-        type: 'data',
-        channel: 'chat',
-        data: { text: 'hello' },
-        timestamp: Date.now(),
-      }
-
-      transport.simulateMessage(message)
-
-      expect(handler1).toHaveBeenCalledWith(message)
-      expect(handler2).toHaveBeenCalledWith(message)
+            expect(client.getStats().subscriptions).toBe(0)
+        })
     })
 
-    it('should unsubscribe handler when returned function is called', async () => {
-      const handler = vi.fn()
-      const unsubscribe = client.on('message', handler)
+    describe('publish', () => {
+        it('should publish a message to a channel', async () => {
+            await client.connect()
 
-      await client.connect()
+            await client.publish('chat', { text: 'hello' })
 
-      const message: DataMessage = {
-        id: 'msg-1',
-        type: 'data',
-        channel: 'chat',
-        data: { text: 'hello' },
-        timestamp: Date.now(),
-      }
+            expect(transport.sentMessages.length).toBe(1)
+            expect(transport.sentMessages[0].channel).toBe('chat')
+        })
 
-      transport.simulateMessage(message)
-      expect(handler).toHaveBeenCalledTimes(1)
-
-      unsubscribe()
-
-      transport.simulateMessage(message)
-      expect(handler).toHaveBeenCalledTimes(1) // Still 1, not called again
+        it('should throw if not connected', async () => {
+            await expect(
+                client.publish('chat', { text: 'hello' }),
+            ).rejects.toThrow()
+        })
     })
-  })
 
-  describe('getStats', () => {
-    it('should return client statistics', async () => {
-      await client.connect()
+    describe('getSubscribedChannels', () => {
+        it('should return list of subscribed channels', async () => {
+            await client.connect()
 
-      await client.subscribe('chat')
+            await client.subscribe('chat')
+            await client.subscribe('notifications')
 
-      const stats = client.getStats()
+            // Simulate subscription confirmation
+            const sub1 = client.getSubscription('chat')
+            const sub2 = client.getSubscription('notifications')
 
-      expect(stats.status).toBe('connected')
-      expect(stats.id).toBeDefined()
-      expect(stats.subscriptions).toBe(1)
-      expect(stats.channels).toEqual([])
+            sub1?.handleSignal(SignalType.SUBSCRIBED)
+            sub2?.handleSignal(SignalType.SUBSCRIBED)
+
+            const channels = client.getSubscribedChannels()
+
+            expect(channels).toContain('chat')
+            expect(channels).toContain('notifications')
+        })
+
+        it('should return empty array if no subscriptions', () => {
+            const channels = client.getSubscribedChannels()
+            expect(channels).toEqual([])
+        })
     })
-  })
 
-  describe('setAutoReconnect', () => {
-    it('should enable or disable auto-reconnect', () => {
-      client.setAutoReconnect(false)
-      client.setAutoReconnect(true)
+    describe('event handlers', () => {
+        it('should register multiple event handlers', async () => {
+            const handler1 = vi.fn()
+            const handler2 = vi.fn()
 
-      // Should not throw
+            client.on('message', handler1)
+            client.on('message', handler2)
+
+            await client.connect()
+
+            const message: DataMessage = {
+                id: 'msg-1',
+                type: 'data',
+                channel: 'chat',
+                data: { text: 'hello' },
+                timestamp: Date.now(),
+            }
+
+            transport.simulateMessage(message)
+
+            expect(handler1).toHaveBeenCalledWith(message)
+            expect(handler2).toHaveBeenCalledWith(message)
+        })
+
+        it('should unsubscribe handler when returned function is called', async () => {
+            const handler = vi.fn()
+            const unsubscribe = client.on('message', handler)
+
+            await client.connect()
+
+            const message: DataMessage = {
+                id: 'msg-1',
+                type: 'data',
+                channel: 'chat',
+                data: { text: 'hello' },
+                timestamp: Date.now(),
+            }
+
+            transport.simulateMessage(message)
+            expect(handler).toHaveBeenCalledTimes(1)
+
+            unsubscribe()
+
+            transport.simulateMessage(message)
+            expect(handler).toHaveBeenCalledTimes(1) // Still 1, not called again
+        })
     })
-  })
 
-  describe('destroy', () => {
-    it('should clean up all resources', async () => {
-      await client.connect()
+    describe('getStats', () => {
+        it('should return client statistics', async () => {
+            await client.connect()
 
-      await client.subscribe('chat')
+            await client.subscribe('chat')
 
-      await client.destroy()
+            const stats = client.getStats()
 
-      expect(client.status).toBe('disconnected')
-      expect(client.getStats().subscriptions).toBe(0)
+            expect(stats.status).toBe('connected')
+            expect(stats.id).toBeDefined()
+            expect(stats.subscriptions).toBe(1)
+            expect(stats.channels).toEqual([])
+        })
     })
-  })
 
-  describe('auto-resubscribe after reconnection', () => {
-    it('should resubscribe to channels after reconnection', async () => {
-      await client.connect()
+    describe('setAutoReconnect', () => {
+        it('should enable or disable auto-reconnect', () => {
+            client.setAutoReconnect(false)
+            client.setAutoReconnect(true)
 
-      const onMessage = vi.fn()
-      await client.subscribe('chat', { onMessage })
-
-      const sub = client.getSubscription('chat')
-      sub?.handleSignal(SignalType.SUBSCRIBED)
-
-      expect(client.getSubscribedChannels()).toContain('chat')
-
-      // Simulate disconnection
-      transport.simulateClose()
-
-      expect(client.status).toBe('disconnected')
-
-      // Simulate reconnection
-      await client.connect()
-
-      // Subscription should be reset and resubscribed
-      expect(sub?.state).toBe('subscribing')
+            // Should not throw
+        })
     })
-  })
+
+    describe('destroy', () => {
+        it('should clean up all resources', async () => {
+            await client.connect()
+
+            await client.subscribe('chat')
+
+            await client.destroy()
+
+            expect(client.status).toBe('disconnected')
+            expect(client.getStats().subscriptions).toBe(0)
+        })
+    })
+
+    describe('auto-resubscribe after reconnection', () => {
+        it('should resubscribe to channels after reconnection', async () => {
+            await client.connect()
+
+            const onMessage = vi.fn()
+            await client.subscribe('chat', { onMessage })
+
+            const sub = client.getSubscription('chat')
+            sub?.handleSignal(SignalType.SUBSCRIBED)
+
+            expect(client.getSubscribedChannels()).toContain('chat')
+
+            // Simulate disconnection
+            transport.simulateClose()
+
+            expect(client.status).toBe('disconnected')
+
+            // Simulate reconnection
+            await client.connect()
+
+            // Subscription should be reset and resubscribed
+            expect(sub?.state).toBe('subscribing')
+        })
+    })
 })
