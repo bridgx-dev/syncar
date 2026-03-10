@@ -151,6 +151,6 @@ export type {
     MessageType,
     SignalType,
     ErrorCode,
-    Context,
-    Middleware,
+    IContext,
+    IMiddleware,
 } from './types'

@@ -1,4 +1,4 @@
-import type { IMiddleware, Context, IMiddlewareAction } from '../types'
+import type { IMiddleware, IContext, IMiddlewareAction } from '../types'
 
 /**
  * Rate limit middleware options
@@ -20,7 +20,7 @@ export interface RateLimitOptions {
      * Extract a unique identifier for rate limiting
      * Defaults to client ID
      */
-    getMessageId?: (c: Context) => string
+    getMessageId?: (c: IContext) => string
 
     /**
      * Actions to rate limit

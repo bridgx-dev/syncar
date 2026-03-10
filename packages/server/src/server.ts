@@ -1,7 +1,7 @@
 import {
     type ChannelName,
     type Message,
-    type Middleware,
+    type IMiddleware,
     type ChannelOptions,
     MessageType,
     ILogger,
@@ -163,7 +163,7 @@ export interface IServerOptions {
      * ]
      * ```
      */
-    middleware: Middleware[]
+    middleware: IMiddleware[]
 
     /**
      * Chunk size for large broadcasts (default: 500)
@@ -420,7 +420,7 @@ export class SyncarServer {
      *
      * @see {@link IMiddleware} for middleware interface
      */
-    use(middleware: Middleware): void {
+    use(middleware: IMiddleware): void {
         this.context.use(middleware)
     }
 

@@ -699,7 +699,7 @@ export type Next = () => Promise<void>
  * }
  * ```
  */
-export interface Context<S = Record<string, unknown>> {
+export interface IContext<S = Record<string, unknown>> {
     /** Request information */
     readonly req: {
         /** The client connection (if applicable) */
@@ -758,9 +758,9 @@ export interface Context<S = Record<string, unknown>> {
  * @see {@link Context} for context interface
  * @see {@link IMiddlewareAction} for available actions
  */
-export type Middleware<S = Record<string, unknown>> = (
+export type IMiddleware<S = Record<string, unknown>> = (
     /** The middleware context */
-    c: Context<S>,
+    c: IContext<S>,
     /** Function to continue to the next middleware */
     next: Next,
 ) => void | Promise<void> | unknown

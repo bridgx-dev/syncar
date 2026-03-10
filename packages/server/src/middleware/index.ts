@@ -5,8 +5,6 @@
  * @module middleware
  */
 
-export type { Context, Middleware } from '../types'
-
 export { authenticate, type AuthOptions } from './authenticate'
 export { logger, type LoggingOptions } from './logger'
 export {

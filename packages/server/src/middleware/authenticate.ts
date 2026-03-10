@@ -1,4 +1,4 @@
-import type { IMiddleware, Context, IMiddlewareAction } from '../types'
+import type { IMiddleware, IContext, IMiddlewareAction } from '../types'
 
 /**
  * Auth middleware options
@@ -13,7 +13,7 @@ export interface AuthOptions {
     /**
      * Extract token from the middleware context
      */
-    getToken?: (c: Context) => string | undefined
+    getToken?: (c: IContext) => string | undefined
 
     /**
      * Property name to attach verified user data
