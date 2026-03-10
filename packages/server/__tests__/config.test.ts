@@ -8,7 +8,6 @@ import { describe, it, expect } from 'vitest'
 import {
     CLOSE_CODES,
     ERROR_CODES,
-    DEFAULT_WS_PATH,
     DEFAULT_MAX_PAYLOAD,
     DEFAULT_PING_INTERVAL,
     DEFAULT_PING_TIMEOUT,
@@ -77,10 +76,6 @@ describe('config', () => {
     })
 
     describe('Default WebSocket Settings', () => {
-        it('should have correct default WebSocket path', () => {
-            expect(DEFAULT_WS_PATH).toBe('/syncar')
-        })
-
         it('should have correct default max payload (1MB)', () => {
             expect(DEFAULT_MAX_PAYLOAD).toBe(1048576)
         })
@@ -119,7 +114,7 @@ describe('config', () => {
                 enablePing: true,
                 pingInterval: 30000,
                 pingTimeout: 5000,
-                broadcastChunkSize: 500,
+                chunkSize: 500,
             })
         })
     })

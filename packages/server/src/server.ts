@@ -1,7 +1,7 @@
 import {
     type ChannelName,
     type Message,
-    type IMiddleware,
+    type Middleware,
     type ChannelOptions,
     MessageType,
     ILogger,
@@ -50,7 +50,7 @@ export interface IServerStats {
  *   enablePing: true,
  *   pingInterval: 30000,
  *   pingTimeout: 5000,
- *   broadcastChunkSize: 500,
+ *   chunkSize: 500,
  * })
  * ```
  *
@@ -163,7 +163,7 @@ export interface IServerOptions {
      * ]
      * ```
      */
-    middleware: IMiddleware[]
+    middleware: Middleware[]
 
     /**
      * Chunk size for large broadcasts (default: 500)
@@ -420,7 +420,7 @@ export class SyncarServer {
      *
      * @see {@link IMiddleware} for middleware interface
      */
-    use(middleware: IMiddleware): void {
+    use(middleware: Middleware): void {
         this.context.use(middleware)
     }
 
@@ -532,7 +532,7 @@ export class SyncarServer {
  *   enablePing: true,
  *   pingInterval: 30000,
  *   pingTimeout: 5000,
- *   broadcastChunkSize: 1000,
+ *   chunkSize: 1000,
  * })
  * server.start()
  * ```

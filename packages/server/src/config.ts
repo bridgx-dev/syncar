@@ -167,11 +167,6 @@ export type ErrorCode = (typeof ERROR_CODES)[keyof typeof ERROR_CODES]
 // ============================================================
 
 /**
- * Default WebSocket path
- */
-export const DEFAULT_WS_PATH = '/syncar'
-
-/**
  * Default maximum message payload size in bytes (1MB)
  */
 export const DEFAULT_MAX_PAYLOAD = 1048576
@@ -216,7 +211,7 @@ export const DEFAULT_SERVER_CONFIG = {
     enablePing: DEFAULT_ENABLE_PING,
     pingInterval: DEFAULT_PING_INTERVAL,
     pingTimeout: DEFAULT_PING_TIMEOUT,
-    broadcastChunkSize: 500,
+    chunkSize: 500,
 } as const
 
 /**

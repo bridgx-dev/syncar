@@ -24,12 +24,9 @@ export class ConnectionHandler {
         }
     }
 
-    async handleConnection(
-        connection: IClientConnection,
-    ): Promise<IClientConnection> {
+    async handleConnection(connection: IClientConnection): Promise<void> {
         // Register client in registry
-        const client = this.registry.register(connection)
-        return client
+        this.registry.register(connection)
     }
 
     async handleDisconnection(

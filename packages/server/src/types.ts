@@ -1,10 +1,6 @@
 import type WebSocket from 'ws'
 import type { IncomingMessage } from 'node:http'
 
-// ============================================================
-// COMMON TYPES
-// ============================================================
-
 /**
  * Message identifier
  *
@@ -322,12 +318,6 @@ export enum ErrorCode {
     RESERVED_CHANNEL_NAME = 'RESERVED_CHANNEL_NAME',
     /** Invalid message format */
     INVALID_MESSAGE_FORMAT = 'INVALID_MESSAGE_FORMAT',
-    /** ID required but not provided */
-    ID_REQUIRED = 'ID_REQUIRED',
-    /** ID already taken */
-    ID_TAKEN = 'ID_TAKEN',
-    /** Invalid ID format */
-    INVALID_ID_FORMAT = 'INVALID_ID_FORMAT',
     /** Rate limit exceeded */
     RATE_LIMIT_EXCEEDED = 'RATE_LIMIT_EXCEEDED',
 }
@@ -774,27 +764,6 @@ export type Middleware<S = Record<string, unknown>> = (
     /** Function to continue to the next middleware */
     next: Next,
 ) => void | Promise<void> | unknown
-
-// Aliases
-/**
- * Alias for Middleware type
- *
- * @remarks
- * Alias maintained for backward compatibility. Prefer using `Middleware` directly.
- *
- * @template S - Type of the state object (default: Record<string, unknown>)
- */
-export type IMiddleware<S = Record<string, unknown>> = Middleware<S>
-
-/**
- * Alias for Context type
- *
- * @remarks
- * Alias maintained for backward compatibility. Prefer using `Context` directly.
- *
- * @template S - Type of the state object (default: Record<string, unknown>)
- */
-export type IMiddlewareContext<S = Record<string, unknown>> = Context<S>
 
 /**
  * Middleware rejection error interface

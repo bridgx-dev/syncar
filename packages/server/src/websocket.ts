@@ -15,7 +15,7 @@ import {
     DEFAULT_MAX_PAYLOAD,
     DEFAULT_PING_INTERVAL,
     DEFAULT_PING_TIMEOUT,
-    DEFAULT_WS_PATH,
+    DEFAULT_PATH,
 } from './config'
 import { generateClientId } from './utils'
 
@@ -221,7 +221,7 @@ export class WebSocketServerTransport extends EventEmitter {
 
         this.config = {
             ...config,
-            path: config.path ?? DEFAULT_WS_PATH,
+            path: config.path ?? DEFAULT_PATH,
             maxPayload: config.maxPayload ?? DEFAULT_MAX_PAYLOAD,
             enablePing: config.enablePing ?? true,
             pingInterval: config.pingInterval ?? DEFAULT_PING_INTERVAL,

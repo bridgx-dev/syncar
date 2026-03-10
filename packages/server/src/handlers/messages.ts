@@ -1,5 +1,4 @@
 import type { IClientConnection, DataMessage } from '../types'
-import { Channel } from '../channel'
 
 import { MessageError, ChannelError } from '../errors'
 import { isDataMessage } from '../utils'
@@ -63,24 +62,6 @@ export class MessageHandler {
 
         // Execute Onion
         await this.context.execute(ctx, pipeline, kernel)
-    }
-
-    canProcessMessage<T = unknown>(message: DataMessage<T>): boolean {
-        if (!isDataMessage<T>(message)) {
-            return false
-        }
-
-        if (this.options.requireChannel) {
-            return !!this.registry.getChannel<T>(message.channel)
-        }
-
-        return true
-    }
-
-    getChannelForMessage<T = unknown>(
-        message: DataMessage<T>,
-    ): Channel<T> | undefined {
-        return this.registry.getChannel<T>(message.channel)
     }
 
     getOptions(): Readonly<Required<MessageHandlerOptions>> {

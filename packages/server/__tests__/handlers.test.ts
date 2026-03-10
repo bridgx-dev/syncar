@@ -74,9 +74,8 @@ describe('ConnectionHandler', () => {
                 socket,
             }
 
-            const result = await connectionHandler.handleConnection(connection)
+            await connectionHandler.handleConnection(connection)
 
-            expect(result).toBe(connection)
             expect(registry.get('client-1')).toBe(connection)
         })
 
@@ -89,9 +88,8 @@ describe('ConnectionHandler', () => {
             }
 
             await connectionHandler.handleConnection(connection)
-            const result = await connectionHandler.handleConnection(connection)
+            await connectionHandler.handleConnection(connection)
 
-            expect(result).toBe(connection)
             expect(registry.getCount()).toBe(1)
         })
     })
@@ -293,91 +291,6 @@ describe('MessageHandler', () => {
         })
     })
 
-    describe('canProcessMessage()', () => {
-        it('should return false for non-DataMessage', () => {
-            const invalidMessage = {
-                id: 'msg-1',
-                type: MessageType.SIGNAL,
-                signal: SignalType.PING,
-                channel: 'system',
-                timestamp: Date.now(),
-            } as any
-
-            expect(messageHandler.canProcessMessage(invalidMessage)).toBe(false)
-        })
-
-        it('should return true when channel exists', () => {
-            const message: DataMessage<string> = {
-                id: 'msg-1',
-                type: MessageType.DATA,
-                channel: 'test-channel',
-                data: 'hello',
-                timestamp: Date.now(),
-            }
-
-            expect(messageHandler.canProcessMessage(message)).toBe(true)
-        })
-
-        it('should return false when channel does not exist and requireChannel is true', () => {
-            const message: DataMessage<string> = {
-                id: 'msg-1',
-                type: MessageType.DATA,
-                channel: 'non-existent',
-                data: 'hello',
-                timestamp: Date.now(),
-            }
-
-            expect(messageHandler.canProcessMessage(message)).toBe(false)
-        })
-
-        it('should return true when requireChannel is false', () => {
-            const handler = new MessageHandler({
-                registry,
-                context,
-                options: {
-                    requireChannel: false,
-                },
-            })
-
-            const message: DataMessage<string> = {
-                id: 'msg-1',
-                type: MessageType.DATA,
-                channel: 'non-existent',
-                data: 'hello',
-                timestamp: Date.now(),
-            }
-
-            expect(handler.canProcessMessage(message)).toBe(true)
-        })
-    })
-
-    describe('getChannelForMessage()', () => {
-        it('should return channel when it exists', () => {
-            const message: DataMessage<string> = {
-                id: 'msg-1',
-                type: MessageType.DATA,
-                channel: 'test-channel',
-                data: 'hello',
-                timestamp: Date.now(),
-            }
-
-            const channel = messageHandler.getChannelForMessage(message)
-            expect(channel).toBe(testChannel)
-        })
-
-        it('should return undefined when channel does not exist', () => {
-            const message: DataMessage<string> = {
-                id: 'msg-1',
-                type: MessageType.DATA,
-                channel: 'non-existent',
-                data: 'hello',
-                timestamp: Date.now(),
-            }
-
-            expect(messageHandler.getChannelForMessage(message)).toBeUndefined()
-        })
-    })
-
     describe('getOptions()', () => {
         it('should return readonly options', () => {
             const options = messageHandler.getOptions()
@@ -459,7 +372,7 @@ describe('SignalHandler', () => {
                 signal: SignalType.SUBSCRIBE,
                 channel: 'test-channel',
                 timestamp: Date.now(),
-            }
+            } as any
 
             await signalHandler.handleSignal(client, message)
 
@@ -484,7 +397,7 @@ describe('SignalHandler', () => {
                 signal: SignalType.UNSUBSCRIBE,
                 channel: 'test-channel',
                 timestamp: Date.now(),
-            }
+            } as any
 
             await signalHandler.handleSignal(client, message)
 
@@ -508,7 +421,7 @@ describe('SignalHandler', () => {
                 signal: SignalType.PING,
                 channel: undefined,
                 timestamp: Date.now(),
-            }
+            } as any
 
             await signalHandler.handleSignal(client, message)
 
@@ -536,7 +449,7 @@ describe('SignalHandler', () => {
                 signal: SignalType.PONG,
                 channel: undefined,
                 timestamp: Date.now(),
-            }
+            } as any
 
             await signalHandler.handleSignal(client, message)
 
@@ -558,7 +471,7 @@ describe('SignalHandler', () => {
                 signal: 'UNKNOWN' as SignalType,
                 channel: undefined,
                 timestamp: Date.now(),
-            }
+            } as any
 
             await expect(
                 signalHandler.handleSignal(client, message),
@@ -581,7 +494,7 @@ describe('SignalHandler', () => {
                 signal: SignalType.SUBSCRIBE,
                 channel: '__private__',
                 timestamp: Date.now(),
-            }
+            } as any
 
             await expect(
                 signalHandler.handleSubscribe(client, message),
@@ -605,7 +518,7 @@ describe('SignalHandler', () => {
                 signal: SignalType.SUBSCRIBE,
                 channel: '__broadcast__',
                 timestamp: Date.now(),
-            }
+            } as any
 
             await expect(
                 signalHandler.handleSubscribe(client, message),
@@ -641,7 +554,7 @@ describe('SignalHandler', () => {
                 signal: SignalType.SUBSCRIBE,
                 channel: 'test-channel',
                 timestamp: Date.now(),
-            }
+            } as any
 
             await handler.handleSubscribe(client, message)
 
@@ -676,7 +589,7 @@ describe('SignalHandler', () => {
                 signal: SignalType.SUBSCRIBE,
                 channel: 'test-channel',
                 timestamp: Date.now(),
-            }
+            } as any
 
             await handler.handleSubscribe(client, message)
 
@@ -699,7 +612,7 @@ describe('SignalHandler', () => {
                 signal: SignalType.UNSUBSCRIBE,
                 channel: 'test-channel',
                 timestamp: Date.now(),
-            }
+            } as any
 
             await expect(
                 signalHandler.handleUnsubscribe(client, message),
@@ -723,7 +636,7 @@ describe('SignalHandler', () => {
                 signal: SignalType.UNSUBSCRIBE,
                 channel: 'test-channel',
                 timestamp: Date.now(),
-            }
+            } as any
 
             await signalHandler.handleUnsubscribe(client, message)
 
@@ -749,7 +662,7 @@ describe('SignalHandler', () => {
                 signal: SignalType.PING,
                 channel: 'test-channel',
                 timestamp: Date.now(),
-            }
+            } as any
 
             await signalHandler.handlePing(client, message)
 
@@ -781,7 +694,7 @@ describe('SignalHandler', () => {
                 signal: SignalType.PING,
                 channel: 'test-channel',
                 timestamp: Date.now(),
-            }
+            } as any
 
             await handler.handlePing(client, message)
 
@@ -803,7 +716,7 @@ describe('SignalHandler', () => {
                 signal: SignalType.PING,
                 channel: undefined,
                 timestamp: Date.now(),
-            }
+            } as any
 
             await signalHandler.handlePing(client, message)
 
@@ -827,7 +740,7 @@ describe('SignalHandler', () => {
                 signal: SignalType.PONG,
                 channel: undefined,
                 timestamp: Date.now(),
-            }
+            } as any
 
             await signalHandler.handlePong(client, message)
 
