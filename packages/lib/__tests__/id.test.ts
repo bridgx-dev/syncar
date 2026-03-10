@@ -6,12 +6,10 @@ import { describe, it, expect } from 'vitest'
 import {
     generateMessageId,
     generateClientId,
-    generateSubscriberId,
     randomString,
     isValidMessageId,
     isValidClientId,
-    isValidSubscriberId,
-} from '../id.js'
+} from '../src/id.js'
 
 describe('id', () => {
     describe('generateMessageId', () => {
@@ -46,21 +44,6 @@ describe('id', () => {
         })
     })
 
-    describe('generateSubscriberId', () => {
-        it('generates unique subscriber IDs', () => {
-            const id1 = generateSubscriberId()
-            const id2 = generateSubscriberId()
-
-            expect(id1).not.toBe(id2)
-        })
-
-        it('generates valid subscriber ID format', () => {
-            const id = generateSubscriberId()
-
-            expect(isValidSubscriberId(id)).toBe(true)
-            expect(id).toMatch(/^sub-\d+-[a-z0-9]+$/)
-        })
-    })
 
     describe('randomString', () => {
         it('generates string of correct length', () => {

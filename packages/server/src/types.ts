@@ -32,19 +32,6 @@ export type MessageId = string
  */
 export type ClientId = string
 
-/**
- * Subscriber identifier (typically client ID)
- *
- * @remarks
- * Identifier for a subscriber to a channel. In most cases, this is the
- * same as the client ID, but can be different for custom subscription models.
- *
- * @example
- * ```ts
- * const subscriberId: SubscriberId = "client_123abc"
- * ```
- */
-export type SubscriberId = string
 
 /**
  * Channel name

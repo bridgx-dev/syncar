@@ -19,7 +19,6 @@
 export type {
     MessageId,
     ClientId,
-    SubscriberId,
     ChannelName,
     Timestamp,
     DataPayload,

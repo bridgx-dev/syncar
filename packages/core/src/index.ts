@@ -20,7 +20,6 @@
 export type {
     ClientId,
     ConnectionStatus,
-    SubscriberId,
     ChannelName,
     MessageId,
     Timestamp,

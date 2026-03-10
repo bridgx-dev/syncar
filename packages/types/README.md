@@ -33,7 +33,7 @@ const status: ConnectionStatus = 'connected'
 
 ### Common Types
 
-- `MessageId`, `ClientId`, `SubscriberId`
+- `MessageId`, `ClientId`
 - `ChannelName`, `Timestamp`
 - `DataPayload<T>`
 

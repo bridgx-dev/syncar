@@ -12,10 +12,6 @@ export type ConnectionStatus =
     | 'connected'
     | 'disconnecting'
 
-/**
- * Subscriber identifier (typically client ID)
- */
-export type SubscriberId = string
 
 /** Client identifier (e.g., WebSocket connection ID) */
 export type ClientId = string
@@ -96,7 +92,7 @@ export interface ChannelState<T = unknown> {
 export interface SubscriptionState {
     id: string
     channel: ChannelName
-    subscriber: SubscriberId
+    subscriber: ClientId
     active: boolean
     subscribedAt: Timestamp
 }

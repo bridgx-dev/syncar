@@ -152,7 +152,6 @@ export type { IChannelState, IPublishOptions, IMessageHandler } from './channel'
 export type {
     MessageId,
     ClientId,
-    SubscriberId,
     ChannelName,
     Timestamp,
     Message,

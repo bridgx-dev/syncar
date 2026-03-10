@@ -8,7 +8,7 @@ import type {
     MessageId,
     Timestamp,
     ChannelName,
-    SubscriberId,
+    ClientId,
 } from './common.js'
 
 /**
@@ -141,5 +141,5 @@ export interface AckMessage extends Message {
  */
 export type MessageHandler<T = unknown> = (
     message: Message<T>,
-    sender?: SubscriberId,
+    sender?: ClientId,
 ) => void

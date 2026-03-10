@@ -3,7 +3,7 @@
  * Provides pub/sub functionality for real-time communication
  */
 
-import type { ChannelName, SubscriberId, DataPayload } from './types.js'
+import type { ChannelName, ClientId } from './types.js'
 import type { Message } from './protocol.js'
 import { Channel, type ChannelOptions } from './channel.js'
 
@@ -12,7 +12,7 @@ import { Channel, type ChannelOptions } from './channel.js'
  */
 export type MessageHandler<T = unknown> = (
     message: Message<T>,
-    sender?: SubscriberId,
+    sender?: ClientId,
 ) => void
 
 /**
@@ -165,7 +165,7 @@ export class MessageBus {
      * Subscribe a subscriber to a channel
      * @returns true if subscription succeeded
      */
-    subscribe(channelName: ChannelName, subscriber: SubscriberId): boolean {
+    subscribe(channelName: ChannelName, subscriber: ClientId): boolean {
         const channel = this.getOrCreateChannel(channelName)
         return channel.subscribe(subscriber)
     }
@@ -174,7 +174,7 @@ export class MessageBus {
      * Unsubscribe a subscriber from a channel
      * @returns true if unsubscription succeeded
      */
-    unsubscribe(channelName: ChannelName, subscriber: SubscriberId): boolean {
+    unsubscribe(channelName: ChannelName, subscriber: ClientId): boolean {
         const channel = this.getChannel(channelName)
 
         if (channel) {
@@ -194,7 +194,7 @@ export class MessageBus {
     /**
      * Unsubscribe a subscriber from all channels
      */
-    unsubscribeAll(subscriber: SubscriberId): void {
+    unsubscribeAll(subscriber: ClientId): void {
         for (const channelName of this.getChannelNames()) {
             this.unsubscribe(channelName, subscriber)
         }
@@ -203,7 +203,7 @@ export class MessageBus {
     /**
      * Get all channels a subscriber is subscribed to
      */
-    getSubscribedChannels(subscriber: SubscriberId): ChannelName[] {
+    getSubscribedChannels(subscriber: ClientId): ChannelName[] {
         const subscribed: ChannelName[] = []
 
         for (const [name, channel] of this.channels) {
@@ -222,7 +222,7 @@ export class MessageBus {
     publish<T>(
         channelName: ChannelName,
         message: Message<T>,
-        excludeSender?: SubscriberId,
+        excludeSender?: ClientId,
     ): number {
         const channel = this.getChannel(channelName)
 
@@ -249,7 +249,7 @@ export class MessageBus {
     /**
      * Broadcast a message to all subscribers across all channels
      */
-    broadcast<T>(message: Message<T>, excludeSender?: SubscriberId): number {
+    broadcast<T>(message: Message<T>, excludeSender?: ClientId): number {
         let totalRecipients = 0
 
         for (const channelName of this.getChannelNames()) {

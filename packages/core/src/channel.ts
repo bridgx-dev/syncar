@@ -6,7 +6,7 @@
 import type {
     ChannelName,
     ChannelState,
-    SubscriberId,
+    ClientId,
     Timestamp,
     DataPayload,
 } from './types.js'
@@ -40,7 +40,7 @@ export interface ChannelOptions {
  */
 export class Channel<T = unknown> {
     public readonly name: ChannelName
-    protected readonly subscribers: Set<SubscriberId> = new Set()
+    protected readonly subscribers: Set<ClientId> = new Set()
     protected readonly options: Required<ChannelOptions>
     protected messageHistory: Message<T>[] = []
     protected _createdAt: Timestamp
@@ -66,7 +66,7 @@ export class Channel<T = unknown> {
             lastMessageAt:
                 this.messageHistory.length > 0
                     ? this.messageHistory[this.messageHistory.length - 1]
-                          ?.timestamp
+                        ?.timestamp
                     : undefined,
         }
     }
@@ -74,14 +74,14 @@ export class Channel<T = unknown> {
     /**
      * Check if a subscriber is in this channel
      */
-    hasSubscriber(subscriber: SubscriberId): boolean {
+    hasSubscriber(subscriber: ClientId): boolean {
         return this.subscribers.has(subscriber)
     }
 
     /**
      * Get all subscribers
      */
-    getSubscribers(): Set<SubscriberId> {
+    getSubscribers(): Set<ClientId> {
         return new Set(this.subscribers)
     }
 
@@ -113,7 +113,7 @@ export class Channel<T = unknown> {
      * Subscribe a client to this channel
      * @returns true if subscription succeeded, false otherwise
      */
-    subscribe(subscriber: SubscriberId): boolean {
+    subscribe(subscriber: ClientId): boolean {
         // Check if already subscribed
         if (this.subscribers.has(subscriber)) {
             return false
@@ -132,7 +132,7 @@ export class Channel<T = unknown> {
      * Unsubscribe a client from this channel
      * @returns true if subscriber was removed, false if not found
      */
-    unsubscribe(subscriber: SubscriberId): boolean {
+    unsubscribe(subscriber: ClientId): boolean {
         return this.subscribers.delete(subscriber)
     }
 

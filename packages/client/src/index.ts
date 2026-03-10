@@ -81,5 +81,5 @@ export type {
     DataMessage,
     MessageType,
     SignalType,
-    SubscriberId,
+    ClientId,
 } from './types.js'

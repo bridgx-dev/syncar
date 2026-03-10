@@ -48,11 +48,9 @@ const delay = calculateBackoff(3, {
 
 - `generateMessageId()` - Generate unique message IDs
 - `generateClientId()` - Generate unique client IDs
-- `generateSubscriberId()` - Generate unique subscriber IDs
 - `randomString(length)` - Generate random alphanumeric strings
 - `isValidMessageId()` - Validate message ID format
 - `isValidClientId()` - Validate client ID format
-- `isValidSubscriberId()` - Validate subscriber ID format
 
 ### Validation (`./validation.ts`)
 

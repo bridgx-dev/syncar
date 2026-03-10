@@ -1,7 +1,6 @@
 import {
     type ChannelName,
     type ClientId,
-    type SubscriberId,
     type DataMessage,
     type IClientConnection,
     type IMiddleware,
@@ -478,7 +477,7 @@ export class Channel<T = unknown> extends BaseChannel<T> {
      * channel.subscribe('client-123')
      * ```
      */
-    subscribe(subscriber: SubscriberId): boolean {
+    subscribe(subscriber: ClientId): boolean {
         if (this.scope === 'broadcast') {
             throw new Error(
                 `Cannot subscribe to channel '${this.name}': ` +
@@ -501,7 +500,7 @@ export class Channel<T = unknown> extends BaseChannel<T> {
      * channel.unsubscribe('client-123')
      * ```
      */
-    unsubscribe(subscriber: SubscriberId): boolean {
+    unsubscribe(subscriber: ClientId): boolean {
         if (this.scope === 'broadcast') {
             throw new Error(
                 `Cannot unsubscribe from channel '${this.name}': ` +
@@ -525,7 +524,7 @@ export class Channel<T = unknown> extends BaseChannel<T> {
      * }
      * ```
      */
-    hasSubscriber(subscriber: SubscriberId): boolean {
+    hasSubscriber(subscriber: ClientId): boolean {
         if (this.scope === 'broadcast') {
             throw new Error(
                 `Cannot check subscribers on channel '${this.name}': ` +
@@ -547,7 +546,7 @@ export class Channel<T = unknown> extends BaseChannel<T> {
      * console.log(`Subscribers: ${Array.from(subs).join(', ')}`)
      * ```
      */
-    getSubscribers(): Set<SubscriberId> {
+    getSubscribers(): Set<ClientId> {
         if (this.scope === 'broadcast') {
             throw new Error(
                 `Cannot get subscribers on channel '${this.name}': ` +

@@ -13,10 +13,6 @@ export type MessageId = string
  */
 export type ClientId = string
 
-/**
- * Subscriber identifier (typically client ID)
- */
-export type SubscriberId = string
 
 /**
  * Channel name

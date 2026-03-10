@@ -2,7 +2,7 @@
  * ID generation utilities
  */
 
-import type { MessageId, ClientId, SubscriberId } from '@syncar/types'
+import type { MessageId, ClientId } from '@syncar/types'
 
 /**
  * Generate a unique message ID
@@ -20,13 +20,6 @@ export function generateClientId(): ClientId {
     return `client-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
 }
 
-/**
- * Generate a unique subscriber ID
- * Format: sub-timestamp-randomString
- */
-export function generateSubscriberId(): SubscriberId {
-    return `sub-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-}
 
 /**
  * Generate a random alphanumeric string
@@ -56,9 +49,3 @@ export function isValidClientId(id: string): id is ClientId {
     return typeof id === 'string' && id.length > 0
 }
 
-/**
- * Validate if a string is a valid subscriber ID
- */
-export function isValidSubscriberId(id: string): id is SubscriberId {
-    return typeof id === 'string' && id.length > 0
-}

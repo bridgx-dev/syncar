@@ -7,7 +7,7 @@ import type {
     Message,
     DataMessage,
     ChannelName,
-    SubscriberId,
+    ClientId,
     MessageType,
     SignalType,
 } from '@syncar/types'
@@ -17,7 +17,7 @@ export type {
     Message,
     DataMessage,
     ChannelName,
-    SubscriberId,
+    ClientId,
     MessageType,
     SignalType,
 }
@@ -173,7 +173,7 @@ export interface ClientConfig {
      * Unique identifier for this client
      * If not provided, one will be generated
      */
-    id?: SubscriberId
+    id?: ClientId
 
     /**
      * Auto-connect on initialization
