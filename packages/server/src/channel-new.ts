@@ -10,7 +10,8 @@ import {
     type ChannelFlow,
 } from './types'
 import {
-    assertValidChannelName
+    assertValidChannelName,
+    isReservedChannelName
 } from './utils'
 import { ClientRegistry } from './registry'
 import { BaseChannel, type IPublishOptions, type IMessageHandler } from './channel'
@@ -95,8 +96,9 @@ export class Channel<T = unknown> extends BaseChannel<T> {
         const { name, registry, options, chunkSize } = config
 
         // Apply defaults
+        // Broadcast scope automatically sets flow to send-only
         const scope = options?.scope ?? 'subscribers'
-        const flow = options?.flow ?? 'bidirectional'
+        const flow = options?.flow ?? (scope === 'broadcast' ? 'send-only' : 'bidirectional')
 
         // Validation: broadcast scope only allows send-only flow
         if (scope === 'broadcast' && flow !== 'send-only') {
@@ -108,7 +110,11 @@ export class Channel<T = unknown> extends BaseChannel<T> {
 
         // For broadcast scope, use the broadcast channel name
         const channelName = scope === 'broadcast' ? '__broadcast__' : name
-        assertValidChannelName(channelName)
+
+        // Validate channel name (but skip validation for reserved broadcast channel)
+        if (!isReservedChannelName(channelName)) {
+            assertValidChannelName(channelName)
+        }
 
         super(channelName, registry, chunkSize)
 
