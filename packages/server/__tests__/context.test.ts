@@ -5,12 +5,12 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { createContext, ContextManager, type ContextOptions } from '../src/context'
-import type {
-    Context,
-    Middleware,
-    IMiddlewareAction,
-} from '../src/types'
+import {
+    createContext,
+    ContextManager,
+    type ContextOptions,
+} from '../src/context'
+import type { Context, Middleware, IMiddlewareAction } from '../src/types'
 import { MessageType } from '../src/types'
 
 describe('context', () => {
@@ -526,7 +526,7 @@ describe('context', () => {
             })
 
             it('should execute final handler', async () => {
-                const finalHandler = vi.fn(async () => { })
+                const finalHandler = vi.fn(async () => {})
 
                 const client = {
                     id: 'client-123',

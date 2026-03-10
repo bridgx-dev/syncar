@@ -1,7 +1,4 @@
-import type {
-    IMiddleware,
-    IMiddlewareAction,
-} from '../types'
+import type { IMiddleware, IMiddlewareAction } from '../types'
 
 /**
  * Logging middleware options

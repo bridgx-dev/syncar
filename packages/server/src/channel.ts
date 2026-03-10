@@ -115,7 +115,7 @@ export class Channel<T = unknown> {
         if (scope === 'broadcast' && flow !== 'send-only') {
             throw new Error(
                 `Invalid channel configuration: broadcast scope only supports send-only flow. ` +
-                `Got scope '${scope}' and flow '${flow}'.`,
+                    `Got scope '${scope}' and flow '${flow}'.`,
             )
         }
 
@@ -201,7 +201,7 @@ export class Channel<T = unknown> {
         if (this.flow === 'send-only') {
             throw new Error(
                 `Cannot register message handler on channel '${this.name}': ` +
-                `onMessage is not available in send-only mode.`,
+                    `onMessage is not available in send-only mode.`,
             )
         }
         this.messageHandlers.add(handler)
@@ -215,7 +215,7 @@ export class Channel<T = unknown> {
         if (this.scope === 'broadcast') {
             throw new Error(
                 `Cannot subscribe to channel '${this.name}': ` +
-                `subscribe is not available for broadcast channels.`,
+                    `subscribe is not available for broadcast channels.`,
             )
         }
         return this.registry.subscribe(subscriber, this.name)
@@ -228,7 +228,7 @@ export class Channel<T = unknown> {
         if (this.scope === 'broadcast') {
             throw new Error(
                 `Cannot unsubscribe from channel '${this.name}': ` +
-                `unsubscribe is not available for broadcast channels.`,
+                    `unsubscribe is not available for broadcast channels.`,
             )
         }
         return this.registry.unsubscribe(subscriber, this.name)
@@ -241,7 +241,7 @@ export class Channel<T = unknown> {
         if (this.scope === 'broadcast') {
             throw new Error(
                 `Cannot check subscribers on channel '${this.name}': ` +
-                `hasSubscriber is not available for broadcast channels.`,
+                    `hasSubscriber is not available for broadcast channels.`,
             )
         }
         return this.registry.getChannelSubscribers(this.name).has(subscriber)
@@ -254,7 +254,7 @@ export class Channel<T = unknown> {
         if (this.scope === 'broadcast') {
             throw new Error(
                 `Cannot get subscribers on channel '${this.name}': ` +
-                `getSubscribers is not available for broadcast channels.`,
+                    `getSubscribers is not available for broadcast channels.`,
             )
         }
         return new Set(this.registry.getChannelSubscribers(this.name))
@@ -285,10 +285,14 @@ export class Channel<T = unknown> {
                     )
                 }
             }
-        } else if (this.scope === 'subscribers' && this.flow === 'bidirectional') {
+        } else if (
+            this.scope === 'subscribers' &&
+            this.flow === 'bidirectional'
+        ) {
             // Auto-relay mode: forward to all subscribers except sender
-            const clients = Array.from(this.registry.getChannelSubscribers(this.name))
-                .filter(id => id !== client.id)
+            const clients = Array.from(
+                this.registry.getChannelSubscribers(this.name),
+            ).filter((id) => id !== client.id)
             this.publishToClients(data, clients)
         }
     }

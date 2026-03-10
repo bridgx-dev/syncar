@@ -1,8 +1,4 @@
-import type {
-    IMiddleware,
-    Context,
-    IMiddlewareAction,
-} from '../types'
+import type { IMiddleware, Context, IMiddlewareAction } from '../types'
 
 /**
  * Rate limit middleware options
@@ -114,11 +110,11 @@ export function rateLimit(options: RateLimitOptions = {}): IMiddleware {
         await next()
     }
 
-        // Attach cleanup method
-        ; (middleware as { cleanup?: () => void }).cleanup = () => {
-            clearInterval(cleanupInterval)
-            rateLimitStore.clear()
-        }
+    // Attach cleanup method
+    ;(middleware as { cleanup?: () => void }).cleanup = () => {
+        clearInterval(cleanupInterval)
+        rateLimitStore.clear()
+    }
 
     return middleware
 }

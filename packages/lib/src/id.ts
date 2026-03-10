@@ -20,7 +20,6 @@ export function generateClientId(): ClientId {
     return `client-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
 }
 
-
 /**
  * Generate a random alphanumeric string
  * @param length - Length of the string to generate
@@ -48,4 +47,3 @@ export function isValidMessageId(id: string): id is MessageId {
 export function isValidClientId(id: string): id is ClientId {
     return typeof id === 'string' && id.length > 0
 }
-

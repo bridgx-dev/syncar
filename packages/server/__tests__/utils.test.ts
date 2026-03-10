@@ -279,9 +279,9 @@ describe('utils', () => {
 
     describe('Logging Utilities', () => {
         const consoleSpies = {
-            log: vi.spyOn(console, 'log').mockImplementation(() => { }),
-            warn: vi.spyOn(console, 'warn').mockImplementation(() => { }),
-            error: vi.spyOn(console, 'error').mockImplementation(() => { }),
+            log: vi.spyOn(console, 'log').mockImplementation(() => {}),
+            warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
+            error: vi.spyOn(console, 'error').mockImplementation(() => {}),
         }
 
         beforeEach(() => {

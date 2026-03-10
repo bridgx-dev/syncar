@@ -12,7 +12,6 @@ export type ConnectionStatus =
     | 'connected'
     | 'disconnecting'
 
-
 /** Client identifier (e.g., WebSocket connection ID) */
 export type ClientId = string
 

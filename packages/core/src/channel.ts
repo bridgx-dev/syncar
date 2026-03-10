@@ -66,7 +66,7 @@ export class Channel<T = unknown> {
             lastMessageAt:
                 this.messageHistory.length > 0
                     ? this.messageHistory[this.messageHistory.length - 1]
-                        ?.timestamp
+                          ?.timestamp
                     : undefined,
         }
     }

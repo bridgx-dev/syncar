@@ -1,8 +1,4 @@
-import type {
-    IMiddleware,
-    IClientConnection,
-    ChannelName,
-} from '../types'
+import type { IMiddleware, IClientConnection, ChannelName } from '../types'
 
 /**
  * Channel whitelist middleware options
@@ -36,7 +32,9 @@ export interface ChannelWhitelistOptions {
  *
  * Restricts which channels clients can subscribe to.
  */
-export function channelWhitelist(options: ChannelWhitelistOptions = {}): IMiddleware {
+export function channelWhitelist(
+    options: ChannelWhitelistOptions = {},
+): IMiddleware {
     const {
         allowedChannels = [],
         isDynamic,

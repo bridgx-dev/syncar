@@ -64,8 +64,6 @@ describe('index.ts exports', () => {
         expect(typeof WebSocketServerTransport).toBe('function')
     })
 
-
-
     it('should export close and error codes', () => {
         expect(CLOSE_CODES).toBeDefined()
         expect(ERROR_CODES).toBeDefined()

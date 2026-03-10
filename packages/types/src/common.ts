@@ -13,7 +13,6 @@ export type MessageId = string
  */
 export type ClientId = string
 
-
 /**
  * Channel name
  */

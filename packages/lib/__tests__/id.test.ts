@@ -44,7 +44,6 @@ describe('id', () => {
         })
     })
 
-
     describe('randomString', () => {
         it('generates string of correct length', () => {
             expect(randomString(5)).toHaveLength(5)

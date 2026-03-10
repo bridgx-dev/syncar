@@ -1,8 +1,4 @@
-import type {
-    IMiddleware,
-    Context,
-    IMiddlewareAction,
-} from '../types'
+import type { IMiddleware, Context, IMiddlewareAction } from '../types'
 
 /**
  * Auth middleware options
@@ -70,7 +66,7 @@ export function authenticate(options: AuthOptions): IMiddleware {
 
             // Attach user data to client (LEGACY - for compatibility)
             if (c.req.client) {
-                ; (c.req.client as unknown as Record<string, unknown>)[
+                ;(c.req.client as unknown as Record<string, unknown>)[
                     attachProperty
                 ] = userData
             }

@@ -56,7 +56,7 @@ describe('ContextManager', () => {
         })
 
         it('should remove middleware', () => {
-            const middleware = async () => { }
+            const middleware = async () => {}
             manager.use(middleware)
 
             expect(manager.remove(middleware)).toBe(true)
@@ -838,8 +838,8 @@ describe('Middleware Factories', () => {
                 typeof (middleware as { cleanup?: () => void }).cleanup,
             ).toBe('function')
 
-                // Call cleanup - should not throw
-                ; (middleware as { cleanup?: () => void }).cleanup!()
+            // Call cleanup - should not throw
+            ;(middleware as { cleanup?: () => void }).cleanup!()
 
             // Store should be cleared
             const state = getRateLimitState('client-1')

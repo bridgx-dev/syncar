@@ -24,8 +24,6 @@ import {
 } from '../src/config'
 
 describe('config', () => {
-
-
     describe('CLOSE_CODES', () => {
         it('should contain all standard WebSocket close codes', () => {
             expect(CLOSE_CODES.NORMAL).toBe(1000)

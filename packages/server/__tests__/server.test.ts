@@ -330,8 +330,6 @@ describe('SyncarServer', () => {
         })
     })
 
-
-
     describe('getStats()', () => {
         it('should return server statistics', async () => {
             const config: IServerOptions = {

@@ -161,7 +161,7 @@ export class SignalHandler {
                 undefined,
                 message.id,
             )
-            client.socket.send(JSON.stringify(ackMessage), () => { })
+            client.socket.send(JSON.stringify(ackMessage), () => {})
         }
     }
 
@@ -180,7 +180,7 @@ export class SignalHandler {
                 undefined,
                 message.id,
             )
-            client.socket.send(JSON.stringify(pongMessage), () => { })
+            client.socket.send(JSON.stringify(pongMessage), () => {})
         }
     }
 

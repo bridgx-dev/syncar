@@ -447,7 +447,7 @@ describe('WebSocketServerTransport', () => {
 
     describe('ServerConstructor option', () => {
         it('should use custom ServerConstructor if provided', () => {
-            class CustomServer extends EventEmitter { }
+            class CustomServer extends EventEmitter {}
 
             const customTransport = new WebSocketServerTransport({
                 server: mockHttpServer,
