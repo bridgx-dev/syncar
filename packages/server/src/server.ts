@@ -385,6 +385,41 @@ export class SyncarServer {
     }
 
     /**
+     * Broadcast data to all connected clients
+     *
+     * @remarks
+     * A convenience method to send data to every client currently connected
+     * to the server. This uses an internal 'broadcast' channel to leverage
+     * the standard middleware and chunking logic.
+     *
+     * @param data - The data to broadcast to all clients
+     *
+     * @example
+     * ```ts
+     * server.broadcast({
+     *   type: 'announcement',
+     *   content: 'Server update in progress'
+     * })
+     * ```
+     */
+    broadcast<T = unknown>(data: T): void {
+        const BROADCAST_INTERNAL = '__broadcast__'
+        let channel = this.registry.getChannel<T>(BROADCAST_INTERNAL)
+
+        if (!channel) {
+            channel = new Channel<T>({
+                name: BROADCAST_INTERNAL,
+                registry: this.registry,
+                options: { scope: 'broadcast', flow: 'receive-only' },
+                chunkSize: this.config.chunkSize,
+            })
+            this.registry.registerChannel(channel)
+        }
+
+        channel.publish(data)
+    }
+
+    /**
      * Get all active channel names
      *
      * @returns Array of channel names currently registered on the server
