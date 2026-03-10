@@ -9,12 +9,8 @@ import {
     type ChannelScope,
     type ChannelFlow,
 } from './types'
-import { createDataMessage, assertValidChannelName } from './utils'
 import { ClientRegistry } from './registry'
-
-// ============================================================
-// TYPES
-// ============================================================
+import { createDataMessage, assertValidChannelName } from './utils'
 
 /**
  * Channel state information
@@ -165,7 +161,7 @@ export abstract class BaseChannel<
         protected readonly registry: ClientRegistry,
         /** Number of clients to process per chunk for large broadcasts (default: 500) */
         protected readonly chunkSize: number = 500,
-    ) {}
+    ) { }
 
     /**
      * Get the current subscriber count
@@ -243,7 +239,7 @@ export abstract class BaseChannel<
         _data: T,
         _client: IClientConnection,
         _message: DataMessage<T>,
-    ): Promise<void> {}
+    ): Promise<void> { }
 
     protected abstract getTargetClients(options?: IPublishOptions): ClientId[]
 
@@ -355,7 +351,7 @@ export class Channel<T = unknown> extends BaseChannel<T> {
         if (scope === 'broadcast' && flow !== 'send-only') {
             throw new Error(
                 `Invalid channel configuration: broadcast scope only supports send-only flow. ` +
-                    `Got scope '${scope}' and flow '${flow}'.`,
+                `Got scope '${scope}' and flow '${flow}'.`,
             )
         }
 
@@ -463,7 +459,7 @@ export class Channel<T = unknown> extends BaseChannel<T> {
         if (this.flow === 'send-only') {
             throw new Error(
                 `Cannot register message handler on channel '${this.name}': ` +
-                    `onMessage is not available in send-only mode.`,
+                `onMessage is not available in send-only mode.`,
             )
         }
         this.messageHandlers.add(handler)
@@ -486,8 +482,8 @@ export class Channel<T = unknown> extends BaseChannel<T> {
         if (this.scope === 'broadcast') {
             throw new Error(
                 `Cannot subscribe to channel '${this.name}': ` +
-                    `subscribe is not available for broadcast channels. ` +
-                    `Broadcast channels send to all clients automatically.`,
+                `subscribe is not available for broadcast channels. ` +
+                `Broadcast channels send to all clients automatically.`,
             )
         }
         return this.registry.subscribe(subscriber, this.name)
@@ -509,7 +505,7 @@ export class Channel<T = unknown> extends BaseChannel<T> {
         if (this.scope === 'broadcast') {
             throw new Error(
                 `Cannot unsubscribe from channel '${this.name}': ` +
-                    `unsubscribe is not available for broadcast channels.`,
+                `unsubscribe is not available for broadcast channels.`,
             )
         }
         return this.registry.unsubscribe(subscriber, this.name)
@@ -533,7 +529,7 @@ export class Channel<T = unknown> extends BaseChannel<T> {
         if (this.scope === 'broadcast') {
             throw new Error(
                 `Cannot check subscribers on channel '${this.name}': ` +
-                    `hasSubscriber is not available for broadcast channels.`,
+                `hasSubscriber is not available for broadcast channels.`,
             )
         }
         return this.registry.getChannelSubscribers(this.name).has(subscriber)
@@ -555,7 +551,7 @@ export class Channel<T = unknown> extends BaseChannel<T> {
         if (this.scope === 'broadcast') {
             throw new Error(
                 `Cannot get subscribers on channel '${this.name}': ` +
-                    `getSubscribers is not available for broadcast channels.`,
+                `getSubscribers is not available for broadcast channels.`,
             )
         }
         return new Set(this.registry.getChannelSubscribers(this.name))

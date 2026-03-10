@@ -4,16 +4,16 @@ import {
     type IMiddleware,
     type ChannelOptions,
     MessageType,
+    ILogger,
 } from './types'
-import type { ILogger, IdGenerator } from './types'
-import { createDefaultLogger } from './utils'
 import { Channel } from './channel'
-import { ConnectionHandler, MessageHandler, SignalHandler } from './handlers'
-import { ContextManager } from './context'
 import { StateError } from './errors'
+import { ContextManager } from './context'
+import { createDefaultLogger } from './utils'
 import { ClientRegistry } from './registry'
 import { WebSocketServerTransport } from './websocket'
 import { DEFAULT_SERVER_CONFIG, DEFAULT_MAX_PAYLOAD } from './config'
+import { ConnectionHandler, MessageHandler, SignalHandler } from './handlers'
 
 interface ServerState {
     started: boolean
@@ -65,23 +65,6 @@ export interface IServerOptions {
      * If not provided, a new HTTP server will be created automatically.
      */
     server?: import('node:http').Server | import('node:https').Server
-
-    /**
-     * Custom connection ID generator
-     *
-     * @remarks
-     * Function to generate unique client IDs from incoming HTTP requests.
-     * Useful for implementing custom authentication or ID generation strategies.
-     *
-     * @example
-     * ```ts
-     * generateId: (request) => {
-     *   const token = request.headers.authorization?.split(' ')[1]
-     *   return extractUserIdFromToken(token)
-     * }
-     * ```
-     */
-    generateId?: IdGenerator
 
     /**
      * Custom logger instance
@@ -190,7 +173,7 @@ export interface IServerOptions {
      * in chunks to avoid blocking the event loop. Lower values reduce latency
      * per chunk but increase total broadcast time.
      */
-    broadcastChunkSize: number
+    chunkSize: number
 }
 
 /**
@@ -265,11 +248,11 @@ export class SyncarServer {
      * @example
      * ```ts
      * const server = createSyncarServer({ port: 3000 })
-     * await server.start()
+     * server.start()
      * console.log('Server is running')
      * ```
      */
-    async start(): Promise<void> {
+    start(): void {
         if (this.status.started) {
             throw new StateError('Server is already started')
         }
@@ -308,11 +291,11 @@ export class SyncarServer {
      *
      * @example
      * ```ts
-     * await server.stop()
+     * server.stop()
      * console.log('Server stopped')
      * ```
      */
-    async stop(): Promise<void> {
+    stop(): void {
         if (!this.status.started || !this.transport) {
             return // Already stopped
         }
@@ -335,14 +318,6 @@ export class SyncarServer {
      *
      * @remarks
      * Unified channel creation. Channels are configured using `scope` and `flow` options:
-     *
-     * - **scope: 'broadcast'** - Sends to ALL clients (no subscriptions)
-     * - **scope: 'subscribers'** - Sends only to subscribed clients (default)
-     *
-     * - **flow: 'bidirectional'** - Server and clients can send (default)
-     * - **flow: 'send-only'** - Only server can send
-     * - **flow: 'receive-only'** - Only clients can send
-     *
      * @template T - Type of data to be published on this channel (default: unknown)
      * @param name - Unique channel name
      * @param options - Channel configuration options
@@ -356,7 +331,7 @@ export class SyncarServer {
      * ```ts
      * const chat = server.createChannel('chat')
      * chat.onMessage((data, client) => {
-     *   chat.publish(data, { exclude: [client.id] })
+     *   chat.publish(data)
      * })
      * ```
      *
@@ -365,13 +340,6 @@ export class SyncarServer {
      * ```ts
      * const alerts = server.createChannel('alerts', { scope: 'broadcast' })
      * alerts.publish({ message: 'Maintenance in 5 min' })
-     * ```
-     *
-     * @example
-     * ### Subscribers + send-only (live dashboard)
-     * ```ts
-     * const updates = server.createChannel('updates', { flow: 'send-only' })
-     * updates.publish({ cpu: 45, memory: 67 })
      * ```
      */
     createChannel<T = unknown>(
@@ -385,16 +353,14 @@ export class SyncarServer {
         }
 
         // Check if channel already exists
-        const existing = this.registry.getChannel<T>(name) as
-            | Channel<T>
-            | undefined
+        const existing = this.registry.getChannel<T>(name) as Channel<T>
         if (existing) return existing
 
         const channel = new Channel<T>({
             name,
             registry: this.registry,
             options,
-            chunkSize: this.config.broadcastChunkSize,
+            chunkSize: this.config.chunkSize,
         })
 
         this.registry.registerChannel(channel)
@@ -459,59 +425,10 @@ export class SyncarServer {
     }
 
     /**
-     * Set a custom authentication handler for connection validation
-     *
-     * @remarks
-     * Sets an authenticator function that receives the HTTP upgrade request
-     * and returns a client ID. The authenticator can throw to reject the connection.
-     * This is useful for implementing token-based authentication during the
-     * WebSocket handshake.
-     *
-     * @param authenticator - A function that receives the HTTP upgrade request
-     * and returns a ClientId (or throws to reject the connection)
-     *
-     * @example
-     * ```ts
-     * server.authenticate(async (request) => {
-     *   const token = request.headers.authorization?.split(' ')[1]
-     *   if (!token) {
-     *     throw new Error('No token provided')
-     *   }
-     *   const user = await verifyJwt(token)
-     *   return user.id
-     * })
-     * ```
-     */
-    authenticate(
-        authenticator: (
-            request: import('node:http').IncomingMessage,
-        ) => string | Promise<string>,
-    ): void {
-        const transport = this.transport || this.config.transport
-        if (transport && 'setAuthenticator' in transport) {
-            ;(transport as any).setAuthenticator(authenticator)
-        } else {
-            this.config.logger.warn(
-                'Current transport does not support setting an authenticator.',
-            )
-        }
-    }
-
-    /**
      * Get server statistics
      *
      * @returns Server statistics including client count, channel count,
      * subscription count, and start time
-     *
-     * @example
-     * ```ts
-     * const stats = server.getStats()
-     * console.log(`Clients: ${stats.clientCount}`)
-     * console.log(`Channels: ${stats.channelCount}`)
-     * console.log(`Subscriptions: ${stats.subscriptionCount}`)
-     * console.log(`Started: ${new Date(stats.startedAt!).toLocaleString()}`)
-     * ```
-     *
      * @see {@link IServerStats} for statistics structure
      */
     getStats(): IServerStats {
@@ -527,42 +444,9 @@ export class SyncarServer {
      * Get the server configuration (read-only)
      *
      * @returns Readonly copy of the server configuration options
-     *
-     * @example
-     * ```ts
-     * const config = server.getConfig()
-     * console.log(`Port: ${config.port}`)
-     * console.log(`Host: ${config.host}`)
-     * console.log(`Path: ${config.path}`)
-     * ```
      */
     getConfig(): Readonly<IServerOptions> {
         return this.config
-    }
-
-    /**
-     * Get the client registry
-     *
-     * @returns The client registry instance used by this server
-     *
-     * @remarks
-     * The registry manages client connections and channel subscriptions.
-     * Direct access allows for advanced operations like manual client
-     * lookup or subscription management.
-     *
-     * @example
-     * ```ts
-     * const registry = server.getRegistry()
-     * const client = registry.get('client-123')
-     * if (client) {
-     *   console.log(`Client connected at: ${new Date(client.connectedAt).toLocaleString()}`)
-     * }
-     * ```
-     *
-     * @see {@link ClientRegistry} for registry API
-     */
-    getRegistry(): ClientRegistry {
-        return this.registry
     }
 
     private setupTransportHandlers(): void {
@@ -606,15 +490,12 @@ export class SyncarServer {
                     await this.signalHandler!.handleSignal(client, message)
                 }
             } catch (error) {
-                this.config.logger.error(
-                    'Error handling message:',
-                    error as Error,
-                )
+                this.config.logger.error((error as Error).message)
             }
         })
 
         transport.on('error', (error: Error) => {
-            this.config.logger.error('Transport error:', error)
+            this.config.logger.error(error.message)
         })
     }
 }
@@ -638,7 +519,7 @@ export class SyncarServer {
  * import { createSyncarServer } from '@syncar/server'
  *
  * const server = createSyncarServer({ port: 3000 })
- * await server.start()
+ * server.start()
  * ```
  *
  * @example
@@ -653,7 +534,7 @@ export class SyncarServer {
  *   pingTimeout: 5000,
  *   broadcastChunkSize: 1000,
  * })
- * await server.start()
+ * server.start()
  * ```
  *
  * @example
@@ -672,7 +553,7 @@ export class SyncarServer {
  *   path: '/ws',
  * })
  *
- * await server.start()
+ * server.start()
  * ```
  *
  * @example
@@ -689,7 +570,7 @@ export class SyncarServer {
  *   path: '/ws',
  * })
  *
- * await server.start()
+ * server.start()
  * ```
  *
  * @example
@@ -699,30 +580,8 @@ export class SyncarServer {
  *
  * const server = createSyncarServer({
  *   port: 3000,
- *   logger: {
- *     debug: (msg, ...args) => console.debug('[DEBUG]', msg, ...args),
- *     info: (msg, ...args) => console.info('[INFO]', msg, ...args),
- *     warn: (msg, ...args) => console.warn('[WARN]', msg, ...args),
- *     error: (msg, ...args) => console.error('[ERROR]', msg, ...args),
- *   },
  * })
  * ```
- *
- * @example
- * ### With middleware
- * ```ts
- * import { createSyncarServer, createLoggingMiddleware } from '@syncar/server'
- *
- * const server = createSyncarServer({
- *   port: 3000,
- *   middleware: [
- *     createLoggingMiddleware(),
- *   ],
- * })
- *
- * await server.start()
- * ```
- *
  * @see {@link SyncarServer} for server class API
  * @see {@link DEFAULT_SERVER_CONFIG} for default configuration values
  */
@@ -761,8 +620,6 @@ export function createSyncarServer(
             pingInterval: serverOptions.pingInterval,
             pingTimeout: serverOptions.pingTimeout,
             connections: registry.connections,
-            generateId: serverOptions.generateId,
-            logger: serverOptions.logger,
         })
     }
 

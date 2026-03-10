@@ -1,4 +1,5 @@
 import { EventEmitter } from 'node:events'
+import { IncomingMessage } from 'node:http'
 import {
     WebSocketServer as WsServer,
     type ServerOptions as WsServerOptions,
@@ -9,8 +10,6 @@ import {
     SignalType,
     type ClientId,
     type IClientConnection,
-    type ILogger,
-    type IdGenerator,
 } from './types'
 import {
     DEFAULT_MAX_PAYLOAD,
@@ -87,23 +86,6 @@ export interface WebSocketServerTransportConfig extends WsServerOptions {
     connections?: Map<ClientId, IClientConnection>
 
     /**
-     * Custom ID generator for new connections
-     *
-     * @remarks
-     * Function to generate unique client IDs from incoming HTTP requests.
-     * Useful for implementing custom authentication or ID generation strategies.
-     *
-     * @example
-     * ```ts
-     * generateId: async (request) => {
-     *   const token = request.headers.authorization?.split(' ')[1]
-     *   return verifyToken(token).then(user => user.id)
-     * }
-     * ```
-     */
-    generateId?: IdGenerator
-
-    /**
      * Custom WebSocket Server constructor
      *
      * @remarks
@@ -111,14 +93,6 @@ export interface WebSocketServerTransportConfig extends WsServerOptions {
      * Defaults to the standard `ws` WebSocketServer.
      */
     ServerConstructor?: new (config: WsServerOptions) => ServerInstance
-
-    /**
-     * Logger instance
-     *
-     * @remarks
-     * Optional logger for transport-level logging.
-     */
-    logger?: ILogger
 }
 
 /**
@@ -212,10 +186,6 @@ export class WebSocketServerTransport extends EventEmitter {
     }
     /** @internal */
     private pingTimer?: ReturnType<typeof setInterval>
-    /** @internal */
-    private authenticator?: (
-        request: import('node:http').IncomingMessage,
-    ) => string | Promise<string>
 
     /**
      * Creates a new WebSocket Server Transport instance
@@ -273,36 +243,6 @@ export class WebSocketServerTransport extends EventEmitter {
         }
     }
 
-    /**
-     * Set a custom authentication handler
-     *
-     * @remarks
-     * Sets an authenticator function that receives the HTTP upgrade request
-     * and returns a client ID. The authenticator can throw to reject the connection.
-     *
-     * @param authenticator - Function that receives the HTTP upgrade request
-     * and returns a client ID (or throws to reject)
-     *
-     * @example
-     * ```ts
-     * transport.setAuthenticator(async (request) => {
-     *   const token = request.headers.authorization?.split(' ')[1]
-     *   if (!token) {
-     *     throw new Error('No token provided')
-     *   }
-     *   const user = await verifyJwt(token)
-     *   return user.id
-     * })
-     * ```
-     */
-    setAuthenticator(
-        authenticator: (
-            request: import('node:http').IncomingMessage,
-        ) => string | Promise<string>,
-    ): void {
-        this.authenticator = authenticator
-    }
-
     private setupEventHandlers(): void {
         this.wsServer.on(
             'connection',
@@ -315,37 +255,15 @@ export class WebSocketServerTransport extends EventEmitter {
         )
 
         this.wsServer.on('error', (error: Error) => {
-            this.config.logger?.error('WebSocket Server Error:', error)
             this.emit('error', error)
         })
     }
 
     private async handleConnection(
         socket: WebSocket,
-        request: import('node:http').IncomingMessage,
+        request: IncomingMessage,
     ): Promise<void> {
-        let clientId: ClientId
-
-        try {
-            if (this.authenticator) {
-                clientId = (await this.authenticator(request)) as ClientId
-            } else if (this.config.generateId) {
-                clientId = await this.config.generateId(request)
-            } else {
-                clientId = generateClientId()
-            }
-        } catch (error) {
-            try {
-                socket.close(
-                    4001,
-                    error instanceof Error ? error.message : 'Unauthorized',
-                )
-            } catch (e) {
-                // Ignore close error
-            }
-            return
-        }
-
+        let clientId = generateClientId()
         const connectedAt = Date.now()
 
         const connection: IClientConnection = {
@@ -374,7 +292,7 @@ export class WebSocketServerTransport extends EventEmitter {
         }
 
         // Emit connection event
-        this.emit('connection', connection)
+        this.emit('connection', connection, request)
     }
 
     private handleMessage(clientId: ClientId, data: Buffer): void {
@@ -393,10 +311,6 @@ export class WebSocketServerTransport extends EventEmitter {
             // Emit message event
             this.emit('message', clientId, message)
         } catch (error) {
-            this.config.logger?.error(
-                `Failed to parse message from ${clientId}:`,
-                error as Error,
-            )
             this.emit('error', error as Error)
         }
     }
