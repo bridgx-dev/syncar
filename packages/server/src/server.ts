@@ -2,6 +2,7 @@ import {
     type ChannelName,
     type Message,
     type IMiddleware,
+    type ChannelOptions,
     MessageType,
 } from './types'
 import type { ILogger, IdGenerator } from './types'
@@ -42,7 +43,8 @@ export interface IServerStats {
     startedAt?: number
 }
 
-import { MulticastChannel, BroadcastChannel } from './channel'
+import { MulticastChannel, BroadcastChannel, type IPublishOptions } from './channel'
+import { Channel } from './channel-new'
 import { ConnectionHandler, MessageHandler, SignalHandler } from './handlers'
 import { ContextManager } from './context'
 import { StateError } from './errors'
@@ -389,6 +391,110 @@ export class SyncarServer {
             throw new StateError('Server must be started before creating channels')
         }
         return this.broadcastChannel as BroadcastChannel<T>
+    }
+
+    /**
+     * Create or retrieve a channel with configurable scope and flow
+     *
+     * @remarks
+     * Unified channel creation that replaces `createBroadcast()` and `createMulticast()`.
+     * Channels are configured using `scope` and `flow` options:
+     *
+     * - **scope: 'broadcast'** - Sends to ALL clients (no subscriptions)
+     * - **scope: 'subscribers'** - Sends only to subscribed clients (default)
+     *
+     * - **flow: 'bidirectional'** - Server and clients can send (default)
+     * - **flow: 'send-only'** - Only server can send
+     * - **flow: 'receive-only'** - Only clients can send
+     *
+     * @template T - Type of data to be published on this channel (default: unknown)
+     * @param name - Unique channel name (ignored for broadcast scope)
+     * @param options - Channel configuration options
+     * @returns The channel instance
+     *
+     * @throws {StateError} If the server hasn't been started yet
+     * @throws {Error} If options are invalid (e.g., broadcast with non-send-only flow)
+     *
+     * @example
+     * ### Default: subscribers + bidirectional (chat room)
+     * ```ts
+     * const chat = server.createChannel('chat')
+     * chat.onMessage((data, client) => {
+     *   chat.publish(data, { exclude: [client.id] })
+     * })
+     * ```
+     *
+     * @example
+     * ### Broadcast: all clients, send-only
+     * ```ts
+     * const alerts = server.createChannel('alerts', { scope: 'broadcast' })
+     * alerts.publish({ message: 'Maintenance in 5 min' })
+     * ```
+     *
+     * @example
+     * ### Subscribers + send-only (live dashboard)
+     * ```ts
+     * const updates = server.createChannel('updates', { flow: 'send-only' })
+     * updates.publish({ cpu: 45, memory: 67 })
+     * ```
+     */
+    createChannel<T = unknown>(name: ChannelName, options?: ChannelOptions): Channel<T> {
+        if (!this.status.started || !this.transport) {
+            throw new StateError('Server must be started before creating channels')
+        }
+
+        // For broadcast scope, check if we already have the broadcast channel
+        if (options?.scope === 'broadcast') {
+            if (this.broadcastChannel) {
+                return this.broadcastChannel as unknown as Channel<T>
+            }
+            throw new StateError('Broadcast channel not initialized')
+        }
+
+        // For subscriber scope, check if channel already exists
+        const existing = this.registry.getChannel<T>(name) as Channel<T> | undefined
+        if (existing) return existing
+
+        const channel = new Channel<T>({
+            name,
+            registry: this.registry,
+            options,
+            chunkSize: this.config.broadcastChunkSize,
+        })
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        this.registry.registerChannel(channel as any)
+        return channel
+    }
+
+    /**
+     * Send a one-off broadcast message to all connected clients
+     *
+     * @remarks
+     * Convenience method for sending a single message to all clients without
+     * creating a channel reference. This is useful for announcements and alerts.
+     *
+     * @template T - Type of data to broadcast (default: unknown)
+     * @param data - The data to broadcast
+     * @param options - Optional publish options for client filtering
+     *
+     * @throws {StateError} If the server hasn't been started yet
+     *
+     * @example
+     * ```ts
+     * server.broadcast('Server maintenance at midnight')
+     *
+     * server.broadcast({ type: 'warning', message: 'High load detected' })
+     *
+     * // Exclude specific clients
+     * server.broadcast('Admin message', { exclude: ['client-123'] })
+     * ```
+     */
+    broadcast<T = unknown>(data: T, options?: IPublishOptions): void {
+        if (!this.status.started || !this.broadcastChannel) {
+            throw new StateError('Server must be started before broadcasting')
+        }
+        this.broadcastChannel.publish(data, options)
     }
 
     /**
