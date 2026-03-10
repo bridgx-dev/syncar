@@ -102,10 +102,24 @@
  *
  * const server = createSyncarServer({ port: 3000 })
  * await server.start()
+ *
+ * // New unified API
+ * const chat = server.createChannel('chat')
+ * const alerts = server.createChannel('alerts', { scope: 'broadcast' })
  * ```
  */
 export { SyncarServer, createSyncarServer } from './server'
 export { SyncarServer as Syncar } from './server'
+
+// New unified channel API
+export { Channel } from './channel-new'
+
+// Old channel types (deprecated)
+/** @deprecated Use `Channel` instead. Will be removed in v2.0. */
+export { BroadcastChannel } from './channel'
+/** @deprecated Use `Channel` instead. Will be removed in v2.0. */
+export { MulticastChannel } from './channel'
+
 export {
   createAuthMiddleware,
   createLoggingMiddleware,
@@ -127,12 +141,14 @@ export {
   MiddlewareExecutionError,
 } from './errors'
 export { WebSocketServerTransport } from './websocket'
-export { MulticastChannel, BroadcastChannel } from './channel'
 
 export { BROADCAST_CHANNEL, CLOSE_CODES, ERROR_CODES } from './config'
 
 export type {
   IClientConnection,
+  ChannelOptions,
+  ChannelScope,
+  ChannelFlow,
 } from './types'
 
 export type {
