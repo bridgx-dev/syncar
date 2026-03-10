@@ -48,7 +48,7 @@ export interface ContextOptions<S = Record<string, unknown>> {
 }
 
 /**
- * Create a new Hono-style middleware context
+ * Create a new Onion-style middleware context
  *
  * @remarks
  * Creates a lightweight middleware context using closures to ensure properties
@@ -108,7 +108,6 @@ export function createContext<S = Record<string, unknown>>(
             channel,
         },
 
-        var: state,
         finalized: false,
 
         get: <K extends keyof S>(key: K): S[K] => {

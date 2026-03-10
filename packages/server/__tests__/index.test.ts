@@ -10,10 +10,6 @@ import {
     SyncarServer,
     createSyncarServer,
     Syncar,
-    authenticate,
-    logger,
-    rateLimit,
-    channelWhitelist,
     ContextManager,
     SyncarError,
     ConfigError,
@@ -28,7 +24,7 @@ import {
     WebSocketServerTransport,
     CLOSE_CODES,
     ERROR_CODES,
-} from '../src/index.js'
+} from '../src/index'
 
 describe('index.ts exports', () => {
     it('should export SyncarServer', () => {
@@ -48,20 +44,6 @@ describe('index.ts exports', () => {
     it('should export ContextManager', () => {
         expect(ContextManager).toBeDefined()
         expect(typeof ContextManager).toBe('function')
-    })
-
-    it('should export middleware factory functions', () => {
-        expect(authenticate).toBeDefined()
-        expect(typeof authenticate).toBe('function')
-
-        expect(logger).toBeDefined()
-        expect(typeof logger).toBe('function')
-
-        expect(rateLimit).toBeDefined()
-        expect(typeof rateLimit).toBe('function')
-
-        expect(channelWhitelist).toBeDefined()
-        expect(typeof channelWhitelist).toBe('function')
     })
 
     it('should export all error classes', () => {

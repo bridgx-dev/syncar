@@ -80,7 +80,7 @@ describe('SyncarServer', () => {
                 pingInterval: 30000,
                 pingTimeout: 5000,
                 middleware: [],
-                broadcastChunkSize: 500,
+                chunkSize: 500,
             }
 
             const server = new SyncarServer(config)
@@ -149,16 +149,13 @@ describe('SyncarServer', () => {
                 pingInterval: 30000,
                 pingTimeout: 5000,
                 middleware: [],
-                broadcastChunkSize: 500,
+                chunkSize: 500,
             }
 
             const server = new SyncarServer(config)
-            await server.start()
+            server.start()
 
-            await expect(server.start()).rejects.toThrow(StateError)
-            await expect(server.start()).rejects.toThrow(
-                'Server is already started',
-            )
+            expect(() => server.start()).toThrow(StateError)
         })
     })
 
@@ -333,35 +330,7 @@ describe('SyncarServer', () => {
         })
     })
 
-    describe('authenticate()', () => {
-        it('should set authenticator on transport', async () => {
-            const config: IServerOptions = {
-                registry,
-                logger: createDefaultLogger(),
-                port: 3000,
-                host: '0.0.0.0',
-                path: '/syncar',
-                transport,
-                enablePing: false,
-                pingInterval: 30000,
-                pingTimeout: 5000,
-                middleware: [],
-                broadcastChunkSize: 500,
-            }
 
-            const server = new SyncarServer(config)
-            await server.start()
-
-            const authenticator = vi.fn(async (request) => {
-                return 'user-' + request.headers['user-id']
-            })
-
-            server.authenticate(authenticator)
-
-            // Should not throw - authenticator is set on transport
-            expect(server).toBeInstanceOf(SyncarServer)
-        })
-    })
 
     describe('getStats()', () => {
         it('should return server statistics', async () => {
@@ -450,8 +419,8 @@ describe('SyncarServer', () => {
         })
     })
 
-    describe('getRegistry()', () => {
-        it('should return the client registry', () => {
+    describe('registry', () => {
+        it('should expose the client registry', () => {
             const config: IServerOptions = {
                 registry,
                 logger: createDefaultLogger(),
@@ -463,13 +432,11 @@ describe('SyncarServer', () => {
                 pingInterval: 30000,
                 pingTimeout: 5000,
                 middleware: [],
-                broadcastChunkSize: 500,
+                chunkSize: 500,
             }
 
             const server = new SyncarServer(config)
-            const retrievedRegistry = server.getRegistry()
-
-            expect(retrievedRegistry).toBe(registry)
+            expect(server.registry).toBe(registry)
         })
     })
 })
@@ -496,7 +463,7 @@ describe('createSyncarServer', () => {
         })
 
         expect(server).toBeInstanceOf(SyncarServer)
-        expect(server.getRegistry()).toBeInstanceOf(ClientRegistry)
+        expect(server.registry).toBeInstanceOf(ClientRegistry)
     })
 
     it('should merge provided config with defaults', () => {
@@ -518,7 +485,7 @@ describe('createSyncarServer', () => {
             registry: customRegistry,
         })
 
-        expect(server.getRegistry()).toBe(customRegistry)
+        expect(server.registry).toBe(customRegistry)
     })
 
     it('should use provided logger', () => {
@@ -654,8 +621,8 @@ describe('SyncarServer.createChannel', () => {
                 scope: 'broadcast',
             })
 
-            // Broadcast scope creates a channel with broadcast scope
-            expect(channel.name).toBe('__broadcast__')
+            // Broadcast scope creates a channel with the same name
+            expect(channel.name).toBe('alerts')
             expect(channel)
         })
 

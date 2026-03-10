@@ -2,7 +2,7 @@ import type { Context, Middleware, Next } from './types'
 
 /**
  * Compose middleware functions into a single function.
- * Follows the Hono/Koa onion-style execution pattern.
+ * Follows the onion-style execution pattern.
  */
 export const compose = <S = Record<string, unknown>>(
     middleware: Middleware<S>[],

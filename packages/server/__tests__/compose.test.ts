@@ -9,16 +9,20 @@ import { compose } from '../src/compose'
 import type { Context, Middleware } from '../src/types'
 
 describe('compose', () => {
-    const createMockContext = (): Context => ({
-        req: {
-            action: 'message',
-        },
-        finalized: false,
-        var: {},
-        get: vi.fn(),
-        set: vi.fn(),
-        reject: vi.fn(),
-    })
+    const createMockContext = (): Context => {
+        const state: any = {}
+        return {
+            req: {
+                action: 'message',
+            },
+            finalized: false,
+            get: vi.fn((key) => state[key]),
+            set: vi.fn((key, value) => {
+                state[key] = value
+            }),
+            reject: vi.fn(),
+        }
+    }
 
     describe('basic middleware execution', () => {
         it('should execute single middleware', async () => {
@@ -294,13 +298,13 @@ describe('compose', () => {
                 requestId?: string
             }
 
+            const state: any = {}
             const context: Context<TestState> = {
                 req: { action: 'message' },
                 finalized: false,
-                var: {},
-                get: vi.fn((key) => (context.var as any)[key]),
+                get: vi.fn((key) => state[key]),
                 set: vi.fn((key, value) => {
-                    ;(context.var as any)[key] = value
+                    state[key] = value
                 }),
                 reject: vi.fn(),
             }

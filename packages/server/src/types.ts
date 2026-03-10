@@ -728,8 +728,6 @@ export interface Context<S = Record<string, unknown>> {
     finalized: boolean
     /** Optional response data */
     res?: unknown
-    /** State object for storing custom data */
-    readonly var: S
     /** Get a value from state by key */
     get<K extends keyof S>(key: K): S[K]
     /** Set a value in state by key */

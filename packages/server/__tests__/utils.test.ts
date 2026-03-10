@@ -142,15 +142,6 @@ describe('utils', () => {
                     'Invalid channel name',
                 )
             })
-
-            it('should throw for reserved channel names', () => {
-                expect(() => assertValidChannelName('__broadcast__')).toThrow(
-                    'Reserved channel name',
-                )
-                expect(() => assertValidChannelName('__private__')).toThrow(
-                    'Reserved channel name',
-                )
-            })
         })
     })
 
@@ -288,9 +279,9 @@ describe('utils', () => {
 
     describe('Logging Utilities', () => {
         const consoleSpies = {
-            log: vi.spyOn(console, 'log').mockImplementation(() => {}),
-            warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
-            error: vi.spyOn(console, 'error').mockImplementation(() => {}),
+            log: vi.spyOn(console, 'log').mockImplementation(() => { }),
+            warn: vi.spyOn(console, 'warn').mockImplementation(() => { }),
+            error: vi.spyOn(console, 'error').mockImplementation(() => { }),
         }
 
         beforeEach(() => {

@@ -4,14 +4,14 @@
  * @vitest-environment node
  */
 
-import { describe, it, expect, vi } from 'vitest'
-import { createContext, ContextManager } from '../src/context'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { createContext, ContextManager, type ContextOptions } from '../src/context'
 import type {
     Context,
-    ContextOptions,
     Middleware,
     IMiddlewareAction,
 } from '../src/types'
+import { MessageType } from '../src/types'
 
 describe('context', () => {
     describe('createContext', () => {
@@ -24,7 +24,6 @@ describe('context', () => {
 
             expect(context.req.action).toBe('message')
             expect(context.finalized).toBe(false)
-            expect(context.var).toEqual({})
         })
 
         it('should include client when provided', () => {
@@ -47,7 +46,7 @@ describe('context', () => {
         it('should include message when provided', () => {
             const message = {
                 id: 'msg-123',
-                type: 'data' as const,
+                type: MessageType.DATA,
                 channel: 'chat',
                 data: 'hello',
                 timestamp: Date.now(),
@@ -326,7 +325,7 @@ describe('context', () => {
 
                 const message = {
                     id: 'msg-123',
-                    type: 'data' as const,
+                    type: MessageType.DATA,
                     channel: 'chat',
                     data: 'hello',
                     timestamp: Date.now(),
@@ -477,7 +476,7 @@ describe('context', () => {
 
                 const message = {
                     id: 'msg-123',
-                    type: 'data' as const,
+                    type: MessageType.DATA,
                     channel: 'chat',
                     data: 'hello',
                     timestamp: Date.now(),
@@ -527,7 +526,7 @@ describe('context', () => {
             })
 
             it('should execute final handler', async () => {
-                const finalHandler = vi.fn(async () => {})
+                const finalHandler = vi.fn(async () => { })
 
                 const client = {
                     id: 'client-123',

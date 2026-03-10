@@ -6,7 +6,6 @@
 
 import { describe, it, expect } from 'vitest'
 import {
-    BROADCAST_CHANNEL,
     CLOSE_CODES,
     ERROR_CODES,
     DEFAULT_WS_PATH,
@@ -22,27 +21,10 @@ import {
     DEFAULTS,
     type CloseCode,
     type ErrorCode,
-    type BroadcastChannel,
 } from '../src/config'
 
 describe('config', () => {
-    describe('BROADCAST_CHANNEL', () => {
-        it('should have the correct broadcast channel name', () => {
-            expect(BROADCAST_CHANNEL).toBe('__broadcast__')
-        })
 
-        it('should be assignable to BroadcastChannel type', () => {
-            const channel: BroadcastChannel = BROADCAST_CHANNEL
-            expect(channel).toBe('__broadcast__')
-        })
-
-        it('should be a const assertion type', () => {
-            // Type narrowing works with const assertion
-            type Test = typeof BROADCAST_CHANNEL
-            const t: Test = BROADCAST_CHANNEL
-            expect(t).toBe('__broadcast__')
-        })
-    })
 
     describe('CLOSE_CODES', () => {
         it('should contain all standard WebSocket close codes', () => {

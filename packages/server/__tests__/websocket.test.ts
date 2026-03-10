@@ -382,32 +382,6 @@ describe('WebSocketServerTransport', () => {
         })
     })
 
-    describe('setAuthenticator()', () => {
-        it('should set authenticator function', () => {
-            const authenticator = vi.fn(async (request) => {
-                return 'user-' + request.headers['user-id']
-            })
-
-            transport.setAuthenticator(authenticator)
-
-            // No way to directly verify without accessing private property
-            // but the method should not throw
-            expect(transport).toBeInstanceOf(WebSocketServerTransport)
-        })
-
-        it('should reject connection when authenticator throws', async () => {
-            const authenticator = vi.fn(async () => {
-                throw new Error('Unauthorized')
-            })
-
-            transport.setAuthenticator(authenticator)
-
-            // The authenticator is called during handleConnection
-            // We can't easily test this without triggering the actual connection flow
-            expect(transport).toBeInstanceOf(WebSocketServerTransport)
-        })
-    })
-
     describe('error handling', () => {
         it('should emit error event from ws server', () => {
             let receivedError: Error | null = null
@@ -473,7 +447,7 @@ describe('WebSocketServerTransport', () => {
 
     describe('ServerConstructor option', () => {
         it('should use custom ServerConstructor if provided', () => {
-            class CustomServer extends EventEmitter {}
+            class CustomServer extends EventEmitter { }
 
             const customTransport = new WebSocketServerTransport({
                 server: mockHttpServer,

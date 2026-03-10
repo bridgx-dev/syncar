@@ -9,7 +9,7 @@
 ## Features
 
 - **Real-time WebSocket Communication** - Fast, bidirectional messaging powered by `ws`
-- **Composable Middleware** - Hono-style middleware for auth, logging, rate limiting, and more
+- **Composable Middleware** - Onion-style middleware for auth, logging, rate limiting, and more
 - **Unified Channel API** - Topic-based messaging patterns with automatic chunking
 - **Handshake Authentication** - Dedicated hook for authenticating clients during connection
 - **Type-Safe API** - Full TypeScript support with comprehensive types
