@@ -127,7 +127,12 @@ export { WebSocketServerTransport } from './websocket'
 export { CLOSE_CODES, ERROR_CODES } from './config'
 export type { IServerOptions, IServerStats } from './server'
 
-export type { IChannelState, IMessageHandler } from './channel'
+export type {
+    IChannelState,
+    IMessageHandler,
+    ChannelOptions,
+    ChannelFlow,
+} from './channel'
 
 export type {
     MessageId,

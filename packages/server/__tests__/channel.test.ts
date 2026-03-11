@@ -133,7 +133,7 @@ describe('Channel', () => {
     })
 
     describe('publishing', () => {
-        it('should publish to subscribers in subscriber scope', () => {
+        it('should publish to all subscribers when no exclusion is provided', () => {
             const channel = new Channel({
                 name: 'chat',
                 registry,
@@ -147,8 +147,36 @@ describe('Channel', () => {
             channel.subscribe('client-1')
             channel.subscribe('client-2')
 
-            // Only subscribers should be counted
-            expect(channel.subscriberCount).toBe(2)
+            const sendSpy1 = vi.spyOn(client1.socket as any, 'send')
+            const sendSpy2 = vi.spyOn(client2.socket as any, 'send')
+
+            channel.publish({ text: 'hello' })
+
+            expect(sendSpy1).toHaveBeenCalled()
+            expect(sendSpy2).toHaveBeenCalled()
+        })
+
+        it('should exclude specified client from publication', () => {
+            const channel = new Channel({
+                name: 'chat',
+                registry,
+            })
+
+            const client1 = createMockClient('client-1')
+            const client2 = createMockClient('client-2')
+            registry.register(client1)
+            registry.register(client2)
+
+            channel.subscribe('client-1')
+            channel.subscribe('client-2')
+
+            const sendSpy1 = vi.spyOn(client1.socket as any, 'send')
+            const sendSpy2 = vi.spyOn(client2.socket as any, 'send')
+
+            channel.publish({ text: 'hello' }, [client1.id])
+
+            expect(sendSpy1).not.toHaveBeenCalled()
+            expect(sendSpy2).toHaveBeenCalled()
         })
     })
 

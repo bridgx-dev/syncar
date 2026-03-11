@@ -184,11 +184,25 @@ export class Channel<T = unknown> {
      * @param data - The data to publish
      * @param exclude - Client ID or IDs to exclude from this publication
      */
-    publish(data: T, client: IClientConnection): void {
+    /**
+     * Publish data to all subscribers
+     *
+     * @remarks
+     * Messages are sent in chunks to avoid blocking the event loop.
+     *
+     * @param data - The data to publish
+     * @param exclude - Optional array of client IDs to exclude
+     */
+    publish(data: T, exclude: ClientId[] = []): void {
         this._lastMessageAt = Date.now()
-        const connections = this.registry
-            .getSubscribers(this.name)
-            .filter((i) => i.id !== client.id)
+        let connections = this.registry.getSubscribers(this.name)
+
+        if (exclude.length > 0) {
+            const excludeSet = new Set(exclude)
+            connections = connections.filter((conn) => !excludeSet.has(conn.id))
+        }
+
+        if (connections.length === 0) return
 
         publishMessage<T>({
             channel: this.name,
@@ -241,7 +255,7 @@ export class Channel<T = unknown> {
             }
         } else if (this.flow === 'bidirectional') {
             // Auto-relay: forward to other subscribers
-            this.publish(data, client)
+            this.publish(data, [client.id])
         }
     }
 

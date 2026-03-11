@@ -313,32 +313,25 @@ export class SyncarServer {
     }
 
     /**
-     * Create or retrieve a channel with configurable scope and flow
+     * Create or retrieve a channel
      *
      * @remarks
-     * Unified channel creation. Channels are configured using `scope` and `flow` options:
+     * Unified channel creation.
+     *
      * @template T - Type of data to be published on this channel (default: unknown)
      * @param name - Unique channel name
      * @param options - Channel configuration options
      * @returns The channel instance
      *
      * @throws {StateError} If the server hasn't been started yet
-     * @throws {Error} If options are invalid (e.g., broadcast with non-send-only flow)
      *
      * @example
-     * ### Default: subscribers + bidirectional (chat room)
+     * ### Default: bidirectional (chat room)
      * ```ts
      * const chat = server.createChannel('chat')
      * chat.onMessage((data, client) => {
-     *   chat.publish(data)
+     *   chat.publish(data, [client.id]) // Relay to others, excluding sender
      * })
-     * ```
-     *
-     * @example
-     * ### Broadcast: all clients, send-only
-     * ```ts
-     * const alerts = server.createChannel('alerts', { scope: 'broadcast' })
-     * alerts.publish({ message: 'Maintenance in 5 min' })
      * ```
      */
     createChannel<T = unknown>(
