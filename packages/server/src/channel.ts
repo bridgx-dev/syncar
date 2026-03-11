@@ -188,7 +188,7 @@ export class Channel<T = unknown> {
         if (this.flow === 'send-only') {
             throw new Error(
                 `Cannot register message handler on channel '${this.name}': ` +
-                `onMessage is not available in send-only mode.`,
+                    `onMessage is not available in send-only mode.`,
             )
         }
         this.messageHandlers.add(handler)

@@ -51,9 +51,9 @@ const chat = server.createChannel<{ user: string; text: string }>('chat')
 
 // 3. Handle messages
 chat.onMessage((data, client) => {
-  console.log(`${data.user}: ${data.text}`)
-  // Relay to all subscribers except the sender
-  chat.publish(data, [client.id])
+    console.log(`${data.user}: ${data.text}`)
+    // Relay to all subscribers except the sender
+    chat.publish(data, [client.id])
 })
 
 // 4. Start listening
@@ -71,9 +71,9 @@ import { createSyncarServer } from '@syncar/server'
 const app = express()
 const httpServer = createServer(app)
 
-const server = createSyncarServer({ 
-  server: httpServer,
-  path: '/ws' 
+const server = createSyncarServer({
+    server: httpServer,
+    path: '/ws',
 })
 
 server.start()
@@ -85,17 +85,19 @@ httpServer.listen(3000)
 Syncar makes it easy to send messages to all connected clients effortlessly.
 
 ### Global Broadcast
+
 Send a message to every single client connected to the server, regardless of their channel subscriptions.
 
 ```typescript
 // Send to everyone
 server.broadcast({
-  type: 'system_alert',
-  message: 'Server maintenance in 5 minutes'
+    type: 'system_alert',
+    message: 'Server maintenance in 5 minutes',
 })
 ```
 
 ### Channel Broadcast
+
 Send a message to all subscribers of a specific channel.
 
 ```typescript
@@ -114,18 +116,18 @@ Syncar's middleware system is inspired by frameworks like Koa and Hono.
 ```typescript
 // Global middleware - runs for every action
 server.use(async (c, next) => {
-  const start = Date.now()
-  await next()
-  console.log(`${c.req.action} took ${Date.now() - start}ms`)
+    const start = Date.now()
+    await next()
+    console.log(`${c.req.action} took ${Date.now() - start}ms`)
 })
 
 // Channel-specific middleware
 const adminChannel = server.createChannel('admin')
 adminChannel.use(async (c, next) => {
-  if (c.get('user')?.role !== 'admin') {
-    return c.reject('Admin access required')
-  }
-  await next()
+    if (c.get('user')?.role !== 'admin') {
+        return c.reject('Admin access required')
+    }
+    await next()
 })
 ```
 
@@ -133,24 +135,24 @@ adminChannel.use(async (c, next) => {
 
 ### Server Instance
 
-| Method | Description |
-| :--- | :--- |
-| `start()` | Starts the server and begins accepting connections. |
-| `stop()` | Gracefully shuts down the server. |
-| `createChannel<T>(name, options)` | Creates/retrieves a channel with specified options. |
-| `broadcast(data)` | Sends a message to all connected clients globally. |
-| `use(middleware)` | Registers a global middleware function. |
-| `getStats()` | Returns metrics (client count, channel count, etc.). |
+| Method                            | Description                                          |
+| :-------------------------------- | :--------------------------------------------------- |
+| `start()`                         | Starts the server and begins accepting connections.  |
+| `stop()`                          | Gracefully shuts down the server.                    |
+| `createChannel<T>(name, options)` | Creates/retrieves a channel with specified options.  |
+| `broadcast(data)`                 | Sends a message to all connected clients globally.   |
+| `use(middleware)`                 | Registers a global middleware function.              |
+| `getStats()`                      | Returns metrics (client count, channel count, etc.). |
 
 ### Channel Instance
 
-| Method | Description |
-| :--- | :--- |
-| `publish(data, exclude?)` | Publishes data to all subscribers in the channel. |
-| `subscribe(clientId)` | Manually subscribes a client to the channel. |
-| `unsubscribe(clientId)` | Unsubscribes a client from the channel. |
-| `onMessage(handler)` | Registers a listener for incoming client messages. |
-| `use(middleware)` | Registers a channel-specific middleware. |
+| Method                    | Description                                        |
+| :------------------------ | :------------------------------------------------- |
+| `publish(data, exclude?)` | Publishes data to all subscribers in the channel.  |
+| `subscribe(clientId)`     | Manually subscribes a client to the channel.       |
+| `unsubscribe(clientId)`   | Unsubscribes a client from the channel.            |
+| `onMessage(handler)`      | Registers a listener for incoming client messages. |
+| `use(middleware)`         | Registers a channel-specific middleware.           |
 
 ## 🧪 Testing
 
