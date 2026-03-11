@@ -1,62 +1,6 @@
 /**
  * Errors Module
- *
- * @description
- * Custom error classes for the Syncar server. All errors extend from
- * {@link SyncarError} and include error codes for programmatic handling.
- *
- * @remarks
- * The error hierarchy:
- *
- * - {@link SyncarError} - Base error class
- *   - {@link ConfigError} - Server configuration issues
- *   - {@link TransportError} - WebSocket transport issues
- *   - {@link ChannelError} - Channel operation failures
- *   - {@link ClientError} - Client operation failures
- *   - {@link MessageError} - Message processing failures
- *   - {@link ValidationError} - Input validation failures
- *   - {@link StateError} - Invalid state operations
- * - {@link MiddlewareRejectionError} - Explicit middleware rejections
- * - {@link MiddlewareExecutionError} - Unexpected middleware errors
- *
- * @example
- * ### Throwing errors
- * ```ts
- * import { StateError, ValidationError } from '@syncar/server'
- *
- * function createChannel(name: string) {
- *   if (!name) {
- *     throw new ValidationError('Channel name is required')
- *   }
- *   if (!server.started) {
- *     throw new StateError('Server must be started first')
- *   }
- * }
- * ```
- *
- * @example
- * ### Catching errors
- * ```ts
- * import {
- *   SyncarError,
- *   MiddlewareRejectionError,
- *   StateError
- * } from '@syncar/server'
- *
- * try {
- *   await server.start()
- * } catch (error) {
- *   if (error instanceof StateError) {
- *     console.error('Invalid state:', error.message)
- *   } else if (error instanceof MiddlewareRejectionError) {
- *     console.error(`Action rejected: ${error.reason}`)
- *   } else if (error instanceof SyncarError) {
- *     console.error(`[${error.code}] ${error.message}`)
- *   }
- * }
- * ```
- *
- * @module errors
+ * @description Custom error classes for the Syncar server.
  */
 
 import type { IMiddlewareRejectionError, IMiddlewareAction } from './types'
@@ -67,32 +11,9 @@ import type { IMiddlewareRejectionError, IMiddlewareAction } from './types'
 
 /**
  * Base Syncar error class
- *
- * @remarks
- * All custom errors in the Syncar server extend this class. Provides
- * consistent error handling with error codes, context, and serialization.
- *
- * @property code - Error code for programmatic handling
- * @property context - Optional additional error context
- *
  * @example
  * ```ts
- * throw new SyncarError('Something went wrong', 'CUSTOM_ERROR', { userId: '123' })
- * ```
- *
- * @example
- * ### Error handling
- * ```ts
- * try {
- *   // ...
- * } catch (error) {
- *   if (error instanceof SyncarError) {
- *     console.log(error.code)        // 'CUSTOM_ERROR'
- *     console.log(error.message)     // 'Something went wrong'
- *     console.log(error.context)     // { userId: '123' }
- *     console.log(error.toJSON())    // Serialized error
- *   }
- * }
+ * throw new SyncarError('Something went wrong', 'INTERNAL_ERROR')
  * ```
  */
 export class SyncarError extends Error {
@@ -342,44 +263,9 @@ export class StateError extends SyncarError {
 
 /**
  * Middleware rejection error
- *
- * @remarks
- * Thrown when middleware explicitly rejects an action using the
- * `context.reject()` function. This is an expected error type that
- * indicates intentional rejection rather than a failure.
- *
- * @property reason - Human-readable reason for the rejection
- * @property action - The action that was rejected
- * @property code - Optional error code for programmatic handling
- * @property context - Additional context about the rejection
- *
  * @example
- * ### Throwing from middleware
  * ```ts
- * const middleware: Middleware = async (context, next) => {
- *   if (!context.req.client) {
- *     context.reject('Client is required')
- *     // Function never returns (throws MiddlewareRejectionError)
- *   }
- *   await next()
- * }
- * ```
- *
- * @example
- * ### Catching rejections
- * ```ts
- * try {
- *   await manager.executeConnection(client, 'connect')
- * } catch (error) {
- *   if (error instanceof MiddlewareRejectionError) {
- *     console.log(`Action '${error.action}' rejected: ${error.reason}`)
- *     // Send error to client
- *     client.socket.send(JSON.stringify({
- *       type: 'error',
- *       data: { message: error.reason, code: error.code }
- *     }))
- *   }
- * }
+ * if (!context.req.client) context.reject('Client is required')
  * ```
  */
 export class MiddlewareRejectionError

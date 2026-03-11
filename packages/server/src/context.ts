@@ -12,26 +12,9 @@ import type {
 /**
  * Context Data Options
  *
- * @remarks
- * Options for creating a new middleware context with pre-populated state.
- *
- * @template S - Type of the state object (default: Record<string, unknown>)
- *
- * @property action - The middleware action being performed
- * @property client - Optional client connection
- * @property message - Optional message being processed
- * @property channel - Optional channel name
- * @property initialState - Optional initial state values
- *
  * @example
  * ```ts
- * const options: ContextOptions<{ user: UserInfo }> = {
- *   action: 'message',
- *   client: connection,
- *   message: dataMessage,
- *   channel: 'chat',
- *   initialState: { user: { id: '123', name: 'Alice' } }
- * }
+ * const options: ContextOptions = { action: 'message', channel: 'chat' }
  * ```
  */
 export interface ContextOptions<S = Record<string, unknown>> {
@@ -50,49 +33,10 @@ export interface ContextOptions<S = Record<string, unknown>> {
 /**
  * Create a new Onion-style middleware context
  *
- * @remarks
- * Creates a lightweight middleware context using closures to ensure properties
- * can be destructured safely. The context provides access to request information,
- * state management, and control flow methods.
- *
- * @template S - Type of the state object (default: Record<string, unknown>)
- *
- * @param options - Context initialization options
- * @returns A new Context object
- *
  * @example
- * ### Basic usage
  * ```ts
- * const context = createContext({
- *   action: 'message',
- *   client: connection,
- *   message: dataMessage,
- *   channel: 'chat'
- * })
+ * const context = createContext({ action: 'message', channel: 'chat' })
  * ```
- *
- * @example
- * ### With initial state
- * ```ts
- * interface AppState {
- *   user: { id: string; name: string }
- *   requestId: string
- * }
- *
- * const context = createContext<AppState>({
- *   action: 'message',
- *   initialState: {
- *     user: { id: '123', name: 'Alice' },
- *     requestId: generateId()
- *   }
- * })
- *
- * // Access state
- * const user = context.get('user')
- * const requestId = context.get('requestId')
- * ```
- *
- * @see {@link Context} for the context interface
  */
 export function createContext<S = Record<string, unknown>>(
     options: ContextOptions<S>,
@@ -127,56 +71,22 @@ export function createContext<S = Record<string, unknown>>(
 /**
  * Context Manager - manages and executes middleware functions
  *
- * @remarks
- * The ContextManager is responsible for registering middleware functions
- * and executing them in the correct order for various actions (connect,
- * disconnect, message, subscribe, unsubscribe).
- *
- * Key features:
- * - Global middleware registration
- * - Per-action middleware execution
- * - Channel-specific middleware support
- * - Automatic error wrapping and reporting
- *
  * @example
  * ```ts
- * import { ContextManager } from '@syncar/server'
- *
  * const manager = new ContextManager()
- *
- * // Register middleware
- * manager.use(async (context, next) => {
- *   console.log(`Action: ${context.req.action}`)
+ * manager.use(async (ctx, next) => {
+ *   console.log(ctx.req.action)
  *   await next()
  * })
- *
- * // Execute middleware for an action
- * const context = await manager.executeConnection(client, 'connect')
  * ```
- *
- * @see {@link createSyncarServer} for server-level context management
  */
 export class ContextManager {
     /** Registered middleware functions */
     protected readonly middlewares: IMiddleware[] = []
 
     /**
-     * Register a middleware function
-     *
-     * @remarks
-     * Adds a middleware function to the global middleware chain.
-     * Middleware is executed in the order it is registered.
-     *
-     * @param middleware - The middleware function to register
-     *
-     * @example
-     * ```ts
-     * manager.use(async (context, next) => {
-     *   console.log('Before')
-     *   await next()
-     *   console.log('After')
-     * })
-     * ```
+     * Register a global middleware function
+     * @param middleware - The middleware function
      */
     use(middleware: IMiddleware): void {
         this.middlewares.push(middleware)

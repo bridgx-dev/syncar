@@ -32,27 +32,6 @@ export interface IServerStats {
 
 /**
  * Server configuration options
- *
- * @remarks
- * Complete configuration interface for the Syncar server. These options
- * control the WebSocket transport layer, connection handling, middleware,
- * and performance tuning parameters.
- *
- * @example
- * ```ts
- * import { createSyncarServer } from '@syncar/server'
- *
- * const server = createSyncarServer({
- *   port: 3000,
- *   host: '0.0.0.0',
- *   path: '/ws',
- *   enablePing: true,
- *   pingInterval: 30000,
- *   pingTimeout: 5000,
- *   chunkSize: 500,
- * })
- * ```
- *
  * @see {@link DEFAULT_SERVER_CONFIG} for default values
  */
 export interface IServerOptions {
@@ -178,32 +157,14 @@ export interface IServerOptions {
 /**
  * Syncar Server - Real-time WebSocket server with pub/sub channels
  *
- * @remarks
- * The main server class providing WebSocket communication with channels,
- * middleware support, and connection management.
- *
  * @example
  * ```ts
- * import { createSyncarServer } from '@syncar/server'
- *
  * const server = createSyncarServer({ port: 3000 })
  * await server.start()
  *
- * // Create channels
- * const chat = server.createChannel<{ text: string }>('chat')
- * const alerts = server.createChannel<{ message: string }>('alerts', { scope: 'broadcast' })
- *
- * // Listen for events
- * server.on('connection', (client) => {
- *   console.log(`Client connected: ${client.id}`)
- * })
- *
- * // Publish messages
- * chat.publish({ text: 'Welcome!' })
- * alerts.publish({ message: 'Server maintenance in 5 min' })
+ * const chat = server.createChannel('chat')
+ * chat.publish('Hello!')
  * ```
- *
- * @see {@link createSyncarServer} for factory function
  */
 export class SyncarServer {
     private readonly config: IServerOptions
@@ -523,87 +484,14 @@ export class SyncarServer {
 /**
  * Create a Syncar server with automatic WebSocket transport setup
  *
- * @remarks
- * Factory function that creates a configured SyncarServer instance.
- * Automatically sets up the WebSocket transport layer if not provided,
- * merges user configuration with defaults, and creates the client registry.
- *
- * @param config - Optional partial server configuration. All properties are optional
- * and will be merged with {@link DEFAULT_SERVER_CONFIG}.
- *
- * @returns Configured Syncar server instance ready to be started
+ * @param config - Optional partial server configuration
+ * @returns Configured Syncar server instance
  *
  * @example
- * ### Basic usage
  * ```ts
- * import { createSyncarServer } from '@syncar/server'
- *
  * const server = createSyncarServer({ port: 3000 })
  * server.start()
  * ```
- *
- * @example
- * ### With custom configuration
- * ```ts
- * const server = createSyncarServer({
- *   port: 8080,
- *   host: 'localhost',
- *   path: '/ws',
- *   enablePing: true,
- *   pingInterval: 30000,
- *   pingTimeout: 5000,
- *   chunkSize: 1000,
- * })
- * server.start()
- * ```
- *
- * @example
- * ### With existing HTTP server
- * ```ts
- * import { createServer } from 'node:http'
- * import { createSyncarServer } from '@syncar/server'
- *
- * const httpServer = createServer((req, res) => {
- *   res.writeHead(200)
- *   res.end('OK')
- * })
- *
- * const server = createSyncarServer({
- *   server: httpServer,
- *   path: '/ws',
- * })
- *
- * server.start()
- * ```
- *
- * @example
- * ### With Express
- * ```ts
- * import express from 'express'
- * import { createSyncarServer } from '@syncar/server'
- *
- * const app = express()
- * const httpServer = app.listen(3000)
- *
- * const server = createSyncarServer({
- *   server: httpServer,
- *   path: '/ws',
- * })
- *
- * server.start()
- * ```
- *
- * @example
- * ### With custom logger
- * ```ts
- * import { createSyncarServer } from '@syncar/server'
- *
- * const server = createSyncarServer({
- *   port: 3000,
- * })
- * ```
- * @see {@link SyncarServer} for server class API
- * @see {@link DEFAULT_SERVER_CONFIG} for default configuration values
  */
 export function createSyncarServer(
     config: Partial<IServerOptions> = {},

@@ -3,76 +3,26 @@ import type { IncomingMessage } from 'node:http'
 
 /**
  * Message identifier
- *
- * @remarks
- * Unique identifier for a message. Typically a UUID or similar unique string.
- *
- * @example
- * ```ts
- * const messageId: MessageId = "550e8400-e29b-41d4-a716-446655440000"
- * ```
  */
 export type MessageId = string
 
 /**
  * Client identifier (e.g., WebSocket connection ID)
- *
- * @remarks
- * Unique identifier for a connected client. This ID is generated when
- * a client connects and is used to address messages to specific clients.
- *
- * @example
- * ```ts
- * const clientId: ClientId = "client_123abc"
- * ```
  */
 export type ClientId = string
 
 /**
  * Channel name
- *
- * @remarks
- * String identifier for a channel. Channel names starting with `__` are
- * reserved for internal use (e.g., `__broadcast__`).
- *
- * @example
- * ```ts
- * const channelName: ChannelName = "chat"
- * ```
  */
 export type ChannelName = string
 
 /**
  * Unix timestamp in milliseconds
- *
- * @remarks
- * Standard timestamp format used throughout the server for tracking
- * connection times, message timestamps, and other time-based events.
- *
- * @example
- * ```ts
- * const timestamp: Timestamp = Date.now()
- * ```
  */
 export type Timestamp = number
 
 /**
  * Generic data payload for messages
- *
- * @remarks
- * Type alias for the data payload in messages. Can be any type,
- * with `unknown` as the default for type safety.
- *
- * @template T - The type of the data payload (default: unknown)
- *
- * @example
- * ```ts
- * const payload: DataPayload<string> = "Hello world"
- * const complexPayload: DataPayload<{ text: string; user: string }> = {
- *   text: "Hello",
- *   user: "Alice"
- * }
- * ```
  */
 export type DataPayload<T = unknown> = T
 
@@ -82,44 +32,20 @@ export type DataPayload<T = unknown> = T
  * @remarks
  * Standard log levels for the logger interface. Used to categorize
  * log messages by severity.
- *
- * @example
- * ```ts
- * const level: LogLevel = 'info'
- * logger[level]('Server started')
- * ```
  */
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
 /**
  * Logger interface
  *
- * @remarks
- * Interface for logging operations. Implementations can write to console,
- * files, or external logging services. All methods accept variadic arguments
- * for flexible logging.
- *
  * @example
  * ```ts
  * const logger: ILogger = {
- *   debug: (msg, ...args) => console.debug('[DEBUG]', msg, ...args),
- *   info: (msg, ...args) => console.info('[INFO]', msg, ...args),
- *   warn: (msg, ...args) => console.warn('[WARN]', msg, ...args),
- *   error: (msg, ...args) => console.error('[ERROR]', msg, ...args),
+ *   debug: (msg, ...args) => console.debug(msg, ...args),
+ *   info: (msg, ...args) => console.info(msg, ...args),
+ *   warn: (msg, ...args) => console.warn(msg, ...args),
+ *   error: (msg, ...args) => console.error(msg, ...args),
  * }
- * ```
- *
- * @example
- * ### Using with pino
- * ```ts
- * import pino from 'pino'
- *
- * const logger: ILogger = pino({
- *   level: 'info',
- *   transport: {
- *     target: 'pino-pretty',
- *   },
- * })
  * ```
  */
 export interface ILogger {
@@ -155,31 +81,7 @@ export interface ILogger {
 
 /**
  * ID Generator function type
- *
- * @remarks
- * Function type for generating unique client IDs from incoming HTTP requests.
- * Can be synchronous or asynchronous, and can throw to reject connections.
- *
  * @param request - The incoming HTTP upgrade request
- * @returns The generated client ID
- *
- * @example
- * ```ts
- * const generateId: IdGenerator = (request) => {
- *   const token = request.headers.authorization?.split(' ')[1]
- *   return extractUserIdFromToken(token)
- * }
- * ```
- *
- * @example
- * ### Async ID generator
- * ```ts
- * const generateId: IdGenerator = async (request) => {
- *   const token = request.headers.authorization?.split(' ')[1]
- *   const user = await verifyJwt(token)
- *   return user.id
- * }
- * ```
  */
 export type IdGenerator = (
     request: IncomingMessage,
@@ -237,15 +139,6 @@ export interface IClientConnection {
  * @remarks
  * Enum defining all message types supported by the Syncar protocol.
  *
- * @example
- * ```ts
- * if (message.type === MessageType.DATA) {
- *   // Handle data message
- * } else if (message.type === MessageType.SIGNAL) {
- *   // Handle signal message
- * }
- * ```
- *
  * @see {@link SignalType} for signal message subtypes
  */
 export enum MessageType {
@@ -296,14 +189,6 @@ export enum SignalType {
  *
  * @remarks
  * Enum defining error codes used in error messages sent to clients.
- *
- * @example
- * ```ts
- * if (message.type === MessageType.ERROR) {
- *   const { code, message } = message.data
- *   console.error(`Error ${code}: ${message}`)
- * }
- * ```
  */
 export enum ErrorCode {
     /** Invalid message type */

@@ -24,25 +24,6 @@ type ServerInstance = WsServer
 
 /**
  * WebSocket Server Transport Configuration
- *
- * @remarks
- * Configuration options for the WebSocket transport layer. Extends the
- * standard `ws` library options with Syncar-specific settings.
- *
- * @example
- * ```ts
- * const config: WebSocketServerTransportConfig = {
- *   server: httpServer,
- *   path: '/ws',
- *   enablePing: true,
- *   pingInterval: 30000,
- *   pingTimeout: 5000,
- *   maxPayload: 1048576,
- *   connections: new Map(),
- *   generateId: (request) => extractUserId(request),
- *   logger: console
- * }
- * ```
  */
 export interface WebSocketServerTransportConfig extends WsServerOptions {
     /**
@@ -98,73 +79,11 @@ export interface WebSocketServerTransportConfig extends WsServerOptions {
 /**
  * WebSocket Server Transport
  *
- * @remarks
- * Handles low-level WebSocket communication using the `ws` library.
- * Manages connections, message parsing, ping/pong keep-alive, and
- * emits high-level events for the server to consume.
- *
- * This transport:
- * - Wraps the `ws` WebSocketServer
- * - Generates unique client IDs
- * - Handles connection lifecycle (connect, disconnect, error)
- * - Parses incoming messages as JSON
- * - Manages ping/pong for connection health
- * - Emits typed events for server consumption
- *
  * @example
- * ### Basic usage
  * ```ts
- * import { WebSocketServerTransport } from '@syncar/server'
- *
- * const transport = new WebSocketServerTransport({
- *   server: httpServer,
- *   path: '/ws',
- *   enablePing: true,
- *   pingInterval: 30000,
- *   pingTimeout: 5000
- * })
- *
- * transport.on('connection', (client) => {
- *   console.log(`Client connected: ${client.id}`)
- * })
- *
- * transport.on('message', (clientId, message) => {
- *   console.log(`Message from ${clientId}:`, message)
- * })
- *
- * transport.on('disconnection', (clientId) => {
- *   console.log(`Client disconnected: ${clientId}`)
- * })
+ * const transport = new WebSocketServerTransport({ server: httpServer, path: '/ws' })
+ * transport.on('connection', (client) => console.log(client.id))
  * ```
- *
- * @example
- * ### With custom ID generator
- * ```ts
- * const transport = new WebSocketServerTransport({
- *   server: httpServer,
- *   generateId: async (request) => {
- *     const token = request.headers.authorization?.split(' ')[1]
- *     const user = await verifyJwt(token)
- *     return user.id
- *   }
- * })
- * ```
- *
- * @example
- * ### With shared connections
- * ```ts
- * const sharedConnections = new Map()
- *
- * const transport1 = new WebSocketServerTransport({
- *   connections: sharedConnections
- * })
- *
- * const transport2 = new WebSocketServerTransport({
- *   connections: sharedConnections
- * })
- * ```
- *
- * @see {@link EventEmitter} for event methods (on, off, emit, etc.)
  */
 export class WebSocketServerTransport extends EventEmitter {
     /**

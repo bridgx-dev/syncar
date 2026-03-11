@@ -36,23 +36,9 @@ export type ChannelFlow = 'bidirectional' | 'send-only' | 'receive-only'
 /**
  * Channel creation options
  *
- * @remarks
- * Configuration options for creating channels with the unified Channel API.
- * Controls message direction (flow).
- *
- * @property flow - Message direction: 'bidirectional', 'send-only', or 'receive-only'
- *
  * @example
  * ```ts
- * // Bidirectional channel - clients can send and receive messages
- * const chatChannel: ChannelOptions = {
- *   flow: 'bidirectional'
- * }
- *
- * // Announcements channel - server sends, clients only receive
- * const announcementsChannel: ChannelOptions = {
- *   flow: 'receive-only'
- * }
+ * const options: ChannelOptions = { flow: 'receive-only' }
  * ```
  */
 export interface ChannelOptions {
@@ -81,20 +67,11 @@ export type IMessageHandler<T> = (
 /**
  * Unified Channel implementation
  *
- * @remarks
- * Handles the complexities of chunked publishing, message routing, and
- * connection management. Provides automatic chunking for large broadcasts
- * to avoid event loop blocking.
- *
- * @template T - Type of data published on this channel (default: unknown)
- *
  * @example
- * ### Default: subscribers + bidirectional (chat room)
  * ```ts
  * const chat = server.createChannel('chat')
  * chat.onMessage((data, client) => {
- *   console.log(`${client.id}: ${data.text}`)
- *   chat.publish(data)
+ *   chat.publish(data, [client.id])
  * })
  * ```
  */
@@ -115,9 +92,7 @@ export class Channel<T = unknown> {
     private _lastMessageAt?: number
     private _createdAt: number
 
-    /**
-     * Creates a new Channel instance
-     */
+    /** @internal */
     constructor(config: {
         name: ChannelName
         registry: ClientRegistry
@@ -135,6 +110,8 @@ export class Channel<T = unknown> {
 
     /**
      * Subscribe a client to this channel
+     * @param subscriber - Client ID to subscribe
+     * @returns `true` if subscribed successfully
      */
     subscribe(subscriber: ClientId): boolean {
         return this.registry.subscribe(subscriber, this.name)
@@ -142,6 +119,8 @@ export class Channel<T = unknown> {
 
     /**
      * Unsubscribe a client from this channel
+     * @param subscriber - Client ID to unsubscribe
+     * @returns `true` if unsubscribed successfully
      */
     unsubscribe(subscriber: ClientId): boolean {
         return this.registry.unsubscribe(subscriber, this.name)
@@ -149,6 +128,7 @@ export class Channel<T = unknown> {
 
     /**
      * Check if a client is subscribed to this channel
+     * @param subscriber - The client ID to check
      */
     hasSubscriber(subscriber: ClientId): boolean {
         return this.registry.getChannelSubscribers(this.name).has(subscriber)
@@ -177,19 +157,6 @@ export class Channel<T = unknown> {
 
     /**
      * Publish data to all subscribers
-     *
-     * @remarks
-     * Messages are sent in chunks to avoid blocking the event loop.
-     *
-     * @param data - The data to publish
-     * @param exclude - Client ID or IDs to exclude from this publication
-     */
-    /**
-     * Publish data to all subscribers
-     *
-     * @remarks
-     * Messages are sent in chunks to avoid blocking the event loop.
-     *
      * @param data - The data to publish
      * @param exclude - Optional array of client IDs to exclude
      */
