@@ -18,7 +18,6 @@
  * await server.start()
  *
  * // Create channels
- * const alerts = server.createChannel('alerts', { scope: 'broadcast' })
  * const chat = server.createChannel<string>('chat')
  *
  * // Listen for events
@@ -27,7 +26,7 @@
  * })
  *
  * // Publish messages
- * alerts.publish('Hello everyone!')
+ * server.broadcast('Hello everyone!')
  * chat.publish('Welcome!')
  * ```
  *
@@ -59,7 +58,7 @@
  * ## Features
  *
  * - **Real-time WebSocket Communication** - Fast, bidirectional messaging
- * - **Unified Channel API** - Single channel interface with configurable scope and flow
+ * - **Unified Channel API** - Single channel interface for subscriber-based rooms
  * - **Middleware System** - Composable middleware for auth, logging, rate limiting
  * - **Type-Safe API** - Full TypeScript support with comprehensive types
  * - **Event-Driven Architecture** - Rich event system for lifecycle events
@@ -101,7 +100,7 @@
  *
  * // New unified API
  * const chat = server.createChannel('chat')
- * const alerts = server.createChannel('alerts', { scope: 'broadcast' })
+ * server.broadcast('Hello everyone!')
  * ```
  */
 export { SyncarServer, createSyncarServer } from './server'
@@ -126,14 +125,6 @@ export {
 export { WebSocketServerTransport } from './websocket'
 
 export { CLOSE_CODES, ERROR_CODES } from './config'
-
-export type {
-    IClientConnection,
-    ChannelOptions,
-    ChannelScope,
-    ChannelFlow,
-} from './types'
-
 export type { IServerOptions, IServerStats } from './server'
 
 export type { IChannelState, IMessageHandler } from './channel'

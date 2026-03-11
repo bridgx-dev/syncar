@@ -63,7 +63,6 @@ describe('SyncarServer', () => {
             path: '/test',
             enablePing: false,
             connections: registry.connections,
-            logger: createDefaultLogger(),
         })
     })
 
@@ -104,7 +103,7 @@ describe('SyncarServer', () => {
                 pingInterval: 30000,
                 pingTimeout: 5000,
                 middleware: [middleware],
-                broadcastChunkSize: 500,
+                chunkSize: 500,
             }
 
             const server = new SyncarServer(config)
@@ -126,7 +125,7 @@ describe('SyncarServer', () => {
                 pingInterval: 30000,
                 pingTimeout: 5000,
                 middleware: [],
-                broadcastChunkSize: 500,
+                chunkSize: 500,
             }
 
             const server = new SyncarServer(config)
@@ -172,7 +171,7 @@ describe('SyncarServer', () => {
                 pingInterval: 30000,
                 pingTimeout: 5000,
                 middleware: [],
-                broadcastChunkSize: 500,
+                chunkSize: 500,
             }
 
             const server = new SyncarServer(config)
@@ -195,7 +194,7 @@ describe('SyncarServer', () => {
                 pingInterval: 30000,
                 pingTimeout: 5000,
                 middleware: [],
-                broadcastChunkSize: 500,
+                chunkSize: 500,
             }
 
             const server = new SyncarServer(config)
@@ -224,7 +223,7 @@ describe('SyncarServer', () => {
                 pingInterval: 30000,
                 pingTimeout: 5000,
                 middleware: [],
-                broadcastChunkSize: 500,
+                chunkSize: 500,
             }
 
             const server = new SyncarServer(config)
@@ -243,7 +242,7 @@ describe('SyncarServer', () => {
                 pingInterval: 30000,
                 pingTimeout: 5000,
                 middleware: [],
-                broadcastChunkSize: 500,
+                chunkSize: 500,
             }
 
             const server = new SyncarServer(config)
@@ -267,7 +266,7 @@ describe('SyncarServer', () => {
                 pingInterval: 30000,
                 pingTimeout: 5000,
                 middleware: [],
-                broadcastChunkSize: 500,
+                chunkSize: 500,
             }
 
             const server = new SyncarServer(config)
@@ -286,7 +285,7 @@ describe('SyncarServer', () => {
                 pingInterval: 30000,
                 pingTimeout: 5000,
                 middleware: [],
-                broadcastChunkSize: 500,
+                chunkSize: 500,
             }
 
             const server = new SyncarServer(config)
@@ -317,7 +316,7 @@ describe('SyncarServer', () => {
                 pingInterval: 30000,
                 pingTimeout: 5000,
                 middleware: [],
-                broadcastChunkSize: 500,
+                chunkSize: 500,
             }
 
             const server = new SyncarServer(config)
@@ -343,7 +342,7 @@ describe('SyncarServer', () => {
                 pingInterval: 30000,
                 pingTimeout: 5000,
                 middleware: [],
-                broadcastChunkSize: 500,
+                chunkSize: 500,
             }
 
             const server = new SyncarServer(config)
@@ -373,7 +372,7 @@ describe('SyncarServer', () => {
                 pingInterval: 30000,
                 pingTimeout: 5000,
                 middleware: [],
-                broadcastChunkSize: 500,
+                chunkSize: 500,
             }
 
             const server = new SyncarServer(config)
@@ -405,7 +404,7 @@ describe('SyncarServer', () => {
                 pingInterval: 30000,
                 pingTimeout: 5000,
                 middleware: [],
-                broadcastChunkSize: 500,
+                chunkSize: 500,
             }
 
             const server = new SyncarServer(config)
@@ -519,7 +518,6 @@ describe('createSyncarServer', () => {
             path: '/custom',
             enablePing: false,
             connections: registry.connections,
-            logger: createDefaultLogger(),
         })
 
         const server = createSyncarServer({
@@ -567,7 +565,6 @@ describe('SyncarServer.createChannel', () => {
             path: '/test',
             enablePing: false,
             connections: registry.connections,
-            logger: createDefaultLogger(),
         })
     })
 
@@ -584,7 +581,7 @@ describe('SyncarServer.createChannel', () => {
                 pingInterval: 30000,
                 pingTimeout: 5000,
                 middleware: [],
-                broadcastChunkSize: 500,
+                chunkSize: 500,
             }
 
             const server = new SyncarServer(config)
@@ -593,35 +590,7 @@ describe('SyncarServer.createChannel', () => {
             const channel = server.createChannel('chat')
 
             expect(channel.name).toBe('chat')
-            expect(channel.scope).toBe('subscribers')
             expect(channel.flow).toBe('bidirectional')
-        })
-
-        it('should create a broadcast channel', async () => {
-            const config: IServerOptions = {
-                registry,
-                logger: createDefaultLogger(),
-                port: 3000,
-                host: '0.0.0.0',
-                path: '/syncar',
-                transport,
-                enablePing: false,
-                pingInterval: 30000,
-                pingTimeout: 5000,
-                middleware: [],
-                broadcastChunkSize: 500,
-            }
-
-            const server = new SyncarServer(config)
-            await server.start()
-
-            const channel = server.createChannel('alerts', {
-                scope: 'broadcast',
-            })
-
-            // Broadcast scope creates a channel with the same name
-            expect(channel.name).toBe('alerts')
-            expect(channel)
         })
 
         it('should create a send-only subscriber channel', async () => {
@@ -636,7 +605,7 @@ describe('SyncarServer.createChannel', () => {
                 pingInterval: 30000,
                 pingTimeout: 5000,
                 middleware: [],
-                broadcastChunkSize: 500,
+                chunkSize: 500,
             }
 
             const server = new SyncarServer(config)
@@ -646,7 +615,6 @@ describe('SyncarServer.createChannel', () => {
                 flow: 'send-only',
             })
 
-            expect(channel.scope).toBe('subscribers')
             expect(channel.flow).toBe('send-only')
         })
 
@@ -662,7 +630,7 @@ describe('SyncarServer.createChannel', () => {
                 pingInterval: 30000,
                 pingTimeout: 5000,
                 middleware: [],
-                broadcastChunkSize: 500,
+                chunkSize: 500,
             }
 
             const server = new SyncarServer(config)
@@ -686,7 +654,7 @@ describe('SyncarServer.createChannel', () => {
                 pingInterval: 30000,
                 pingTimeout: 5000,
                 middleware: [],
-                broadcastChunkSize: 500,
+                chunkSize: 500,
             }
 
             const server = new SyncarServer(config)

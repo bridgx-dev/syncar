@@ -7,6 +7,7 @@ import type {
     SignalMessage,
     SignalType,
     ILogger,
+    IClientConnection,
 } from './types'
 import { MessageType } from './types'
 
@@ -117,6 +118,49 @@ export function createSignalMessage(
         data,
         timestamp: Date.now(),
     }
+}
+
+/**
+ * Send message in chunks for large lists of clients
+ *
+ * @param config.data - The raw data to send
+ * @param config.connections - Array of target client connections
+ * @param config.chunkSize - Number of messages to send per chunk
+ * @param config.channel - The channel name (defaults to 'broadcast')
+ */
+export function publishMessage<T>(config: {
+    data: T
+    connections: IClientConnection[]
+    chunkSize: number
+    channel: ChannelName
+}): void {
+    const { data, connections, chunkSize, channel } = config
+    const dataMessage = createDataMessage<T>(channel, data)
+    const message = JSON.stringify(dataMessage)
+
+    let index = 0
+
+    const nextChunk = () => {
+        const chunk = connections.slice(index, index + chunkSize)
+        if (chunk.length === 0) return
+
+        for (const client of chunk) {
+            try {
+                client.socket.send(message)
+            } catch (error) {
+                // Silently fail or use basic console error
+                console.error(`Failed to send message to ${client.id}`)
+            }
+        }
+
+        index += chunkSize
+
+        if (index < connections.length) {
+            setImmediate(nextChunk)
+        }
+    }
+
+    nextChunk()
 }
 
 // ============================================================

@@ -18,7 +18,6 @@ describe('Channel', () => {
             })
 
             expect(channel.name).toBe('chat')
-            expect(channel.scope).toBe('subscribers')
             expect(channel.flow).toBe('bidirectional')
         })
 
@@ -48,73 +47,6 @@ describe('Channel', () => {
         })
     })
 
-    describe('scope: broadcast', () => {
-        it('should create a broadcast-scoped channel', () => {
-            const channel = new Channel({
-                name: 'alerts',
-                registry,
-                options: { scope: 'broadcast' },
-            })
-
-            expect(channel.name).toBe('alerts')
-            expect(channel.scope).toBe('broadcast')
-            expect(channel.flow).toBe('send-only')
-        })
-
-        it('should throw when subscribing to a broadcast channel', () => {
-            const channel = new Channel({
-                name: 'alerts',
-                registry,
-                options: { scope: 'broadcast' },
-            })
-
-            expect(() => channel.subscribe('client-1')).toThrow(
-                /subscribe is not available for broadcast channels/,
-            )
-        })
-
-        it('should throw when checking subscribers on a broadcast channel', () => {
-            const channel = new Channel({
-                name: 'alerts',
-                registry,
-                options: { scope: 'broadcast' },
-            })
-
-            expect(() => channel.hasSubscriber('client-1')).toThrow(
-                /hasSubscriber is not available for broadcast channels/,
-            )
-        })
-
-        it('should target all connected clients for publishing', () => {
-            const channel = new Channel({
-                name: 'alerts',
-                registry,
-                options: { scope: 'broadcast' },
-            })
-
-            const client1 = createMockClient('client-1')
-            const client2 = createMockClient('client-2')
-            registry.register(client1)
-            registry.register(client2)
-
-            // Both clients should be counted
-            expect(channel.subscriberCount).toBe(2)
-        })
-
-        it('should not allow onMessage for broadcast scope', () => {
-            const channel = new Channel({
-                name: 'alerts',
-                registry,
-                options: { scope: 'broadcast' },
-            })
-
-            // Broadcast channels are send-only, so onMessage should throw
-            expect(() => channel.onMessage(vi.fn())).toThrow(
-                /onMessage is not available in send-only mode/,
-            )
-        })
-    })
-
     describe('flow: send-only', () => {
         it('should create a send-only channel', () => {
             const channel = new Channel({
@@ -123,7 +55,6 @@ describe('Channel', () => {
                 options: { flow: 'send-only' },
             })
 
-            expect(channel.scope).toBe('subscribers')
             expect(channel.flow).toBe('send-only')
         })
 
@@ -173,7 +104,6 @@ describe('Channel', () => {
                 options: { flow: 'receive-only' },
             })
 
-            expect(channel.scope).toBe('subscribers')
             expect(channel.flow).toBe('receive-only')
         })
 
@@ -185,30 +115,6 @@ describe('Channel', () => {
             })
 
             expect(() => channel.onMessage(vi.fn())).not.toThrow()
-        })
-    })
-
-    describe('validation', () => {
-        it('should throw when scope is broadcast and flow is not send-only', () => {
-            expect(
-                () =>
-                    new Channel({
-                        name: 'invalid',
-                        registry,
-                        options: { scope: 'broadcast', flow: 'bidirectional' },
-                    }),
-            ).toThrow(/broadcast scope only supports send-only flow/)
-        })
-
-        it('should throw when scope is broadcast and flow is receive-only', () => {
-            expect(
-                () =>
-                    new Channel({
-                        name: 'invalid',
-                        registry,
-                        options: { scope: 'broadcast', flow: 'receive-only' },
-                    }),
-            ).toThrow(/broadcast scope only supports send-only flow/)
         })
     })
 
@@ -244,22 +150,6 @@ describe('Channel', () => {
             // Only subscribers should be counted
             expect(channel.subscriberCount).toBe(2)
         })
-
-        it('should publish to all clients in broadcast scope', () => {
-            const channel = new Channel({
-                name: 'alerts',
-                registry,
-                options: { scope: 'broadcast' },
-            })
-
-            const client1 = createMockClient('client-1')
-            const client2 = createMockClient('client-2')
-            registry.register(client1)
-            registry.register(client2)
-
-            // All clients should be counted
-            expect(channel.subscriberCount).toBe(2)
-        })
     })
 
     describe('message dispatch', () => {
@@ -277,7 +167,8 @@ describe('Channel', () => {
             channel.subscribe('client-1')
             channel.subscribe('client-2')
 
-            const publishSpy = vi.spyOn(channel as any, 'publishToClients')
+            const client2Socket = client2.socket as any
+            const sendSpy = vi.spyOn(client2Socket, 'send')
 
             await channel.dispatch({ text: 'hello' }, client1, {
                 id: 'msg-1',
@@ -287,11 +178,11 @@ describe('Channel', () => {
                 data: { text: 'hello' },
             })
 
-            // Should publish to all except sender
-            expect(publishSpy).toHaveBeenCalled()
-            const calledIds = publishSpy.mock.calls[0][1]
-            expect(calledIds).not.toContain('client-1')
-            expect(calledIds).toContain('client-2')
+            // Should publish to client2
+            expect(sendSpy).toHaveBeenCalled()
+            const message = JSON.parse(sendSpy.mock.calls[0][0] as string)
+            expect(message.channel).toBe('chat')
+            expect(message.data.text).toBe('hello')
         })
 
         it('should call handlers when registered (bidirectional)', async () => {

@@ -2,16 +2,15 @@ import {
     type ChannelName,
     type Message,
     type IMiddleware,
-    type ChannelOptions,
     MessageType,
     ILogger,
 } from './types'
-import { Channel } from './channel'
 import { StateError } from './errors'
 import { ContextManager } from './context'
-import { createDefaultLogger } from './utils'
 import { ClientRegistry } from './registry'
+import { Channel, ChannelOptions } from './channel'
 import { WebSocketServerTransport } from './websocket'
+import { createDefaultLogger, publishMessage } from './utils'
 import { DEFAULT_SERVER_CONFIG, DEFAULT_MAX_PAYLOAD } from './config'
 import { ConnectionHandler, MessageHandler, SignalHandler } from './handlers'
 
@@ -389,8 +388,8 @@ export class SyncarServer {
      *
      * @remarks
      * A convenience method to send data to every client currently connected
-     * to the server. This uses an internal 'broadcast' channel to leverage
-     * the standard middleware and chunking logic.
+     * to the server. This uses the `publishInChunks` utility to efficiently
+     * broadcast messages without blocking the event loop.
      *
      * @param data - The data to broadcast to all clients
      *
@@ -403,20 +402,13 @@ export class SyncarServer {
      * ```
      */
     broadcast<T = unknown>(data: T): void {
-        const BROADCAST_INTERNAL = '__broadcast__'
-        let channel = this.registry.getChannel<T>(BROADCAST_INTERNAL)
-
-        if (!channel) {
-            channel = new Channel<T>({
-                name: BROADCAST_INTERNAL,
-                registry: this.registry,
-                options: { scope: 'broadcast', flow: 'receive-only' },
-                chunkSize: this.config.chunkSize,
-            })
-            this.registry.registerChannel(channel)
-        }
-
-        channel.publish(data)
+        const connections = this.registry.getAll()
+        publishMessage<T>({
+            data,
+            connections,
+            chunkSize: this.config.chunkSize,
+            channel: '__broadcast__',
+        })
     }
 
     /**
