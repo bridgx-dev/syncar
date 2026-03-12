@@ -1,8 +1,13 @@
 {
     "name": "@syncar/server",
-    "version": "1.0.0-alpha.3",
+    "version": "1.0.0-alpha.4",
     "description": "Node.js server for Syncar real-time synchronization",
     "author": "M16BAPPI - [m16bappi@gmail.com]",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/bridgx-dev/syncar.git",
+        "directory": "packages/server"
+    },
     "type": "module",
     "main": "./dist/index.js",
     "module": "./dist/index.js",
