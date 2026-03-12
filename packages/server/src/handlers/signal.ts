@@ -6,35 +6,16 @@ import { ChannelError, MessageError } from '../errors'
 import { ContextManager } from '../context'
 import { ClientRegistry } from '../registry'
 
-export interface SignalHandlerOptions {
-    requireChannel?: boolean
-    allowReservedChannels?: boolean
-    sendAcknowledgments?: boolean
-    autoRespondToPing?: boolean
-}
-
 export class SignalHandler {
     private readonly registry: ClientRegistry
     private readonly context: ContextManager
-    private readonly options: Required<SignalHandlerOptions>
 
     constructor(dependencies: {
         registry: ClientRegistry
         context: ContextManager
-        options?: SignalHandlerOptions
     }) {
         this.registry = dependencies.registry
         this.context = dependencies.context
-
-        // Apply defaults
-        this.options = {
-            requireChannel: dependencies.options?.requireChannel ?? false,
-            allowReservedChannels:
-                dependencies.options?.allowReservedChannels ?? false,
-            sendAcknowledgments:
-                dependencies.options?.sendAcknowledgments ?? true,
-            autoRespondToPing: dependencies.options?.autoRespondToPing ?? true,
-        }
     }
 
     async handleSignal(
@@ -71,7 +52,7 @@ export class SignalHandler {
                     break
 
                 case SignalType.PONG:
-                    await this.handlePong(client, message)
+                    await this.handlePong(client)
                     break
 
                 default:
@@ -99,19 +80,14 @@ export class SignalHandler {
     ): Promise<void> {
         const { channel } = message
 
-        // Check for reserved channel
-        if (
-            !this.options.allowReservedChannels &&
-            isReservedChannelName(channel)
-        ) {
+        // Check for reserved channel (not allowed - always checked)
+        if (isReservedChannelName(channel)) {
             throw new ChannelError(
                 `Cannot subscribe to reserved channel: ${channel}`,
             )
         }
 
         // Subscribe to channel via registry
-        // Features like reserved channels, max subscribers, etc. are now
-        // handled via onSubscribe callbacks that can reject the subscription
         const success = this.registry.subscribe(client.id, channel)
         if (!success) {
             throw new ChannelError(
@@ -119,16 +95,14 @@ export class SignalHandler {
             )
         }
 
-        // Send acknowledgment
-        if (this.options.sendAcknowledgments) {
-            const ackMessage = createSignalMessage(
-                channel,
-                SignalType.SUBSCRIBED,
-                undefined,
-                message.id,
-            )
-            client.socket.send(JSON.stringify(ackMessage))
-        }
+        // Send acknowledgment (always enabled by default)
+        const ackMessage = createSignalMessage(
+            channel,
+            SignalType.SUBSCRIBED,
+            undefined,
+            message.id,
+        )
+        client.socket.send(JSON.stringify(ackMessage))
     }
 
     async handleUnsubscribe(
@@ -147,16 +121,14 @@ export class SignalHandler {
         // Unsubscribe from channel via registry
         this.registry.unsubscribe(client.id, channel)
 
-        // Send acknowledgment
-        if (this.options.sendAcknowledgments) {
-            const ackMessage = createSignalMessage(
-                channel,
-                SignalType.UNSUBSCRIBED,
-                undefined,
-                message.id,
-            )
-            client.socket.send(JSON.stringify(ackMessage), () => {})
-        }
+        // Send acknowledgment (always enabled by default)
+        const ackMessage = createSignalMessage(
+            channel,
+            SignalType.UNSUBSCRIBED,
+            undefined,
+            message.id,
+        )
+        client.socket.send(JSON.stringify(ackMessage), () => {})
     }
 
     async handlePing(
@@ -166,28 +138,19 @@ export class SignalHandler {
         // Update client's last ping time
         client.lastPingAt = Date.now()
 
-        // Auto-respond with PONG if enabled
-        if (this.options.autoRespondToPing) {
-            const pongMessage = createSignalMessage(
-                message.channel,
-                SignalType.PONG,
-                undefined,
-                message.id,
-            )
-            client.socket.send(JSON.stringify(pongMessage), () => {})
-        }
+        // Auto-respond with PONG (always enabled by default)
+        const pongMessage = createSignalMessage(
+            message.channel,
+            SignalType.PONG,
+            undefined,
+            message.id,
+        )
+        client.socket.send(JSON.stringify(pongMessage), () => {})
     }
 
-    async handlePong(
-        client: IClientConnection,
-        _message: SignalMessage,
-    ): Promise<void> {
+    async handlePong(client: IClientConnection): Promise<void> {
         // PONG is received, connection is alive
         // The timestamp is already updated by the transport layer
         client.lastPingAt = Date.now()
-    }
-
-    getOptions(): Readonly<Required<SignalHandlerOptions>> {
-        return this.options
     }
 }

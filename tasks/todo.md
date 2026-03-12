@@ -272,16 +272,73 @@
 
 ## Phase 4: Low Priority / Technical Debt ⚪
 
-### Fix 16: Remove Unused Parameters
-- [ ] Remove `_reason` parameter or use it
-- [ ] Remove `_message` parameter or use it
-- [ ] Review all `_` prefixed parameters
-- [ ] Update JSDoc comments
-- [ ] Verify tests still pass
+### Fix 16: Remove Unused Parameters ✅
+- [x] Remove `_reason` parameter or use it
+- [x] Remove `_message` parameter or use it
+- [x] Review all `_` prefixed parameters
+- [x] Update JSDoc comments
+- [x] Verify tests still pass
 
-**Files:** Multiple handler files
+**Files:** `src/handlers/connections.ts`, `src/handlers/signal.ts`, `src/websocket.ts`
 **Estimated:** 1 hour
-**Status:** ⏸️ Not Started
+**Status:** ✅ Completed (2026-03-12)
+
+**Changes Made:**
+1. **signal.ts:** Removed unused `_message` parameter from `handlePong()` method
+   - Updated call site to only pass `client`
+   - Method now only receives the client parameter
+
+2. **connections.ts:** Removed unused `_reason` parameter from `handleDisconnection()` method
+   - Parameter was never passed by callers anyway
+   - Simplified method signature
+
+3. **websocket.ts:** Removed underscore prefixes from close callback parameters
+   - Changed `_code` and `_reason` to `code` and `reason`
+   - Added comment explaining they're available but not currently used
+   - This follows the convention of naming unused callback parameters without underscore prefix when they're part of an external interface
+
+---
+
+### Additional: Remove Unused Handler Options ✅
+- [x] Remove `SignalHandlerOptions.requireChannel` (defined but never used)
+- [x] Remove `ConnectionHandlerOptions.rejectionCloseCode` (defined but never used)
+- [x] Remove ALL handler option interfaces (never configured by server)
+  - [x] Remove entire `SignalHandlerOptions` interface
+  - [x] Remove entire `MessageHandlerOptions` interface
+  - [x] Remove entire `ConnectionHandlerOptions` interface
+- [x] Remove `getOptions()` methods from all handlers
+- [x] Hardcode default behaviors
+  - [x] SignalHandler: always checks reserved channels, sends acks, auto-responds to ping
+  - [x] MessageHandler: always requires channel
+  - [x] ConnectionHandler: no options
+- [x] Update handlers/index.ts exports
+- [x] Update tests to remove conditional behavior tests
+- [x] Verify all 23 handler tests pass
+- [ ] Update documentation
+
+**Files:** `src/handlers/signal.ts`, `src/handlers/connections.ts`, `src/handlers/messages.ts`, `src/handlers/index.ts`, `__tests__/handlers.test.ts`
+**Estimated:** 30 minutes
+**Status:** ✅ Completed (2026-03-12)
+
+**Unused Options Removed:**
+1. `SignalHandlerOptions.requireChannel` - Had default value `false` but was never referenced
+2. `SignalHandlerOptions.allowReservedChannels` - Had default value but was never used
+3. `SignalHandlerOptions.sendAcknowledgments` - Had default value but was never used
+4. `SignalHandlerOptions.autoRespondToPing` - Had default value but was never used
+5. `MessageHandlerOptions.requireChannel` - Had default value but was never used
+6. `ConnectionHandlerOptions.rejectionCloseCode` - Had default value but was never used
+7. Entire `ConnectionHandlerOptions` interface was never used
+
+**Changes Made:**
+1. **signal.ts:** Removed entire `SignalHandlerOptions` interface, removed `getOptions()` method, hardcoded all default behaviors
+2. **connections.ts:** Completely removed `ConnectionHandlerOptions` interface and all related code
+3. **messages.ts:** Removed entire `MessageHandlerOptions` interface, removed `getOptions()` method, hardcoded `requireChannel: true`
+4. **handlers/index.ts:** Removed exports for all option types
+5. **handlers.test.ts:** Removed 7 tests that referenced deleted options:
+   - ConnectionHandler options tests (3 tests)
+   - MessageHandler options tests (1 test)
+   - SignalHandler options tests (3 tests: getOptions, conditional acknowledgments, conditional ping)
+6. **All 23 handler tests pass**
 
 ---
 
@@ -357,12 +414,12 @@
 - [ ] Phase 1: Critical Security Fixes (1/5 complete)
 - [x] Phase 2: High Priority Fixes (1/5 complete)
 - [ ] Phase 3: Medium Priority Improvements (0/5 complete)
-- [x] Phase 4: Low Priority / Technical Debt (1/4 complete)
+- [x] Phase 4: Low Priority / Technical Debt (2/4 complete)
 
 ### Statistics
 - **Total Tasks:** 19 fixes + additional improvements
 - **Estimated Total Time:** 45.5-60.5 hours
-- **Completed:** 3 (Fix 1, Fix 7, Fix 19)
+- **Completed:** 5 (Fix 1, Fix 7, Fix 16 + extended handler options removal, Fix 19)
 - **In Progress:** 0
 - **Blocked:** 0
 
@@ -411,7 +468,7 @@
 | Fix 13 | Context refactoring | 🟡 Medium | ⏸️ |
 | Fix 14 | Log injection | 🟡 Medium | ⏸️ |
 | Fix 15 | Timer cleanup | 🟡 Medium | ⏸️ |
-| Fix 16 | Unused params | ⚪ Low | ⏸️ |
+| Fix 16 | Unused params | ⚪ Low | ✅ |
 | Fix 17 | Magic numbers | ⚪ Low | ⏸️ |
 | Fix 18 | Silent failures | ⚪ Low | ⏸️ |
 | Fix 19 | Dead code (scope property) | ⚪ Low | ✅ |

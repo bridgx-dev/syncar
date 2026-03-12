@@ -5,27 +5,16 @@ import { isDataMessage } from '../utils'
 import { ContextManager } from '../context'
 import { ClientRegistry } from '../registry'
 
-export interface MessageHandlerOptions {
-    requireChannel?: boolean
-}
-
 export class MessageHandler {
     private readonly registry: ClientRegistry
     private readonly context: ContextManager
-    private readonly options: Required<MessageHandlerOptions>
 
     constructor(dependencies: {
         registry: ClientRegistry
         context: ContextManager
-        options?: MessageHandlerOptions
     }) {
         this.registry = dependencies.registry
         this.context = dependencies.context
-
-        // Apply defaults
-        this.options = {
-            requireChannel: dependencies.options?.requireChannel ?? true,
-        }
     }
 
     async handleMessage<T = unknown>(
@@ -42,8 +31,8 @@ export class MessageHandler {
         // Get channel using the registry
         const channel = this.registry.getChannel<T>(message.channel)
 
-        // Validate channel exists
-        if (this.options.requireChannel && !channel) {
+        // Validate channel exists (always required by default)
+        if (!channel) {
             throw new ChannelError(`Channel not found: ${message.channel}`)
         }
 
@@ -62,9 +51,5 @@ export class MessageHandler {
 
         // Execute Onion
         await this.context.execute(ctx, pipeline, kernel)
-    }
-
-    getOptions(): Readonly<Required<MessageHandlerOptions>> {
-        return this.options
     }
 }

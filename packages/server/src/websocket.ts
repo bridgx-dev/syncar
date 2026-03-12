@@ -200,7 +200,9 @@ export class WebSocketServerTransport extends EventEmitter {
             this.handleMessage(clientId, data)
         })
 
-        socket.on('close', (_code: number, _reason: Buffer) => {
+        socket.on('close', (code: number, reason: Buffer) => {
+            // Note: close code and reason are available but not currently used
+            // They could be logged or included in the disconnection event in the future
             this.handleDisconnection(clientId)
         })
 

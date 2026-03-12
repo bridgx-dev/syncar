@@ -46,22 +46,8 @@ describe('ConnectionHandler', () => {
     })
 
     describe('constructor', () => {
-        it('should create handler with default options', () => {
+        it('should create handler', () => {
             expect(connectionHandler).toBeInstanceOf(ConnectionHandler)
-            expect(connectionHandler.getOptions().rejectionCloseCode).toBe(
-                CLOSE_CODES.REJECTED,
-            )
-        })
-
-        it('should use custom rejection close code', () => {
-            const handler = new ConnectionHandler({
-                registry,
-                options: {
-                    rejectionCloseCode: 4003,
-                },
-            })
-
-            expect(handler.getOptions().rejectionCloseCode).toBe(4003)
         })
     })
 
@@ -134,15 +120,6 @@ describe('ConnectionHandler', () => {
             expect(registry.get('client-1')).toBeUndefined()
         })
     })
-
-    describe('getOptions()', () => {
-        it('should return readonly options', () => {
-            const options = connectionHandler.getOptions()
-
-            expect(options).toHaveProperty('rejectionCloseCode')
-            expect(options.rejectionCloseCode).toBe(CLOSE_CODES.REJECTED)
-        })
-    })
 })
 
 describe('MessageHandler', () => {
@@ -165,25 +142,6 @@ describe('MessageHandler', () => {
             registry,
         })
         registry.registerChannel(testChannel as any)
-    })
-
-    describe('constructor', () => {
-        it('should create handler with default options', () => {
-            expect(messageHandler).toBeInstanceOf(MessageHandler)
-            expect(messageHandler.getOptions().requireChannel).toBe(true)
-        })
-
-        it('should use custom requireChannel option', () => {
-            const handler = new MessageHandler({
-                registry,
-                context,
-                options: {
-                    requireChannel: false,
-                },
-            })
-
-            expect(handler.getOptions().requireChannel).toBe(false)
-        })
     })
 
     describe('handleMessage()', () => {
@@ -259,45 +217,6 @@ describe('MessageHandler', () => {
                 messageHandler.handleMessage(client, message),
             ).resolves.toBeUndefined()
         })
-
-        it('should handle message when requireChannel is false and channel does not exist', async () => {
-            const handler = new MessageHandler({
-                registry,
-                context,
-                options: {
-                    requireChannel: false,
-                },
-            })
-
-            const socket = new MockWebSocket() as any
-            const client: IClientConnection = {
-                id: 'client-1',
-                connectedAt: Date.now(),
-                socket,
-            }
-
-            const message: DataMessage<string> = {
-                id: 'msg-1',
-                type: MessageType.DATA,
-                channel: 'non-existent',
-                data: 'hello',
-                timestamp: Date.now(),
-            }
-
-            // Should not throw when requireChannel is false
-            await expect(
-                handler.handleMessage(client, message),
-            ).resolves.toBeUndefined()
-        })
-    })
-
-    describe('getOptions()', () => {
-        it('should return readonly options', () => {
-            const options = messageHandler.getOptions()
-
-            expect(options).toHaveProperty('requireChannel')
-            expect(options.requireChannel).toBe(true)
-        })
     })
 })
 
@@ -324,33 +243,8 @@ describe('SignalHandler', () => {
     })
 
     describe('constructor', () => {
-        it('should create handler with default options', () => {
+        it('should create handler', () => {
             expect(signalHandler).toBeInstanceOf(SignalHandler)
-            const options = signalHandler.getOptions()
-
-            expect(options.requireChannel).toBe(false)
-            expect(options.allowReservedChannels).toBe(false)
-            expect(options.sendAcknowledgments).toBe(true)
-            expect(options.autoRespondToPing).toBe(true)
-        })
-
-        it('should use custom options', () => {
-            const handler = new SignalHandler({
-                registry,
-                context,
-                options: {
-                    requireChannel: true,
-                    allowReservedChannels: true,
-                    sendAcknowledgments: false,
-                    autoRespondToPing: false,
-                },
-            })
-
-            const options = handler.getOptions()
-            expect(options.requireChannel).toBe(true)
-            expect(options.allowReservedChannels).toBe(true)
-            expect(options.sendAcknowledgments).toBe(false)
-            expect(options.autoRespondToPing).toBe(false)
         })
     })
 
@@ -563,38 +457,6 @@ describe('SignalHandler', () => {
             expect(ack.signal).toBe(SignalType.SUBSCRIBED)
             expect(ack.id).toBe('msg-1')
         })
-
-        it('should not send acknowledgment when disabled', async () => {
-            const handler = new SignalHandler({
-                registry,
-                context,
-                options: {
-                    sendAcknowledgments: false,
-                },
-            })
-
-            const socket = new MockWebSocket() as any
-            const client: IClientConnection = {
-                id: 'client-1',
-                connectedAt: Date.now(),
-                socket,
-            }
-
-            // Register client first
-            registry.register(client)
-
-            const message = {
-                id: 'msg-1',
-                type: MessageType.SIGNAL,
-                signal: SignalType.SUBSCRIBE,
-                channel: 'test-channel',
-                timestamp: Date.now(),
-            } as any
-
-            await handler.handleSubscribe(client, message)
-
-            expect(socket.sent.length).toBe(0)
-        })
     })
 
     describe('handleUnsubscribe()', () => {
@@ -671,36 +533,6 @@ describe('SignalHandler', () => {
             expect(pong.signal).toBe(SignalType.PONG)
         })
 
-        it('should not auto-respond when disabled', async () => {
-            const handler = new SignalHandler({
-                registry,
-                context,
-                options: {
-                    autoRespondToPing: false,
-                },
-            })
-
-            const socket = new MockWebSocket() as any
-            const client: IClientConnection = {
-                id: 'client-1',
-                connectedAt: Date.now(),
-                socket,
-                lastPingAt: 0,
-            }
-
-            const message = {
-                id: 'msg-1',
-                type: MessageType.SIGNAL,
-                signal: SignalType.PING,
-                channel: 'test-channel',
-                timestamp: Date.now(),
-            } as any
-
-            await handler.handlePing(client, message)
-
-            expect(socket.sent.length).toBe(0)
-        })
-
         it('should update client lastPingAt', async () => {
             const socket = new MockWebSocket() as any
             const client: IClientConnection = {
@@ -745,17 +577,6 @@ describe('SignalHandler', () => {
             await signalHandler.handlePong(client, message)
 
             expect(client.lastPingAt).toBeGreaterThan(0)
-        })
-    })
-
-    describe('getOptions()', () => {
-        it('should return readonly options', () => {
-            const options = signalHandler.getOptions()
-
-            expect(options).toHaveProperty('requireChannel')
-            expect(options).toHaveProperty('allowReservedChannels')
-            expect(options).toHaveProperty('sendAcknowledgments')
-            expect(options).toHaveProperty('autoRespondToPing')
         })
     })
 })
