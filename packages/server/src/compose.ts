@@ -1,16 +1,16 @@
-import type { Context, Middleware, Next } from './types'
+import type { IContext, IMiddleware, Next } from './types'
 
 /**
  * Compose middleware functions into a single function.
  * Follows the onion-style execution pattern.
  */
 export const compose = <S = Record<string, unknown>>(
-    middleware: Middleware<S>[],
+    middleware: IMiddleware<S>[],
 ) => {
-    return (context: Context<S>, next?: Next) => {
+    return (context: IContext<S>, next?: Next) => {
         let index = -1
 
-        const dispatch = async (i: number): Promise<Context<S>> => {
+        const dispatch = async (i: number): Promise<IContext<S>> => {
             if (i <= index) throw new Error('next() called multiple times')
             index = i
 
