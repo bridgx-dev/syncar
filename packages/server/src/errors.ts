@@ -154,6 +154,114 @@ export class TransportError extends SyncarError {
 }
 
 /**
+ * Message size error
+ *
+ * @remarks
+ * Thrown when an incoming message exceeds the maximum allowed payload size.
+ * This is a security measure to prevent DoS attacks via large message payloads.
+ *
+ * @property dataSize - The actual size of the message in bytes
+ * @property maxSize - The maximum allowed message size in bytes
+ *
+ * @example
+ * ```ts
+ * if (messageSize > maxPayload) {
+ *   throw new MessageSizeError(messageSize, maxPayload)
+ * }
+ * ```
+ */
+export class MessageSizeError extends TransportError {
+    /**
+     * The actual size of the message that exceeded the limit
+     */
+    public readonly dataSize: number
+
+    /**
+     * The maximum allowed message size
+     */
+    public readonly maxSize: number
+
+    /**
+     * Creates a new MessageSizeError
+     *
+     * @param dataSize - The actual size of the message in bytes
+     * @param maxSize - The maximum allowed message size in bytes
+     */
+    constructor(dataSize: number, maxSize: number) {
+        const message = `Message size ${dataSize} bytes exceeds maximum allowed size of ${maxSize} bytes`
+        const context = { dataSize, maxSize }
+
+        super(message, context)
+        this.name = 'MessageSizeError'
+        this.dataSize = dataSize
+        this.maxSize = maxSize
+
+        // Override the code for specific error handling
+        this.code = 'MESSAGE_TOO_LARGE'
+
+        // Maintains proper stack trace (only available on V8)
+        if (Error.captureStackTrace) {
+            Error.captureStackTrace(this, MessageSizeError)
+        }
+    }
+
+    /**
+     * Convert error to JSON for logging/serialization
+     *
+     * @returns JSON representation with size information
+     *
+     * @example
+     * ```ts
+     * const error = new MessageSizeError(2048, 1024)
+     * console.log(JSON.stringify(error.toJSON(), null, 2))
+     * // {
+     * //   "name": "MessageSizeError",
+     * //   "message": "Message size 2048 bytes exceeds maximum allowed size of 1024 bytes",
+     * //   "code": "MESSAGE_TOO_LARGE",
+     * //   "dataSize": 2048,
+     * //   "maxSize": 1024,
+     * //   "stack": "..."
+     * // }
+     * ```
+     */
+    override toJSON(): {
+        name: string
+        message: string
+        code: string
+        dataSize: number
+        maxSize: number
+        context?: Record<string, unknown>
+        stack?: string
+    } {
+        return {
+            name: this.name,
+            message: this.message,
+            code: this.code,
+            dataSize: this.dataSize,
+            maxSize: this.maxSize,
+            context: this.context,
+            stack: this.stack,
+        }
+    }
+
+    /**
+     * Get a summary of the error for logging
+     *
+     * @returns Formatted error summary string
+     *
+     * @example
+     * ```ts
+     * const error = new MessageSizeError(2048, 1024)
+     * console.log(error.toString())
+     * // "[MessageSizeError:MESSAGE_TOO_LARGE] Message size 2048 bytes exceeds maximum allowed size of 1024 bytes"
+     * ```
+     */
+    override toString(): string {
+        return `[${this.name}:${this.code}] ${this.message}`
+    }
+}
+
+/**
  * Channel error
  *
  * @remarks

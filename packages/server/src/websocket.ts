@@ -18,6 +18,7 @@ import {
     DEFAULT_PATH,
 } from './config'
 import { generateClientId } from './utils'
+import { MessageSizeError } from './errors'
 
 // Instance types
 type ServerInstance = WsServer
@@ -102,6 +103,7 @@ export class WebSocketServerTransport extends EventEmitter {
         pingInterval: number
         pingTimeout: number
         enablePing: boolean
+        maxPayload: number
     }
     /** @internal */
     private pingTimer?: ReturnType<typeof setInterval>
@@ -216,6 +218,19 @@ export class WebSocketServerTransport extends EventEmitter {
 
     private handleMessage(clientId: ClientId, data: Buffer): void {
         try {
+            /**
+             * Validate message size before parsing to prevent DoS attacks
+             * @security Check size before JSON.parse to prevent memory exhaustion
+             * from malicious large payloads. This is defense-in-depth since the
+             * ws library also enforces maxPayload at the protocol level.
+             */
+            const dataSize = data.length
+            if (dataSize > this.config.maxPayload) {
+                const error = new MessageSizeError(dataSize, this.config.maxPayload)
+                this.emit('error', error)
+                return
+            }
+
             const message = JSON.parse(data.toString())
             const connection = this.connections.get(clientId)
 

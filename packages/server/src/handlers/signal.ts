@@ -109,12 +109,6 @@ export class SignalHandler {
             )
         }
 
-        // Cannot subscribe to broadcast channel (it's for all clients)
-        const channelInstance = this.registry.getChannel(channel)
-        if (channelInstance?.scope === 'broadcast') {
-            throw new ChannelError('Cannot subscribe to broadcast channel')
-        }
-
         // Subscribe to channel via registry
         // Features like reserved channels, max subscribers, etc. are now
         // handled via onSubscribe callbacks that can reject the subscription

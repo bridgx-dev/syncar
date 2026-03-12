@@ -12,6 +12,8 @@ export {
     type RateLimitOptions,
     clearRateLimitStore,
     getRateLimitState,
+    getRateLimitStoreSize,
+    resetRateLimit,
 } from './rate-limit'
 export {
     channelWhitelist,

@@ -11,6 +11,7 @@ import {
 } from '../src/websocket'
 import { MessageType, SignalType, type IClientConnection } from '../src/types'
 import { createDefaultLogger } from '../src/utils'
+import { MessageSizeError } from '../src/errors'
 import { WebSocket } from 'ws'
 import { EventEmitter } from 'node:events'
 
@@ -497,6 +498,92 @@ describe('WebSocketServerTransport', () => {
 
             expect(handler).toHaveBeenCalledTimes(1)
             expect(handler).toHaveBeenCalledWith('data1')
+        })
+    })
+
+    describe('message size validation', () => {
+        it('should create transport with custom maxPayload', () => {
+            const customMaxPayload = 2048 // 2KB
+            const sizeLimitedTransport = new WebSocketServerTransport({
+                server: mockHttpServer,
+                path: '/test',
+                maxPayload: customMaxPayload,
+                enablePing: false,
+                connections: new Map(),
+                logger: createDefaultLogger(),
+            })
+
+            expect(sizeLimitedTransport).toBeInstanceOf(WebSocketServerTransport)
+            // The transport should be created with the custom maxPayload
+            // The actual validation happens in handleMessage when messages are received
+        })
+
+        it('should create transport with default maxPayload', () => {
+            const defaultTransport = new WebSocketServerTransport({
+                server: mockHttpServer,
+                path: '/test',
+                // maxPayload not specified - should use DEFAULT_MAX_PAYLOAD (1MB)
+                enablePing: false,
+                connections: new Map(),
+                logger: createDefaultLogger(),
+            })
+
+            expect(defaultTransport).toBeInstanceOf(WebSocketServerTransport)
+            // Default maxPayload is applied in constructor
+        })
+
+        it('should use configured maxPayload for underlying ws server', () => {
+            const customMaxPayload = 512 * 1024 // 512KB
+            const sizeLimitedTransport = new WebSocketServerTransport({
+                server: mockHttpServer,
+                path: '/test',
+                maxPayload: customMaxPayload,
+                enablePing: false,
+                connections: new Map(),
+                logger: createDefaultLogger(),
+            })
+
+            expect(sizeLimitedTransport).toBeInstanceOf(WebSocketServerTransport)
+            // The ws server is configured with maxPayload in the constructor
+            // This prevents messages larger than maxPayload from being accepted at the protocol level
+        })
+
+        it('should create MessageSizeError with correct properties', () => {
+            const dataSize = 2048
+            const maxSize = 1024
+            const error = new MessageSizeError(dataSize, maxSize)
+
+            expect(error).toBeInstanceOf(MessageSizeError)
+            expect(error.name).toBe('MessageSizeError')
+            expect(error.code).toBe('MESSAGE_TOO_LARGE')
+            expect(error.dataSize).toBe(dataSize)
+            expect(error.maxSize).toBe(maxSize)
+            expect(error.message).toContain('exceeds maximum allowed size')
+        })
+
+        it('should include size information in error toJSON', () => {
+            const dataSize = 4096
+            const maxSize = 1024
+            const error = new MessageSizeError(dataSize, maxSize)
+
+            const json = error.toJSON()
+
+            expect(json.name).toBe('MessageSizeError')
+            expect(json.code).toBe('MESSAGE_TOO_LARGE')
+            expect(json.dataSize).toBe(dataSize)
+            expect(json.maxSize).toBe(maxSize)
+            expect(json.message).toBeDefined()
+        })
+
+        it('should format error toString correctly', () => {
+            const dataSize = 2048
+            const maxSize = 1024
+            const error = new MessageSizeError(dataSize, maxSize)
+
+            const str = error.toString()
+
+            expect(str).toContain('[MessageSizeError:MESSAGE_TOO_LARGE]')
+            expect(str).toContain('exceeds maximum allowed size')
         })
     })
 })

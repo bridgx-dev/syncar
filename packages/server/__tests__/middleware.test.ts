@@ -16,6 +16,8 @@ import {
     channelWhitelist,
     clearRateLimitStore,
     getRateLimitState,
+    getRateLimitStoreSize,
+    resetRateLimit,
 } from '../src/middleware'
 import type { IClientConnection } from '../src/types'
 import type { Message, DataMessage } from '../src/types'
@@ -915,6 +917,260 @@ describe('Middleware Factories', () => {
 
             // The cleanup should have run (verified by no errors)
             expect(true).toBe(true)
+        })
+
+        describe('concurrent requests (race condition fix)', () => {
+            it('should handle concurrent requests atomically', async () => {
+                const middleware = rateLimit({
+                    maxRequests: 5,
+                    windowMs: 1000,
+                })
+
+                manager.use(middleware)
+
+                const message: DataMessage = {
+                    id: 'msg-1',
+                    type: MessageType.DATA,
+                    channel: 'chat',
+                    data: { text: 'hello' },
+                    timestamp: Date.now(),
+                }
+
+                // Send 5 concurrent requests (at the limit)
+                const requests = Array.from({ length: 5 }, () =>
+                    manager.executeMessage(mockClient, message),
+                )
+
+                // All should succeed
+                await expect(Promise.all(requests)).resolves.toBeDefined()
+
+                // Verify count is exactly 5
+                const state = getRateLimitState('client-1')
+                expect(state?.count).toBe(5)
+            })
+
+            it('should reject excess concurrent requests', async () => {
+                const middleware = rateLimit({
+                    maxRequests: 3,
+                    windowMs: 1000,
+                })
+
+                manager.use(middleware)
+
+                const message: DataMessage = {
+                    id: 'msg-1',
+                    type: MessageType.DATA,
+                    channel: 'chat',
+                    data: { text: 'hello' },
+                    timestamp: Date.now(),
+                }
+
+                // Send 5 concurrent requests (exceeds limit of 3)
+                const requests = Array.from({ length: 5 }, () =>
+                    manager.executeMessage(mockClient, message).catch(
+                        (e) => e,
+                    ),
+                )
+
+                const results = await Promise.all(requests)
+
+                // Count successes and failures
+                const successes = results.filter(
+                    (r) => !(r instanceof MiddlewareRejectionError),
+                )
+                const failures = results.filter(
+                    (r) => r instanceof MiddlewareRejectionError,
+                )
+
+                // Should have exactly 3 successes and 2 failures
+                expect(successes.length).toBe(3)
+                expect(failures.length).toBe(2)
+
+                // Verify count is exactly 3 (not more due to race condition)
+                const state = getRateLimitState('client-1')
+                expect(state?.count).toBe(3)
+            })
+
+            it('should serialize concurrent requests for same ID', async () => {
+                const middleware = rateLimit({
+                    maxRequests: 1,
+                    windowMs: 1000,
+                })
+
+                manager.use(middleware)
+
+                const message: DataMessage = {
+                    id: 'msg-1',
+                    type: MessageType.DATA,
+                    channel: 'chat',
+                    data: { text: 'hello' },
+                    timestamp: Date.now(),
+                }
+
+                // Track execution order
+                const executionOrder: string[] = []
+
+                // Create 3 concurrent requests
+                const requests = Array.from({ length: 3 }, (_, i) =>
+                    manager
+                        .executeMessage(mockClient, message)
+                        .then(() => executionOrder.push(`request-${i}`))
+                        .catch(() => executionOrder.push(`failed-${i}`)),
+                )
+
+                await Promise.allSettled(requests)
+
+                // All requests should have completed in some order
+                expect(executionOrder.length).toBe(3)
+
+                // Count should not exceed 1
+                const state = getRateLimitState('client-1')
+                expect(state?.count).toBe(1)
+            })
+        })
+
+        describe('memory exhaustion protection (maxEntries)', () => {
+            it('should enforce maxEntries limit', async () => {
+                const middleware = rateLimit({
+                    maxRequests: 100,
+                    windowMs: 1000,
+                    maxEntries: 3, // Only allow 3 unique IDs
+                })
+
+                manager.use(middleware)
+
+                const message: DataMessage = {
+                    id: 'msg-1',
+                    type: MessageType.DATA,
+                    channel: 'chat',
+                    data: { text: 'hello' },
+                    timestamp: Date.now(),
+                }
+
+                // Create requests for 5 different clients
+                const clients = Array.from({ length: 5 }, (_, i) =>
+                    createMockClient(`client-${i}`),
+                )
+
+                const results = await Promise.allSettled(
+                    clients.map((client) =>
+                        manager.executeMessage(client, message),
+                    ),
+                )
+
+                // First 3 should succeed, last 2 should be rejected
+                const successes = results.filter((r) => r.status === 'fulfilled')
+                expect(successes.length).toBe(3)
+
+                // Store size should not exceed maxEntries
+                expect(getRateLimitStoreSize()).toBeLessThanOrEqual(3)
+            })
+
+            it('should allow existing clients when maxEntries reached', async () => {
+                const middleware = rateLimit({
+                    maxRequests: 5,
+                    windowMs: 1000,
+                    maxEntries: 2,
+                })
+
+                manager.use(middleware)
+
+                const message: DataMessage = {
+                    id: 'msg-1',
+                    type: MessageType.DATA,
+                    channel: 'chat',
+                    data: { text: 'hello' },
+                    timestamp: Date.now(),
+                }
+
+                // First client fills the store
+                await manager.executeMessage(mockClient, message)
+
+                // Second client fills the store
+                const client2 = createMockClient('client-2')
+                await manager.executeMessage(client2, message)
+
+                // Third client should be rejected (store full)
+                const client3 = createMockClient('client-3')
+                await expect(
+                    manager.executeMessage(client3, message),
+                ).rejects.toThrow(MiddlewareRejectionError)
+
+                // But first client can still make requests (existing entry)
+                await manager.executeMessage(mockClient, message)
+                const state = getRateLimitState('client-1')
+                expect(state?.count).toBe(2)
+            })
+        })
+
+        describe('utility functions', () => {
+            it('should get rate limit store size', async () => {
+                const middleware = rateLimit({
+                    maxRequests: 5,
+                    windowMs: 1000,
+                })
+
+                manager.use(middleware)
+
+                const message: DataMessage = {
+                    id: 'msg-1',
+                    type: MessageType.DATA,
+                    channel: 'chat',
+                    data: { text: 'hello' },
+                    timestamp: Date.now(),
+                }
+
+                expect(getRateLimitStoreSize()).toBe(0)
+
+                // Create state for 3 different clients
+                await manager.executeMessage(createMockClient('client-1'), message)
+                await manager.executeMessage(createMockClient('client-2'), message)
+                await manager.executeMessage(createMockClient('client-3'), message)
+
+                expect(getRateLimitStoreSize()).toBe(3)
+            })
+
+            it('should reset rate limit for specific client', async () => {
+                const middleware = rateLimit({
+                    maxRequests: 3,
+                    windowMs: 1000,
+                })
+
+                manager.use(middleware)
+
+                const message: DataMessage = {
+                    id: 'msg-1',
+                    type: MessageType.DATA,
+                    channel: 'chat',
+                    data: { text: 'hello' },
+                    timestamp: Date.now(),
+                }
+
+                // Use up the limit
+                await manager.executeMessage(mockClient, message)
+                await manager.executeMessage(mockClient, message)
+                await manager.executeMessage(mockClient, message)
+
+                let state = getRateLimitState('client-1')
+                expect(state?.count).toBe(3)
+
+                // Next request should be rejected
+                await expect(
+                    manager.executeMessage(mockClient, message),
+                ).rejects.toThrow(MiddlewareRejectionError)
+
+                // Reset rate limit for this client
+                resetRateLimit('client-1')
+
+                // State should be gone
+                state = getRateLimitState('client-1')
+                expect(state).toBeUndefined()
+
+                // Should be able to make requests again
+                await manager.executeMessage(mockClient, message)
+                state = getRateLimitState('client-1')
+                expect(state?.count).toBe(1)
+            })
         })
     })
 
